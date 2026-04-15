@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบัญชี ERP NUALANAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .sidebar-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
+
+        /* ปรับปรุง Scrollbar แนวนอนและแนวตั้งให้ "หนา สีเขียว และลากง่าย" ในทุกๆ หน้า */
+        .table-scroll::-webkit-scrollbar, .preview-scroll::-webkit-scrollbar { height: 16px; width: 16px; }
+        .table-scroll::-webkit-scrollbar-track, .preview-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 8px; border: 3px solid #f8fafc; }
+        .table-scroll::-webkit-scrollbar-thumb, .preview-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 8px; border: 3px solid #e2e8f0; }
+        .table-scroll:hover::-webkit-scrollbar-thumb, .preview-scroll:hover::-webkit-scrollbar-thumb { background: #059669; }
+
+        /* PRINT STYLES FIX */
+        @media print {
+            @page { size: A4; margin: 0 !important; }
+            html, body { width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; background-color: white !important; overflow: hidden !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            body.modal-open nav, body.modal-open header, body.modal-open > div.flex-1 > main > div.tab-content, body.modal-open #custom-alert-modal, body.modal-open #custom-confirm-modal { display: none !important; }
+            body.modal-open > div.flex-1, body.modal-open main { display: block !important; position: static !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+            body.modal-open #document-preview-modal { display: block !important; position: absolute !important; top: 0 !important; left: 0 !important; width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; background: white !important; z-index: 9999 !important; }
+            body.modal-open #document-preview-modal > div.bg-white { display: block !important; width: 210mm !important; height: 297mm !important; max-width: none !important; max-height: none !important; box-shadow: none !important; border: none !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; background: transparent !important; overflow: hidden !important; }
+            body.modal-open .sticky.top-0, body.modal-open .no-print { display: none !important; }
+            body.modal-open .overflow-auto.bg-gray-300 { display: block !important; width: 210mm !important; height: 297mm !important; padding: 0 !important; margin: 0 !important; background: white !important; overflow: hidden !important; }
+            body.modal-open #paper-wrapper { width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; display: block !important; }
+            body.modal-open #paper-preview { width: 210mm !important; height: 297mm !important; max-width: 210mm !important; max-height: 297mm !important; margin: 0 !important; padding: 10mm !important; border: none !important; box-shadow: none !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; page-break-after: avoid !important; page-break-before: avoid !important; page-break-inside: avoid !important; transform: scale(1) !important; transform-origin: top left !important; position: static !important; }
+            body.modal-open #paper-preview .table-scroll { overflow: visible !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
+            body.modal-open #paper-preview table { min-width: 100% !important; width: 100% !important; }
+
+            body:not(.modal-open) nav, body:not(.modal-open) header, body:not(.modal-open) .no-print { display: none !important; }
+            body:not(.modal-open) .tab-content:not(.active) { display: none !important; }
+            body:not(.modal-open) .tab-content.active { display: block !important; }
+            body:not(.modal-open) html, body:not(.modal-open) body { height: auto !important; width: 100% !important; overflow: visible !important; }
+            body:not(.modal-open) .flex-1, body:not(.modal-open) main { display: block !important; height: auto !important; width: 100% !important; padding: 0 !important; overflow: visible !important; }
+
+            body:not(.modal-open) .table-scroll { overflow: visible !important; }
+            body:not(.modal-open) table.vat-table { min-width: 100% !important; width: 100% !important; font-size: 11px !important; }
+            body:not(.modal-open) table.vat-table th, body:not(.modal-open) table.vat-table td { padding: 4px !important; white-space: normal !important; word-wrap: break-word; }
+
+            table { page-break-inside: auto; width: 100% !important; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
+            .vat-table th, .vat-table td { border-color: #000 !important; border-width: 1px !important; }
+            input[type="checkbox"] { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border: 1px solid black; background: white; display: inline-flex; align-items: center; justify-content: center; }
+            input[type="checkbox"]:checked::after { content: 'x'; font-size: 16px; font-weight: bold; color: black; line-height: 1; }
+        }
+        
+        .item-grid { display: grid; grid-template-columns: 2fr 3fr 1fr 1fr 1.5fr 1.5fr 1.5fr auto; gap: 0.5rem; align-items: center; }
+        .vat-table th, .vat-table td { border: 1px solid #1f2937; }
+        .double-underline { border-bottom: 3px double #047857; padding-bottom: 2px; }
+
+        #vat-table-body td[contenteditable="true"]:hover { background-color: #fef08a; cursor: text; outline: 1px dashed #ca8a04; }
+        #vat-table-body td[contenteditable="true"]:focus { background-color: #fff; outline: 2px solid #059669; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen bg-gray-50 overflow-hidden font-sans relative text-[12px]">
+
+    <!-- Alerts & Modals -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[14px]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all scale-100">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-4xl"></i></div>
+            <h3 id="custom-alert-title" class="text-xl font-bold text-gray-800 mb-2">สำเร็จ!</h3>
+            <p id="custom-alert-msg" class="text-gray-600 mb-6">ดำเนินการเรียบร้อยแล้ว</p>
+            <button onclick="document.getElementById('custom-alert-modal').classList.add('hidden')" class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition shadow-sm">ตกลง</button>
+        </div>
+    </div>
+
+    <div id="custom-confirm-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[14px]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-warning text-4xl"></i></div>
+            <h3 id="custom-confirm-title" class="text-xl font-bold text-gray-800 mb-2">ยืนยันการทำรายการ?</h3>
+            <p id="custom-confirm-msg" class="text-gray-600 mb-6 whitespace-pre-line">คุณแน่ใจหรือไม่...</p>
+            <div class="flex gap-3 justify-center">
+                <button id="custom-confirm-cancel" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold transition">ยกเลิก</button>
+                <button id="custom-confirm-ok" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition shadow-sm">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-[#042f24] flex items-center justify-center z-[200] transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-10 text-center transform scale-100 transition-transform relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
+            <div class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-md">
+                <i class="ph ph-chart-bar text-4xl"></i>
+            </div>
+            <h2 class="text-3xl font-black text-gray-800 tracking-tight mb-1">ERP <span class="text-emerald-500">NUALANAN</span></h2>
+            <p class="text-gray-500 text-sm mb-8">ลงชื่อเข้าสู่ระบบด้วยอีเมลเพื่อดำเนินการต่อ</p>
+            
+            <form id="login-form" class="space-y-5 text-left text-[14px]">
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">อีเมล (Email)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-envelope text-gray-400 text-lg"></i>
+                        </div>
+                        <input type="email" id="login-username" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-gray-50" placeholder="user@example.com" value="">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-gray-700 mb-1">รหัสผ่าน (Password)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-lock text-gray-400 text-lg"></i>
+                        </div>
+                        <input type="password" id="login-password" required minlength="6" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-gray-50" placeholder="••••••••" value="">
+                    </div>
+                </div>
+                <div id="login-error" class="text-red-500 text-[13px] text-center hidden font-medium bg-red-50 py-2 rounded">
+                    <i class="ph ph-warning-circle inline-block align-middle mr-1"></i> ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง!
+                </div>
+                <button type="submit" id="btn-login-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition-all flex items-center justify-center gap-2 mt-4">
+                    <span>เข้าสู่ระบบ</span> <i class="ph ph-sign-in text-lg"></i>
+                </button>
+            </form>
+            <div class="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-500 flex flex-col gap-1">
+                <span>* หากยังไม่มีบัญชี ระบบจะสร้างบัญชีให้โดยอัตโนมัติเมื่อเข้าสู่ระบบครั้งแรก (รหัสผ่านขั้นต่ำ 6 ตัวอักษร)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="main-app" class="w-full h-full flex" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <nav class="w-[300px] bg-[#042f24] text-white flex flex-col shadow-2xl z-20 shrink-0 h-full text-[14px]">
+            <div class="p-6 border-b border-white/5 shrink-0 relative">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-black flex items-center gap-2 tracking-tight">
+                            <div class="bg-emerald-500 text-[#042f24] p-1.5 rounded"><i class="ph ph-chart-bar text-xl"></i></div>
+                            <span>ERP <span class="text-emerald-400">Flow</span></span>
+                        </h1>
+                        <p class="text-[10px] text-emerald-500/80 mt-2 tracking-widest uppercase font-semibold">Enterprise Resource Planning</p>
+                    </div>
+                    <button onclick="toggleLanguage()" class="bg-white/10 hover:bg-white/20 text-emerald-400 p-1.5 rounded-md transition flex items-center justify-center shadow-sm border border-white/10" title="เปลี่ยนภาษา (TH/EN)">
+                        <i class="ph ph-translate text-lg"></i> <span id="current-lang-display" class="ml-1 text-[10px] font-bold">TH</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto sidebar-scroll pb-6 min-h-0">
+                <div class="p-4 pt-4"><h2 class="text-white/40 font-semibold text-[10px] uppercase tracking-wider mb-2 px-2">Main Menu</h2></div>
+                <ul class="flex flex-col gap-1 px-3 mb-4">
+                    <li><button onclick="switchTab('dashboard')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-squares-four text-lg"></i> <span data-i18n="menu_dashboard">ภาพรวม (Dashboard)</span></button></li>
+                    <li><button onclick="switchTab('document-list')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-files text-lg"></i> <span data-i18n="menu_docs">คลังเอกสารทั้งหมด</span></button></li>
+                    <li><button onclick="switchTab('customers')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-users text-lg"></i> <span data-i18n="menu_customers">ฐานข้อมูลคู่ค้า / ลูกค้า</span></button></li>
+                    <li><button onclick="switchTab('employees')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-identification-card text-lg"></i> <span data-i18n="menu_employees">ฐานข้อมูลพนักงาน</span></button></li>
+                    <li><button onclick="switchTab('products')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-package text-lg"></i> <span data-i18n="menu_products">ฐานข้อมูลสินค้า / บริการ</span></button></li>
+                </ul>
+
+                <div class="p-4 border-t border-white/5"><h2 class="text-white/40 font-semibold text-[10px] uppercase tracking-wider mb-2 px-2">ERP Modules</h2></div>
+                <ul class="flex flex-col gap-1 px-2">
+                    <li>
+                        <button onclick="toggleSubmenu('menu-sales')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm">
+                            <div class="flex items-center gap-2"><i class="ph ph-shopping-cart text-lg text-emerald-400"></i> 1) ฝั่งขาย (Sales/AR)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-sales"></i>
+                        </button>
+                        <div id="menu-sales" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">ก่อนขาย</div>
+                            <a onclick="handleMenuClick('QT', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเสนอราคา (Quotation)</a>
+                            <a onclick="handleMenuClick('SO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบสั่งขาย (Sales Order)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">ส่งของ</div>
+                            <a onclick="handleMenuClick('DO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบส่งของ (Delivery Note / DO)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">วางบิล</div>
+                            <a onclick="handleMenuClick('INV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบแจ้งหนี้ (Invoice)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">ภาษีไทย (ในประเทศ)</div>
+                            <a onclick="handleMenuClick('TINV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบกำกับภาษีเต็มรูป (Tax Invoice)</a>
+                            <a onclick="handleMenuClick('ABB', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบกำกับภาษีอย่างย่อ (ABB)</a>
+                            <a onclick="handleMenuClick('RE', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเสร็จรับเงิน (Receipt)</a>
+                            <a onclick="handleMenuClick('RETAX', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเสร็จรับเงิน/ใบกำกับภาษี</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">เอกสารปรับยอด</div>
+                            <a onclick="handleMenuClick('DN', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเพิ่มหนี้ (Debit Note)</a>
+                            <a onclick="handleMenuClick('CN', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบลดหนี้ (Credit Note)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-export')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-airplane-tilt text-lg text-emerald-400"></i> 2) เอกสารส่งออก (Export)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-export"></i>
+                        </button>
+                        <div id="menu-export" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <a onclick="handleMenuClick('EQT', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเสนอราคาส่งออก (Export Quotation)</a>
+                            <a onclick="handleMenuClick('PI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเรียกเก็บเงินล่วงหน้า (Proforma Invoice)</a>
+                            <a onclick="handleMenuClick('CI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบกำกับสินค้า (Commercial Invoice: CI)</a>
+                            <a onclick="handleMenuClick('PL', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรายการบรรจุหีบห่อ (Packing List: PL)</a>
+                            <a onclick="handleMenuClick('EVAT', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบกำกับภาษี 0% (Export VAT 0%)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">โลจิสติกส์</div>
+                            <a onclick="handleMenuClick('SHM', 'label')" class="block px-2 py-1.5 text-xs text-emerald-300 font-medium hover:bg-white/5 rounded cursor-pointer transition"><i class="ph ph-printer"></i> พิมพ์ Shipping Mark</a>
+                            <a onclick="handleMenuClick('BC', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบจองเรือ (Booking Confirmation)</a>
+                            <a onclick="handleMenuClick('BL', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบตราส่ง (B/L หรือ AWB)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-purchase')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-handshake text-lg text-emerald-400"></i> 3) ฝั่งซื้อ (Purchasing/AP)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-purchase"></i>
+                        </button>
+                        <div id="menu-purchase" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">ก่อนซื้อ</div>
+                            <a onclick="handleMenuClick('PR', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบขอซื้อ (Purchase Requisition: PR)</a>
+                            <a onclick="handleMenuClick('PO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบสั่งซื้อ (Purchase Order: PO)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">รับของ</div>
+                            <a onclick="handleMenuClick('GRN', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับสินค้า (Goods Receipt Note: GRN)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">ตั้งหนี้/ภาษีซื้อ</div>
+                            <a onclick="handleMenuClick('VB', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับวางบิล / ใบแจ้งหนี้ผู้ขาย</a>
+                            <a onclick="handleMenuClick('PINV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบกำกับภาษีซื้อ (Purchase Tax Inv)</a>
+                            <div class="text-emerald-500 text-[10px] font-bold mt-2 mb-1 px-2">เอกสารปรับยอด</div>
+                            <a onclick="handleMenuClick('SDN', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเพิ่มหนี้จากผู้ขาย (Supplier DN)</a>
+                            <a onclick="handleMenuClick('SCN', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบลดหนี้จากผู้ขาย (Supplier CN)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-inventory')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-warehouse text-lg text-emerald-400"></i> 4) คลังสินค้า (Inventory)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-inventory"></i>
+                        </button>
+                        <div id="menu-inventory" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <a onclick="handleMenuClick('STI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเข้า (Stock In)</a>
+                            <a onclick="handleMenuClick('STO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบจ่ายออก (Stock Out)</a>
+                            <a onclick="handleMenuClick('STT', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบโอนย้ายคลัง (Stock Transfer)</a>
+                            <a onclick="handleMenuClick('STA', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบปรับปรุงสต๊อก (Stock Adjustment)</a>
+                            <div class="border-t border-white/10 my-1"></div>
+                            <a onclick="handleMenuClick('STC', 'report')" class="block px-2 py-1.5 text-xs text-emerald-300 font-medium hover:bg-white/5 rounded cursor-pointer transition"><i class="ph ph-chart-line"></i> รายงานสต๊อกคงเหลือ (Stock Card)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-production')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-factory text-lg text-emerald-400"></i> 5) การผลิต (Production)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-production"></i>
+                        </button>
+                        <div id="menu-production" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <a onclick="handleMenuClick('PDO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบสั่งผลิต (Production Order)</a>
+                            <a onclick="handleMenuClick('MI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเบิกวัตถุดิบเข้าผลิต (Material Issue)</a>
+                            <a onclick="handleMenuClick('FGR', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเข้าผลิตสำเร็จ (Finished Goods Rec.)</a>
+                            <a onclick="handleMenuClick('MR', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบคืนวัตถุดิบ (Material Return)</a>
+                            <div class="border-t border-white/10 my-1"></div>
+                            <a onclick="handleMenuClick('YSR', 'report')" class="block px-2 py-1.5 text-xs text-emerald-300 font-medium hover:bg-white/5 rounded cursor-pointer transition"><i class="ph ph-chart-line"></i> รายงานผลผลิต/ของเสีย (Yield & Scrap)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-finance')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-bank text-lg text-emerald-400"></i> 6) การเงิน/บัญชี (Finance)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-finance"></i>
+                        </button>
+                        <div id="menu-finance" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <a onclick="handleMenuClick('RV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเงิน / ใบสำคัญรับ (RV)</a>
+                            <a onclick="handleMenuClick('PV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบจ่ายเงิน / ใบสำคัญจ่าย (PV)</a>
+                            <a onclick="handleMenuClick('JV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบสำคัญทั่วไป (Journal Voucher)</a>
+                            <div class="border-t border-white/10 my-1"></div>
+                            <a onclick="handleMenuClick('BRC', 'report')" class="block px-2 py-1.5 text-xs text-emerald-300 font-medium hover:bg-white/5 rounded cursor-pointer transition"><i class="ph ph-chart-line"></i> รายงานกระทบยอดธนาคาร (Bank Recon.)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-tax')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-receipt text-lg text-emerald-400"></i> 7) ภาษีไทย (Tax)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-tax"></i>
+                        </button>
+                        <div id="menu-tax" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <a onclick="handleMenuClick('VATOUT', 'report')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">รายงานภาษีขาย (VAT Output Report)</a>
+                            <a onclick="handleMenuClick('VATIN', 'report')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">รายงานภาษีซื้อ (VAT Input Report)</a>
+                            <a onclick="handleMenuClick('WHT', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">หนังสือรับรองหัก ณ ที่จ่าย (WHT Cert)</a>
+                            <a onclick="handleMenuClick('WHTSUM', 'report')" class="block px-2 py-1.5 text-xs text-emerald-300 font-medium hover:bg-white/5 rounded cursor-pointer transition"><i class="ph ph-chart-line"></i> สรุปภาษีหัก ณ ที่จ่ายรายเดือน</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-hr')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-users-three text-lg text-emerald-400"></i> 8) ทรัพยากรบุคคล (HR)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-hr"></i>
+                        </button>
+                        <div id="menu-hr" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <a onclick="handleMenuClick('PAYSLIP', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition" data-i18n="menu_payslip">สลิปเงินเดือน (Payslip)</a>
+                        </div>
+                    </li>
+                </ul>
+
+                <ul class="flex flex-col gap-1 px-3 mt-4 pt-4 border-t border-white/5">
+                    <li><button onclick="switchTab('company-profile')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-buildings text-lg"></i> <span data-i18n="menu_company">ข้อมูลพื้นฐานบริษัท</span></button></li>
+                    <li><button onclick="switchTab('settings')" class="w-full text-left px-4 py-2.5 text-white/80 hover:bg-white/10 hover:text-emerald-300 rounded-lg flex items-center gap-3 transition-all font-medium text-sm"><i class="ph ph-gear text-lg"></i> <span data-i18n="menu_settings">ตั้งค่าระบบ (Settings)</span></button></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden relative z-10">
+            <header class="bg-white h-16 shadow-sm border-b border-gray-100 flex justify-between items-center px-8 shrink-0 no-print text-[14px]">
+                <div class="flex items-center gap-4">
+                    <div class="h-8 w-8 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center"><i class="ph ph-buildings text-lg"></i></div>
+                    <div>
+                        <h2 class="text-[14px] font-bold text-gray-800" id="header-company-name">บริษัท โค้ดดิ้ง สตูดิโอ จำกัด</h2>
+                        <p class="text-[12px] text-gray-500"><span data-i18n="tax_id_label">Tax ID:</span> <span id="header-company-tax">0105555555555</span> | <span data-i18n="phone_label">โทร:</span> <span id="header-company-phone">02-123-4567</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="text-gray-400 hover:text-emerald-600 transition relative"><i class="ph ph-bell text-xl"></i><span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span></button>
+                    <!-- ปุ่ม Logout -->
+                    <button onclick="doLogout()" class="text-gray-400 hover:text-red-500 transition" title="ออกจากระบบ"><i class="ph ph-sign-out text-xl"></i></button>
+                    <div class="h-8 w-8 bg-emerald-600 rounded-full flex items-center justify-center text-[14px] font-bold text-white border-2 border-white shadow-sm cursor-pointer hover:bg-emerald-700 transition">CS</div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-8 relative bg-gray-50/50">
+
+                <!-- 1. Dashboard Tab -->
+                <div id="tab-dashboard" class="tab-content text-[14px]">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-chart-bar"></i> <span data-i18n="title_dashboard">ภาพรวมธุรกิจ (Executive Dashboard)</span></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center gap-4"><div class="p-4 bg-green-100 text-green-600 rounded-lg"><i class="ph ph-money text-3xl"></i></div><div><p class="text-[12px] text-gray-500 font-medium" data-i18n="dash_revenue">ยอดขายสุทธิ (รวมภาษี)</p><p class="text-xl font-bold text-gray-800" id="dash-total-revenue">0.00 <span class="text-[12px] font-normal text-gray-500" data-i18n="currency">บาท</span></p></div></div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center gap-4"><div class="p-4 bg-blue-100 text-blue-600 rounded-lg"><i class="ph ph-file-text text-3xl"></i></div><div><p class="text-[12px] text-gray-500 font-medium" data-i18n="dash_docs">เอกสารทั้งหมดที่ออก</p><p class="text-xl font-bold text-gray-800" id="dash-total-docs">0 <span class="text-[12px] font-normal text-gray-500" data-i18n="unit_doc">ฉบับ</span></p></div></div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center gap-4"><div class="p-4 bg-orange-100 text-orange-600 rounded-lg"><i class="ph ph-file-cloud text-3xl"></i></div><div><p class="text-[12px] text-gray-500 font-medium" data-i18n="dash_invs">ใบกำกับภาษีขาย (ที่สร้างรายได้)</p><p class="text-xl font-bold text-gray-800" id="dash-total-invs">0 <span class="text-[12px] font-normal text-gray-500" data-i18n="unit_doc">ฉบับ</span></p></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2" data-i18n="dash_doc_type_title">จำนวนเอกสารแยกตามประเภท</h3><ul id="dash-doc-types" class="space-y-3 max-h-[300px] overflow-y-auto pr-2 table-scroll text-[12px]"></ul></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2" data-i18n="dash_sales_by_product">สัดส่วนยอดขายแยกตามสินค้า</h3><div id="dash-sales-by-product" class="space-y-4 max-h-[300px] overflow-y-auto pr-2 table-scroll text-[12px]"></div></div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"><h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2" data-i18n="dash_sales_by_customer">สัดส่วนยอดขายแยกตามลูกค้า</h3><div id="dash-sales-by-customer" class="space-y-4 max-h-[300px] overflow-y-auto pr-2 table-scroll text-[12px]"></div></div>
+                    </div>
+                </div>
+
+                <!-- 2. Company Profile Tab -->
+                <div id="tab-company-profile" class="tab-content text-[14px]">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-buildings"></i> <span data-i18n="menu_company">ข้อมูลพื้นฐานบริษัท</span></h2>
+                        <form id="company-profile-form" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center gap-4">
+                                    <div class="w-24 h-24 bg-white border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center relative overflow-hidden group hover:border-emerald-500 transition cursor-pointer" onclick="document.getElementById('comp-logo-input').click()">
+                                        <img id="comp-logo-preview" src="" class="absolute inset-0 w-full h-full object-contain p-1 hidden bg-white z-10" alt="Logo">
+                                        <i class="ph ph-image text-2xl text-gray-400 group-hover:text-emerald-500 mb-1 z-0"></i><span class="text-[10px] text-gray-500 font-bold z-0">Logo</span>
+                                    </div>
+                                    <div><label class="block text-[14px] font-bold text-gray-700 mb-1">โลโก้บริษัท (Company Logo)</label><p class="text-[12px] text-gray-500 mb-2">คลิกที่กรอบเพื่ออัปโหลดไฟล์ภาพ (PNG, JPG)</p><input type="file" id="comp-logo-input" accept="image/*" class="hidden"></div>
+                                </div>
+                                <div><label class="block text-[12px] font-medium text-gray-700 mb-2">ชื่อบริษัท (TH) <span class="text-red-500">*</span></label><input type="text" id="comp-name-th" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div><label class="block text-[12px] font-medium text-gray-700 mb-2">ชื่อบริษัท (EN) <span class="text-red-500">*</span></label><input type="text" id="comp-name-en" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div class="md:col-span-2"><label class="block text-[12px] font-medium text-gray-700 mb-2">ที่อยู่ (TH)</label><textarea id="comp-addr-th" rows="2" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea></div>
+                                <div class="md:col-span-2"><label class="block text-[12px] font-medium text-gray-700 mb-2">ที่อยู่ (EN)</label><textarea id="comp-addr-en" rows="2" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea></div>
+                                <div><label class="block text-[12px] font-medium text-gray-700 mb-2">เลขประจำตัวผู้เสียภาษี <span class="text-red-500">*</span></label><input type="text" id="comp-tax" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div><label class="block text-[12px] font-medium text-gray-700 mb-2">สาขา (Branch) <span class="text-red-500">*</span></label><input type="text" id="comp-branch" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div><label class="block text-[12px] font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label><input type="text" id="comp-phone" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div><label class="block text-[12px] font-medium text-gray-700 mb-2">อีเมล / เว็บไซต์</label><input type="text" id="comp-email" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                            </div>
+                            <div class="flex justify-end pt-4 border-t border-gray-100"><button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition flex items-center gap-2"><i class="ph ph-floppy-disk"></i> <span data-i18n="btn_save_company">บันทึกข้อมูลบริษัท</span></button></div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 3. Create Document Tab -->
+                <div id="tab-create-doc" class="tab-content text-[14px]">
+                    <div class="max-w-6xl mx-auto">
+                        <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-file-plus"></i> <span data-i18n="title_create_doc">สร้างเอกสารใหม่</span></h2>
+                        <form id="create-doc-form" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                                <div class="md:col-span-2">
+                                    <label class="block text-[12px] font-medium text-gray-700 mb-2"><span data-i18n="label_doc_type">ประเภทเอกสาร</span> <span class="text-red-500">*</span></label>
+                                    <select id="doc-type" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none" onchange="checkDocType()">
+                                        <option value="" disabled selected data-i18n="opt_select_type">-- เลือกประเภท --</option>
+                                        <optgroup label="1) Sales / AR">
+                                            <option value="QT">ใบเสนอราคา (Quotation)</option><option value="SO">ใบสั่งขาย (Sales Order)</option><option value="DO">ใบส่งของ (Delivery Note / DO)</option><option value="INV">ใบแจ้งหนี้ (Invoice)</option><option value="TINV">ใบกำกับภาษีเต็มรูป (Tax Invoice)</option><option value="ABB">ใบกำกับภาษีอย่างย่อ (Abbreviated Tax Inv)</option><option value="RE">ใบเสร็จรับเงิน (Receipt)</option><option value="RETAX">ใบเสร็จรับเงิน/ใบกำกับภาษี</option><option value="DN">ใบเพิ่มหนี้ (Debit Note)</option><option value="CN">ใบลดหนี้ (Credit Note)</option>
+                                        </optgroup>
+                                        <optgroup label="2) Export Pack">
+                                            <option value="EQT">ใบเสนอราคาส่งออก (Export Quotation)</option><option value="PI">ใบเรียกเก็บเงินล่วงหน้า (Proforma Invoice)</option><option value="CI">ใบกำกับสินค้า (Commercial Invoice: CI)</option><option value="PL">ใบรายการบรรจุหีบห่อ (Packing List: PL)</option><option value="EVAT">ใบกำกับภาษี 0% (Export VAT 0%)</option><option value="BC">ใบจองเรือ (Booking Confirmation)</option><option value="BL">ใบตราส่ง (B/L หรือ AWB)</option>
+                                        </optgroup>
+                                        <optgroup label="3) Purchasing / AP">
+                                            <option value="PR">ใบขอซื้อ (Purchase Requisition: PR)</option><option value="PO">ใบสั่งซื้อ (Purchase Order: PO)</option><option value="GRN">ใบรับสินค้า (Goods Receipt Note: GRN)</option><option value="VB">ใบรับวางบิล / ใบแจ้งหนี้ผู้ขาย (Vendor Bill)</option><option value="PINV">ใบกำกับภาษีซื้อ (Purchase Tax Invoice)</option><option value="SDN">ใบเพิ่มหนี้จากผู้ขาย (Supplier DN)</option><option value="SCN">ใบลดหนี้จากผู้ขาย (Supplier CN)</option>
+                                        </optgroup>
+                                        <optgroup label="4) Inventory">
+                                            <option value="STI">ใบรับเข้าคลัง (Stock In)</option><option value="STO">ใบจ่ายออกคลัง (Stock Out)</option><option value="STT">ใบโอนย้ายคลัง (Stock Transfer)</option><option value="STA">ใบปรับปรุงสต๊อก (Stock Adjustment)</option>
+                                        </optgroup>
+                                        <optgroup label="5) Production">
+                                            <option value="PDO">ใบสั่งผลิต (Production Order)</option><option value="MI">ใบเบิกวัตถุดิบเข้าผลิต (Material Issue)</option><option value="FGR">ใบรับเข้าผลิตสำเร็จ (Finished Goods Receipt)</option><option value="MR">ใบคืนวัตถุดิบ (Material Return)</option>
+                                        </optgroup>
+                                        <optgroup label="6) Finance / GL">
+                                            <option value="RV">ใบรับเงิน / ใบสำคัญรับ (Payment Receipt)</option><option value="PV">ใบจ่ายเงิน / ใบสำคัญจ่าย (Payment Voucher)</option><option value="JV">ใบสำคัญทั่วไป (Journal Voucher)</option>
+                                        </optgroup>
+                                        <optgroup label="7) Tax">
+                                            <option value="WHT">หนังสือรับรองหัก ณ ที่จ่าย (WHT Certificate)</option>
+                                        </optgroup>
+                                        <optgroup label="8) HR / Payroll">
+                                            <option value="PAYSLIP">สลิปเงินเดือน (Payslip)</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-1"><label class="block text-[12px] font-medium text-gray-700 mb-2">วันที่เอกสาร <span class="text-red-500">*</span></label><input type="date" id="doc-date" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-[12px] font-medium text-gray-700 mb-2" data-i18n="label_credit">เครดิต (Credit Term)</label>
+                                    <select id="doc-credit" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><option value="เงินสด (Cash)">เงินสด (Cash)</option><option value="15 วัน (Days)">15 วัน (Days)</option><option value="30 วัน (Days)">30 วัน (Days)</option><option value="45 วัน (Days)">45 วัน (Days)</option><option value="60 วัน (Days)">60 วัน (Days)</option><option value="90 วัน (Days)">90 วัน (Days)</option></select>
+                                </div>
+                                <div class="md:col-span-1"><label class="block text-[12px] font-medium text-gray-700 mb-2">อ้างอิง (Ref No.)</label><input type="text" id="doc-ref-manual" list="all-docs-list" placeholder="ระบุเลขอ้างอิง" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><datalist id="all-docs-list"></datalist></div>
+
+                                <div class="md:col-span-3 custom-dropdown-container relative">
+                                    <label class="block text-[12px] font-medium text-gray-700 mb-2" id="label_customer_wrap"><span data-i18n="label_customer">ชื่อลูกค้า / คู่ค้า</span> <span class="text-red-500">*</span></label>
+                                    <input type="text" id="customer-select" class="hidden">
+                                    <button type="button" onclick="toggleSearchMenu('customer')" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none flex justify-between items-center bg-white text-left shadow-sm">
+                                        <span id="customer-display-text" class="text-gray-500 truncate" data-i18n="opt_select_cust">-- เลือกลูกค้า --</span><i class="ph ph-caret-down text-gray-400"></i>
+                                    </button>
+                                    <div id="customer-search-menu" class="custom-search-menu hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"><div class="p-2 border-b bg-gray-50"><input type="text" id="customer-search-input" class="w-full border border-gray-300 rounded p-2 text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" placeholder="🔍 ค้นหา..." onkeyup="filterCustomDropdown('customer')"></div><ul id="customer-options-list" class="max-h-48 overflow-y-auto"></ul></div>
+                                </div>
+
+                                <div class="md:col-span-2 hidden custom-dropdown-container relative" id="seller-container">
+                                    <label class="block text-[12px] font-medium text-gray-700 mb-2"><span data-i18n="label_seller">พนักงานขาย (Salesperson)</span></label>
+                                    <input type="text" id="seller-select" class="hidden">
+                                    <button type="button" onclick="toggleSearchMenu('seller')" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none flex justify-between items-center bg-white text-left shadow-sm">
+                                        <span id="seller-display-text" class="text-gray-500 truncate">-- ไม่ระบุ --</span><i class="ph ph-caret-down text-gray-400"></i>
+                                    </button>
+                                    <div id="seller-search-menu" class="custom-search-menu hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"><div class="p-2 border-b bg-gray-50"><input type="text" id="seller-search-input" class="w-full border border-gray-300 rounded p-2 text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" placeholder="🔍 ค้นหาพนักงาน..." onkeyup="filterCustomDropdown('seller')"></div><ul id="seller-options-list" class="max-h-48 overflow-y-auto"></ul></div>
+                                </div>
+
+                                <div class="md:col-span-5 hidden" id="ref-qt-container">
+                                    <div class="bg-blue-50/50 border border-blue-200 rounded-lg p-4 custom-dropdown-container relative">
+                                        <label class="block text-[12px] font-bold text-blue-800 mb-2 flex items-center gap-1"><i class="ph ph-link"></i> ดึงข้อมูลจากเอกสารอื่น (Pull from other Doc)</label>
+                                        <input type="text" id="ref-qt-select" class="hidden">
+                                        <button type="button" onclick="toggleSearchMenu('ref-qt')" class="w-full border border-blue-300 bg-white rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none flex justify-between items-center text-left shadow-sm hover:bg-blue-50 transition">
+                                            <span id="ref-qt-display-text" class="text-gray-600 truncate">-- ไม่ดึงข้อมูล (Manual) --</span><i class="ph ph-caret-down text-gray-400"></i>
+                                        </button>
+                                        <div id="ref-qt-search-menu" class="custom-search-menu hidden absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"><div class="p-2 border-b bg-gray-50"><input type="text" id="ref-qt-search-input" class="w-full border border-gray-300 rounded p-2 text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" placeholder="🔍 ค้นหาเอกสาร..." onkeyup="filterCustomDropdown('ref-qt')"></div><ul id="ref-qt-options-list" class="max-h-48 overflow-y-auto"></ul></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Specific Document Detail Containers -->
+                            <div id="qt-details-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
+                                <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-calendar-blank"></i> <span data-i18n="qt_details">เงื่อนไขใบเสนอราคา</span></h3>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4"><div><label class="block text-[12px] font-medium text-purple-700 mb-1" data-i18n="valid_until">กำหนดยืนราคา</label><input type="date" id="doc-expire-date" class="w-full border border-purple-300 rounded p-2 outline-none"></div></div>
+                            </div>
+
+                            <div id="vendor-inv-container" class="hidden bg-orange-50 p-4 rounded-lg border border-orange-200 mt-4">
+                                <label class="block text-[12px] font-medium text-orange-800 mb-2"><span data-i18n="label_vendor_inv">อ้างอิงใบกำกับภาษีผู้ขาย</span> <span class="text-red-500">*</span></label>
+                                <input type="text" id="vendor-inv-no" placeholder="ระบุเลขที่บิลที่ได้จากผู้ขาย" class="w-full border border-orange-300 rounded-lg p-2.5 outline-none">
+                                <p class="text-[12px] text-orange-600 mt-1" data-i18n="label_vendor_inv_desc">จำเป็นต้องระบุเพื่อรายงานภาษีซื้อ</p>
+                            </div>
+
+                            <div id="export-details-container" class="hidden bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                                <h3 class="text-sm font-bold text-blue-800 mb-4 flex items-center gap-2"><i class="ph ph-airplane-takeoff"></i> <span data-i18n="export_details">ข้อมูลการส่งออก</span></h3>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div><label class="block text-[12px] font-medium text-blue-700 mb-1" data-i18n="incoterm">Incoterms</label><input type="text" id="doc-incoterm" list="incoterms-list" placeholder="FOB, CIF..." class="w-full border border-blue-300 rounded p-2 outline-none uppercase"><datalist id="incoterms-list"><option value="EXW"></option><option value="FCA"></option><option value="FOB"></option><option value="CFR"></option><option value="CIF"></option><option value="DAP"></option><option value="DDP"></option></datalist></div>
+                                    <div><label class="block text-[12px] font-medium text-blue-700 mb-1" data-i18n="currency">สกุลเงิน</label><select id="doc-currency" onchange="handleCurrencyChange()" class="w-full border border-blue-300 rounded p-2 outline-none"><option value="THB">THB</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="JPY">JPY</option><option value="GBP">GBP</option><option value="CNY">CNY</option></select></div>
+                                    <div><label class="block text-[12px] font-medium text-blue-700 mb-1" data-i18n="pol">Port of Loading</label><input type="text" id="doc-pol" placeholder="e.g. Bangkok" class="w-full border border-blue-300 rounded p-2 outline-none"></div>
+                                    <div><label class="block text-[12px] font-medium text-blue-700 mb-1" data-i18n="pod">Port of Discharge</label><input type="text" id="doc-pod" placeholder="e.g. Tokyo" class="w-full border border-blue-300 rounded p-2 outline-none"></div>
+                                </div>
+                            </div>
+
+                            <!-- Payslip Deductions (WHT & SSO) -->
+                            <div id="payslip-deductions-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
+                                <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-minus-circle"></i> รายการหักเพิ่มเติม (Deductions) สำหรับสลิปเงินเดือน</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div>
+                                        <label class="block text-[12px] font-medium text-purple-700 mb-1">หักประกันสังคม (%)</label>
+                                        <input type="number" id="payslip-sso-pct" step="0.01" min="0" value="0" class="w-full border border-purple-300 rounded p-2 outline-none" oninput="calculateLiveTotal()">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[12px] font-medium text-purple-700 mb-1">หัก ณ ที่จ่าย (%)</label>
+                                        <input type="number" id="payslip-wht-pct" step="0.01" min="0" value="0" class="w-full border border-purple-300 rounded p-2 outline-none" oninput="calculateLiveTotal()">
+                                    </div>
+                                </div>
+                                <p class="text-[10px] text-purple-600 mt-2">* ระบบจะคำนวณ % จากยอดเงินเดือนรวม (Gross Salary) เพื่อนำไปแสดงผลที่ส่วนท้ายสลิป</p>
+                            </div>
+
+                            <!-- Line Items -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4 mt-4" data-i18n="title_items">รายละเอียดรายการ (Line Items)</h3>
+                                <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm overflow-x-auto table-scroll">
+                                    <div class="min-w-[900px] pb-4">
+                                        <div class="item-grid font-semibold text-gray-600 text-[12px] uppercase mb-2 pb-2 border-b">
+                                            <div>รหัสสินค้า (Code)</div><div>รายละเอียด (Description)</div><div class="text-center">จำนวน</div><div class="text-center">หน่วย (Unit)</div><div class="text-right">ราคา/หน่วย <br><span class="text-[10px] text-gray-400 font-normal">(รวม VAT)</span></div>
+                                            <div class="text-right flex justify-end items-center gap-1">
+                                                <div class="bg-gray-100 px-2 py-1 rounded flex items-center gap-1 border border-gray-200"><select id="global-disc-type" class="bg-transparent font-bold text-gray-700 outline-none cursor-pointer appearance-none" onchange="calculateLiveTotal()"><option value="disc_%">ส่วนลด (%)</option><option value="gp_%">GP (%)</option></select><i class="ph ph-caret-down text-gray-500 text-[10px] pointer-events-none"></i></div>
+                                            </div>
+                                            <div class="text-right">รวมเป็นเงิน</div><div></div>
+                                        </div>
+                                        <div id="items-container" class="space-y-3 text-[14px]"></div>
+                                        <div class="mt-4 flex justify-between items-start">
+                                            <button type="button" onclick="addLineItem()" class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1 text-[14px] bg-emerald-50 px-3 py-1.5 rounded-md transition border border-emerald-200"><i class="ph ph-plus-circle"></i> <span data-i18n="btn_add_item">เพิ่มรายการ</span></button>
+                                            
+                                            <div class="text-right w-64 bg-gray-50 p-3 rounded border text-[14px]">
+                                                <div class="flex justify-between mb-1" id="live-subtotal-row">
+                                                    <span class="text-gray-500" id="live-subtotal-label">มูลค่าก่อนภาษี:</span> 
+                                                    <span id="live-subtotal" class="font-medium">0.00</span>
+                                                </div>
+                                                <div class="flex justify-between mb-1" id="live-vat-row">
+                                                    <span class="text-gray-500">ภาษี (VAT):</span> 
+                                                    <span id="live-vat" class="font-medium">0.00</span>
+                                                </div>
+                                                <div class="flex justify-between mb-1 text-red-600 hidden" id="live-sso-row">
+                                                    <span>ประกันสังคม:</span> 
+                                                    <span id="live-sso" class="font-medium">0.00</span>
+                                                </div>
+                                                <div class="flex justify-between mb-1 text-red-600 hidden" id="live-wht-row">
+                                                    <span>หัก ณ ที่จ่าย:</span> 
+                                                    <span id="live-wht" class="font-medium">0.00</span>
+                                                </div>
+                                                <div class="flex justify-between border-t pt-1 font-bold">
+                                                    <span class="text-gray-800">ยอดรวมสุทธิ:</span> 
+                                                    <span id="live-grand" class="text-emerald-700">0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Remarks -->
+                            <div>
+                                <h3 class="text-[14px] font-semibold text-gray-700 mb-2" data-i18n="label_select_remarks">เลือกข้อความหมายเหตุท้ายบิล</h3>
+                                <input type="text" id="search-remark" placeholder="🔍 ค้นหาหมายเหตุ..." class="w-full border border-gray-300 rounded-t-lg p-2 text-[13px] outline-none focus:ring-2 focus:ring-emerald-500 border-b-0" onkeyup="filterRemarks()">
+                                <div id="doc-remarks-selections" class="bg-gray-50 p-4 rounded-b-lg border border-gray-200 space-y-2 max-h-40 overflow-y-auto text-[14px] table-scroll"></div>
+                            </div>
+
+                            <div class="flex justify-end pt-4 border-t border-gray-100">
+                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-bold shadow-md transition flex items-center gap-2"><i class="ph ph-floppy-disk text-lg"></i> <span data-i18n="btn_save_doc">บันทึกเอกสาร</span></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 4. Documents List Tab -->
+                <div id="tab-document-list" class="tab-content">
+                    <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-files"></i> <span data-i18n="title_doc_list">คลังเอกสารทั้งหมด</span></h2></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto table-scroll">
+                            <table class="w-full text-left border-collapse whitespace-nowrap min-w-[1000px] text-[14px]">
+                                <thead class="bg-gray-50 text-gray-600 text-[12px] border-b">
+                                    <tr>
+                                        <th class="p-4 font-medium" data-i18n="col_doc_no">เลขที่เอกสาร</th><th class="p-4 font-medium" data-i18n="col_type">ประเภท</th><th class="p-4 font-medium" data-i18n="col_customer">ชื่อคู่ค้า/ลูกค้า</th><th class="p-4 font-medium" data-i18n="col_email">อีเมล (Email)</th>
+                                        <th class="p-4 font-medium" data-i18n="col_date">วันที่</th><th class="p-4 font-medium" data-i18n="col_ref_no">เลขอ้างอิง</th><th class="p-4 font-medium text-center" data-i18n="col_status">สถานะ</th><th class="p-4 font-medium text-right" data-i18n="col_total">ยอดสุทธิ (บาท)</th><th class="p-4 font-medium text-center no-print" data-i18n="col_action">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="document-table-body" class="divide-y divide-gray-100">
+                                    <tr><td colspan="9" class="p-8 text-center text-gray-400 italic">ยังไม่มีเอกสารในระบบ</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Customers Tab -->
+                <div id="tab-customers" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2></div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_cust" id="form-cust-title">เพิ่มลูกค้าใหม่</h3>
+                            <form id="add-customer-form" class="space-y-4 text-[14px]">
+                                <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_cust_name">ชื่อบริษัท/องค์กร</span> <span class="text-red-500">*</span></label><input type="text" id="new-cust-name" required class="w-full border p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_contact">ชื่อลูกค้า (เว้นได้)</label><input type="text" id="new-cust-contact" class="w-full border p-2 rounded outline-none"></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_email">อีเมล</label><input type="email" id="new-cust-email" class="w-full border p-2 rounded outline-none"></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_addr">ที่อยู่</label><textarea id="new-cust-address" rows="2" class="w-full border p-2 rounded outline-none"></textarea></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_tax">เลขภาษี</label><input type="text" id="new-cust-tax" placeholder="13 หลัก" class="w-full border p-2 rounded outline-none"></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_branch">สาขา</label><input type="text" id="new-cust-branch" value="สำนักงานใหญ่" class="w-full border p-2 rounded outline-none"></div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" id="btn-save-cust" class="flex-1 bg-emerald-600 text-white font-medium p-2 rounded" data-i18n="btn_save_cust">บันทึก</button>
+                                    <button type="button" id="btn-cancel-cust" onclick="cancelEditCustomer()" class="hidden flex-1 bg-gray-200 text-gray-700 font-medium p-2 rounded" data-i18n="btn_cancel">ยกเลิก</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto table-scroll">
+                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[800px]">
+                                    <thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4" data-i18n="col_cust_code">รหัส</th><th class="p-4" data-i18n="col_customer">บริษัท</th><th class="p-4" data-i18n="lbl_cust_contact">ชื่อลูกค้า</th><th class="p-4">Email / Info</th><th class="p-4 text-center" data-i18n="col_action">จัดการ</th></tr></thead>
+                                    <tbody id="customers-table-body" class="divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 6. Employees Tab -->
+                <div id="tab-employees" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-identification-card"></i> <span data-i18n="title_employees">ฐานข้อมูลพนักงาน</span></h2></div>
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_emp" id="form-emp-title">เพิ่มพนักงานใหม่</h3>
+                            <form id="add-employee-form" class="space-y-4 text-[14px]">
+                                <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_emp_name">ชื่อ-นามสกุล</span> <span class="text-red-500">*</span></label><input type="text" id="new-emp-name" required class="w-full border p-2 rounded outline-none"></div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]">วันที่เข้าทำงาน <span class="text-red-500">*</span></label><input type="date" id="new-emp-join-date" required class="w-full border p-2 rounded outline-none"></div>
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]">สถานะ</label><select id="new-emp-status" class="w-full border p-2 rounded outline-none" onchange="toggleResignDate()"><option value="active">ทำงานอยู่</option><option value="resigned">ลาออก</option></select></div>
+                                </div>
+                                <div id="resign-date-container" class="hidden"><label class="block text-gray-600 mb-1 text-[12px]">วันที่ลาออก</label><input type="date" id="new-emp-resign-date" class="w-full border p-2 rounded outline-none"></div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]">เงินเดือนพื้นฐาน</label><input type="number" id="new-emp-salary" step="0.01" value="0" class="w-full border p-2 rounded outline-none text-right"></div>
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]">ฐานคำนวณ (%)</label><input type="number" id="new-emp-base-pct" step="0.01" class="w-full border p-2 rounded outline-none text-right" placeholder="เช่น 5, -5"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_emp_pos">ตำแหน่ง</label><input type="text" id="new-emp-pos" class="w-full border p-2 rounded outline-none"></div>
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]">เลขภาษี (Tax ID)</label><input type="text" id="new-emp-taxid" class="w-full border p-2 rounded outline-none" placeholder="13 หลัก"></div>
+                                </div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]">อีเมล / เบอร์โทร</label>
+                                    <div class="flex gap-2"><input type="email" id="new-emp-email" placeholder="Email" class="w-1/2 border p-2 rounded outline-none"><input type="text" id="new-emp-phone" placeholder="Phone" class="w-1/2 border p-2 rounded outline-none"></div>
+                                </div>
+                                <div class="flex gap-2 pt-2"><button type="submit" id="btn-save-emp" class="flex-1 bg-emerald-600 text-white font-medium p-2 rounded">บันทึก</button><button type="button" id="btn-cancel-emp" onclick="cancelEditEmployee()" class="hidden flex-1 bg-gray-200 text-gray-700 font-medium p-2 rounded">ยกเลิก</button></div>
+                            </form>
+                        </div>
+                        <div class="xl:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto table-scroll">
+                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[800px]">
+                                    <thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4">รหัส/สถานะ</th><th class="p-4" data-i18n="lbl_emp_name">ชื่อ/ตำแหน่ง</th><th class="p-4">เงินเดือน (THB)</th><th class="p-4">ติดต่อ</th><th class="p-4 text-center" data-i18n="col_action">จัดการ</th></tr></thead>
+                                    <tbody id="employees-table-body" class="divide-y divide-gray-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Products Tab -->
+                <div id="tab-products" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-package"></i> <span data-i18n="title_products">รายการสินค้า</span></h2></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-currency-circle-dollar text-emerald-600 text-xl"></i> <span data-i18n="title_exchange_rate">ตั้งค่าอัตราแลกเปลี่ยน</span></h3></div>
+                        <form id="exchange-rate-form" class="flex flex-wrap gap-4 items-end">
+                            <div class="w-24"><label class="block text-[12px] font-bold text-gray-600 mb-1">USD</label><input type="number" id="rate-USD" step="0.01" class="w-full border border-gray-300 rounded p-2 text-right outline-none"></div>
+                            <div class="w-24"><label class="block text-[12px] font-bold text-gray-600 mb-1">EUR</label><input type="number" id="rate-EUR" step="0.01" class="w-full border border-gray-300 rounded p-2 text-right outline-none"></div>
+                            <div class="w-24"><label class="block text-[12px] font-bold text-gray-600 mb-1">JPY</label><input type="number" id="rate-JPY" step="0.0001" class="w-full border border-gray-300 rounded p-2 text-right outline-none"></div>
+                            <div class="w-24"><label class="block text-[12px] font-bold text-gray-600 mb-1">GBP</label><input type="number" id="rate-GBP" step="0.01" class="w-full border border-gray-300 rounded p-2 text-right outline-none"></div>
+                            <div class="w-24"><label class="block text-[12px] font-bold text-gray-600 mb-1">CNY</label><input type="number" id="rate-CNY" step="0.01" class="w-full border border-gray-300 rounded p-2 text-right outline-none"></div>
+                            <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold transition flex items-center gap-2"><i class="ph ph-floppy-disk"></i> <span data-i18n="btn_save">บันทึก</span></button>
+                        </form>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod">เพิ่มสินค้าใหม่</h3>
+                            <form id="add-product-form" class="space-y-4 text-[14px]">
+                                <div><label class="block text-[12px] text-gray-600 mb-1">รหัสสินค้า (Code) <span class="text-red-500">*</span></label>
+                                    <div class="flex gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option></select><input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
+                                </div>
+                                <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><div><label class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit)</label><input type="text" id="new-prod-unit" placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded"></div><div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required step="0.01" class="w-full border p-2 rounded"></div></div>
+                                <button type="submit" class="w-full bg-emerald-600 text-white p-2 rounded" data-i18n="btn_save_prod">บันทึก</button>
+                            </form>
+                        </div>
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto table-scroll">
+                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[500px]"><thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4">รหัส</th><th class="p-4" data-i18n="lbl_prod_name">สินค้า</th><th class="p-4 text-center">หน่วย</th><th class="p-4 text-right">ราคา (THB)</th><th class="p-4 text-center">จัดการ</th></tr></thead><tbody id="products-table-body" class="divide-y"></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Settings Tab -->
+                <div id="tab-settings" class="tab-content">
+                    <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-gear"></i> <span data-i18n="menu_settings">ตั้งค่าระบบ</span></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm border p-6 flex flex-col h-full">
+                            <h3 class="text-lg font-semibold mb-2"><i class="ph ph-list-checks"></i> คลังข้อความหมายเหตุ</h3>
+                            <div id="settings-remarks-list" class="space-y-2 mb-4 flex-1 overflow-y-auto border rounded-lg p-2 bg-gray-50 table-scroll text-[14px]"></div>
+                            <form id="add-remark-form" class="mt-auto border-t pt-4 flex gap-2">
+                                <textarea id="new-remark-text" rows="2" class="flex-1 border p-2 text-[14px] rounded outline-none focus:ring-2 focus:ring-emerald-500" placeholder="พิมพ์ข้อความ แล้วกด Enter เพื่อบันทึก" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); document.getElementById('btn-add-remark').click(); }"></textarea>
+                                <button type="submit" id="btn-add-remark" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 rounded font-medium transition text-[14px]">Add</button>
+                            </form>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6 relative">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div><h3 class="text-lg font-semibold mb-2 text-red-700"><i class="ph ph-warning"></i> Danger Zone (ล้างระบบ)</h3><p class="text-[14px] mb-6">การกดปุ่มนี้จะ <strong>ลบข้อมูลเอกสารและยอดขายทั้งหมด (Set Zero)</strong></p><button onclick="resetSystem()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded font-bold text-[14px]">รีเซ็ตข้อมูลเอกสาร</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. Stock Card Tab -->
+                <div id="tab-stock-card" class="tab-content">
+                    <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-chart-line"></i> รายงานสต๊อกคงเหลือ</h2></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex gap-4 items-end no-print text-[14px]">
+                        <div class="flex-1"><label class="block text-[12px] font-medium text-gray-700 mb-1">เลือกสินค้าเพื่อดูความเคลื่อนไหว</label><select id="stc-product-select" class="border border-gray-300 rounded-lg p-2 outline-none w-full"><option value="">-- กรุณาเลือกสินค้า --</option></select></div>
+                        <button onclick="generateStockCard()" class="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-sm flex items-center gap-2"><i class="ph ph-magnifying-glass"></i> ดู</button><button onclick="window.print()" class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2 ml-auto"><i class="ph ph-printer"></i> พิมพ์</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area" id="print-area-only">
+                        <h3 class="text-center font-bold text-lg py-4 bg-emerald-50 border-b text-emerald-800">STOCK CARD: <span id="stc-title-item">...</span></h3>
+                        <div class="overflow-x-auto table-scroll">
+                            <table class="w-full text-left border-collapse text-[12px] whitespace-nowrap min-w-[1000px]"><thead class="bg-gray-100 border-b border-gray-300"><tr><th class="p-3 border-r text-center w-16">ลำดับ</th><th class="p-3 border-r">วันที่</th><th class="p-3 border-r">เอกสารอ้างอิง</th><th class="p-3 border-r">รายการ (Type)</th><th class="p-3 border-r text-center text-green-700 bg-green-50">รับเข้า (IN)</th><th class="p-3 border-r text-center text-red-700 bg-red-50">จ่ายออก (OUT)</th><th class="p-3 text-center font-bold bg-gray-50">คงเหลือ (BALANCE)</th></tr></thead><tbody id="stc-table-body" class="divide-y divide-gray-200"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. Reports Center Tab -->
+                <div id="tab-reports-center" class="tab-content">
+                    <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2" id="ur-header-title">ศูนย์รวมรายงาน</h2><button onclick="window.print()" class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2"><i class="ph ph-printer"></i> พิมพ์รายงานนี้</button></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area"><div class="overflow-x-auto table-scroll"><table class="w-full text-left border-collapse text-[12px] whitespace-nowrap min-w-[800px]"><thead class="bg-gray-100 border-b border-gray-300"><tr><th class="p-4 border-r w-12 text-center">No.</th><th class="p-4 border-r w-24">วันที่</th><th class="p-4 border-r w-32">เลขที่อ้างอิง</th><th class="p-4 border-r">รายละเอียด</th><th class="p-4 text-right w-40">มูลค่า (THB)</th></tr></thead><tbody id="ur-table-body" class="divide-y divide-gray-100"></tbody><tfoot class="bg-gray-50 font-bold border-t-2 border-gray-800"><tr><td colspan="4" class="p-4 text-right border-r">ยอดรวมในรายงาน:</td><td class="p-4 text-right text-blue-700" id="ur-total-amt">0.00</td></tr></tfoot></table></div></div>
+                </div>
+
+                <!-- 11. Shipping Mark Tab -->
+                <div id="tab-shipping-mark" class="tab-content">
+                    <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-box-arrow-up"></i> พิมพ์ฉลากกล่อง</h2></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border mb-6 flex gap-4 items-end no-print text-[14px]">
+                        <div class="flex-1"><label class="block text-[12px] font-medium mb-1">เลือกเอกสาร Packing List หรือ Invoice</label><select id="shm-doc-select" class="w-full border p-2 rounded"></select></div><div><label class="block text-[12px] font-medium mb-1">จำนวนกล่อง</label><input type="number" id="shm-ctn" value="1" min="1" class="w-32 border p-2 rounded text-center"></div><button onclick="generateShippingMark()" class="bg-blue-600 text-white px-6 py-2 rounded shadow-sm">สร้างฉลาก</button><button onclick="window.print()" class="bg-emerald-600 text-white px-4 py-2 rounded shadow-sm ml-auto flex items-center gap-2"><i class="ph ph-printer"></i> พิมพ์ทั้งหมด</button>
+                    </div>
+                    <div id="shm-print-area" class="grid grid-cols-1 md:grid-cols-2 gap-8 print-area"><div class="p-8 text-center text-gray-400 border-2 border-dashed rounded-xl">เลือกเอกสารเพื่อสร้าง Shipping Mark</div></div>
+                </div>
+
+                <!-- 12. VAT Report Tab -->
+                <div id="tab-vat-report" class="tab-content">
+                    <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-receipt"></i> <span data-i18n="title_vat_report">รายงานภาษี</span></h2></div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-wrap gap-4 items-end no-print text-[14px]">
+                        <div><label class="block text-[12px] font-medium text-gray-700 mb-1" data-i18n="lbl_report_type">ประเภทรายงาน</label><select id="vat-type-filter" class="border border-gray-300 rounded-lg p-2 outline-none"><option value="output">ภาษีขาย</option><option value="input">ภาษีซื้อ</option></select></div>
+                        <div><label class="block text-[12px] font-medium text-gray-700 mb-1" data-i18n="lbl_report_month">เดือน / ปี</label><input type="month" id="vat-month-filter" class="border border-gray-300 rounded-lg p-2 outline-none"></div>
+                        <button onclick="generateVatReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2"><i class="ph ph-magnifying-glass"></i> <span data-i18n="btn_view_report">ดูรายงาน</span></button>
+                        <button onclick="exportVatToCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 ml-auto"><i class="ph ph-file-csv"></i> <span>Export CSV</span></button>
+                        <button onclick="window.print()" class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2"><i class="ph ph-printer"></i> <span data-i18n="btn_print_report">พิมพ์รายงาน</span></button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area print:shadow-none print:border-none p-4 pb-12">
+                        <div id="vat-print-header" class="mb-4 text-gray-900">
+                            <h2 class="text-center text-xl font-bold mb-6" id="vat-official-title">รายงานภาษีขาย</h2>
+                            <div class="flex justify-center gap-8 mb-6 text-[14px]"><div><span class="font-bold">เดือนภาษี</span> <span id="vat-official-month" class="border-b border-black inline-block w-32 text-center pb-1">...</span></div><div><span class="font-bold">ปี</span> <span id="vat-official-year" class="border-b border-black inline-block w-24 text-center pb-1">...</span></div></div>
+                            <div class="grid grid-cols-12 gap-2 text-[12px] mb-4"><div class="col-span-2 font-bold">ชื่อผู้ประกอบการ</div><div class="col-span-5 border-b border-black pb-1" id="vat-official-comp-name">...</div><div class="col-span-2 font-bold text-right pr-2">เลขประจำตัวผู้เสียภาษีอากร</div><div class="col-span-3 flex" id="vat-official-comp-tax"></div></div>
+                            <div class="grid grid-cols-12 gap-2 text-[12px] mb-6"><div class="col-span-2 font-bold">ชื่อสถานประกอบการ</div><div class="col-span-5 border-b border-black pb-1" id="vat-official-comp-name2">...</div><div class="col-span-5 flex items-center gap-4 pl-4"><label class="flex items-center gap-2 font-bold"><input type="checkbox" id="vat-hq-check" disabled class="w-4 h-4 border-black"> สำนักงานใหญ่</label><label class="flex items-center gap-2 font-bold"><input type="checkbox" id="vat-branch-check" disabled class="w-4 h-4 border-black"> สาขาที่ <span id="vat-official-branch-no" class="border-b border-black inline-block w-16 text-center pb-1 text-black font-normal"></span></label></div></div>
+                        </div>
+                        <div class="overflow-x-auto table-scroll">
+                            <table class="w-full text-center border-collapse border border-gray-800 text-[12px] vat-table min-w-[1000px]"><thead class="bg-gray-100 font-bold"><tr><th rowspan="2" class="p-2 w-12">ลำดับ<br>ที่</th><th colspan="2" class="p-2">ใบกำกับภาษี</th><th rowspan="2" class="p-2">ชื่อผู้ซื้อสินค้า/ผู้รับบริการ<br>(หรือผู้ขายสินค้า)</th><th rowspan="2" class="p-2">เลขประจำตัว<br>ผู้เสียภาษีอากร</th><th rowspan="2" class="p-2 w-16">สาขา</th><th rowspan="2" class="p-2">มูลค่าสินค้า<br>หรือบริการ</th><th rowspan="2" class="p-2">จำนวนเงิน<br>ภาษีมูลค่าเพิ่ม</th></tr><tr><th class="p-2">วัน เดือน ปี</th><th class="p-2">เล่มที่/เลขที่</th></tr></thead><tbody id="vat-table-body" class="divide-y divide-gray-300"><tr><td colspan="8" class="p-8 text-center text-gray-400">กรุณากด 'ดูรายงาน'</td></tr></tbody><tfoot class="font-bold border-t-2 border-gray-800"><tr><td colspan="6" class="p-3 text-right">รวมยอดทั้งสิ้น (Total)</td><td class="p-3 text-right" id="vat-total-amt">0.00</td><td class="p-3 text-right text-emerald-700" id="vat-total-vat">0.00</td></tr></tfoot></table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Modal -->
+                <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[12px]">
+                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[95vh] relative flex flex-col overflow-hidden">
+                        <div class="shrink-0 bg-gray-100 p-4 border-b flex justify-between items-center z-10 no-print">
+                            <div class="flex items-center gap-4">
+                                <h3 class="font-bold text-gray-700 flex items-center gap-2 text-[14px]"><i class="ph ph-file-search text-xl"></i> <span data-i18n="title_preview">ตัวอย่างเอกสาร</span></h3>
+                                
+                                <!-- Scale Slider Area -->
+                                <div class="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-lg border border-gray-300 shadow-sm ml-2">
+                                    <i class="ph ph-magnifying-glass-plus text-gray-500"></i>
+                                    <input type="range" id="preview-scale-slider" min="0.4" max="1.2" step="0.05" value="0.8" class="w-24 accent-emerald-600 cursor-pointer" oninput="updatePreviewScale(this.value)">
+                                    <span id="scale-percent" class="text-[10px] font-bold text-gray-600 min-w-[30px]">80%</span>
+                                </div>
+
+                                <select id="doc-copy-type" class="border border-gray-300 rounded p-1.5 outline-none font-medium shadow-sm" onchange="document.getElementById('preview-copy-type').innerText = this.value">
+                                    <option value="ต้นฉบับ (Original)">ต้นฉบับ (Original)</option>
+                                    <option value="สำเนา (Copy)">สำเนา (Copy)</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="draftAIEmail()" class="bg-purple-100 text-purple-700 px-4 py-2 rounded shadow-sm font-bold flex items-center gap-2"><i class="ph ph-magic-wand text-lg"></i> <span data-i18n="btn_draft_email">ร่างอีเมล (AI)</span></button>
+                                <button onclick="printDocumentList(currentlyPreviewingDoc.docNo)" class="bg-emerald-600 text-white px-4 py-2 rounded shadow font-bold flex items-center gap-2"><i class="ph ph-printer text-lg"></i> <span data-i18n="btn_print">พิมพ์</span></button>
+                                <button onclick="closePreview()" class="bg-red-100 text-red-700 px-4 py-2 rounded"><i class="ph ph-x"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div id="ai-email-container" class="hidden bg-purple-50 p-4 border-b border-purple-200 absolute w-full z-20 no-print">
+                            <button onclick="document.getElementById('ai-email-container').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="ph ph-x"></i></button>
+                            <h4 class="font-bold text-purple-800 mb-2 flex items-center gap-2 text-[14px]"><i class="ph ph-robot"></i> AI Email Draft</h4>
+                            <div class="mb-2"><label class="text-xs text-purple-700 font-bold">To:</label><input type="text" id="ai-email-to" class="w-full border border-purple-200 rounded p-1 focus:outline-none" readonly></div>
+                            <textarea id="ai-email-body" rows="6" wrap="off" style="white-space: pre !important; overflow-x: scroll !important; overflow-y: scroll !important;" class="w-full border border-purple-300 rounded p-3 focus:outline-none preview-scroll resize-none" readonly></textarea>
+                            <div class="mt-2 text-right"><button onclick="copyEmailText()" class="text-purple-700 font-medium hover:underline"><i class="ph ph-copy"></i> Copy to Clipboard</button></div>
+                        </div>
+                        
+                        <div class="flex-1 overflow-auto bg-gray-300 preview-scroll" style="text-align: center; white-space: nowrap;">
+                            <div class="inline-block text-left align-top p-4 md:p-8 transition-all duration-200" style="white-space: normal;">
+                                <div id="paper-wrapper" class="transition-all duration-200 bg-white relative shadow-2xl" style="width: calc(210mm * 0.8); height: calc(297mm * 0.8);">
+                                    <div id="paper-preview" class="bg-white relative leading-tight flex flex-col overflow-hidden" style="width: 210mm; height: 297mm; padding: 10mm; box-sizing: border-box; transform: scale(0.8); transform-origin: top left; position: absolute; top: 0; left: 0;">
+                                        <div id="preview-copy-type" class="absolute top-6 right-8 font-bold text-gray-500 tracking-wide border-b border-gray-300 pb-1">ต้นฉบับ (Original)</div>
+                                        <div id="preview-stamp-container"></div>
+                                        
+                                        <div class="shrink-0 mb-2">
+                                            <div class="grid grid-cols-[120px_1fr_120px] items-center relative z-10 mb-2 gap-4 mt-2">
+                                                <div class="text-left flex items-center justify-start h-16"><img id="preview-company-logo" src="" class="hidden max-h-full max-w-full object-contain" alt="Logo"></div>
+                                                <div class="text-center">
+                                                    <h1 class="text-[14px] font-bold text-gray-900" id="preview-company-name"></h1>
+                                                    <p class="text-[12px] text-gray-700 mt-1" id="preview-company-addr"></p>
+                                                    <p class="text-[12px] text-gray-700 mt-0.5"><span id="preview-company-tax-label"></span> <span id="pv-comp-tax"></span> | <span id="preview-company-tel-label"></span> <span id="pv-comp-phone"></span></p>
+                                                </div>
+                                                <div></div>
+                                            </div>
+                                            <div class="border-b border-gray-800 mb-2"></div>
+                                            
+                                            <div class="text-center mb-3 relative z-10"><h2 id="preview-doc-name" class="inline-block bg-gray-50 border border-gray-200 rounded py-1 px-6 text-[14px] font-bold text-gray-900 uppercase tracking-wide shadow-sm"></h2></div>
+                                            
+                                            <div class="grid grid-cols-2 gap-3 relative z-10 text-[12px]">
+                                                <div class="border border-gray-200 rounded p-2 bg-white">
+                                                    <p class="font-bold text-gray-800 mb-1" id="preview-cust-label"></p>
+                                                    <p id="preview-customer" class="font-bold text-gray-900 mb-0.5"></p>
+                                                    <p id="preview-customer-tax" class="text-gray-700"></p>
+                                                    <p id="preview-customer-branch" class="text-gray-700"></p>
+                                                    <p id="preview-customer-addr" class="text-gray-700 mt-0.5"></p>
+                                                </div>
+                                                <div class="border border-gray-200 rounded p-2 bg-white space-y-1">
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-docno-label"></span> <span id="preview-doc-no" class="font-bold text-red-600"></span></div>
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-date-label"></span> <span id="preview-date" class="text-gray-800"></span></div>
+                                                    <div class="flex hidden" id="preview-expire-container"><span class="w-28 font-bold text-purple-700" id="preview-expire-label"></span> <span id="preview-expire-date" class="font-bold text-purple-700"></span></div>
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-credit-label"></span> <span id="preview-credit" class="text-gray-800"></span></div>
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-ref-label"></span> <span id="preview-ref-no" class="text-gray-800"></span></div>
+                                                </div>
+                                            </div>
+                                            <div id="preview-export-details" class="hidden mt-2 p-2 border border-gray-200 rounded grid grid-cols-2 gap-1 bg-gray-50 relative z-10 text-[12px]">
+                                                <div><span class="font-bold">Incoterms:</span> <span id="preview-incoterm"></span></div>
+                                                <div><span class="font-bold">Port of Loading:</span> <span id="preview-pol"></span></div>
+                                                <div><span class="font-bold">Port of Discharge:</span> <span id="preview-pod"></span></div>
+                                                <div><span class="font-bold">Currency:</span> <span id="preview-currency-label"></span></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="relative z-10 mt-1 flex-1 flex flex-col min-h-0 text-[12px]">
+                                            <div class="overflow-x-auto w-full mb-2 table-scroll pb-2">
+                                                <table class="w-full border border-gray-200 shrink-0 min-w-[700px]">
+                                                    <thead class="bg-gray-50 border-b border-gray-200 text-gray-800">
+                                                        <tr><th class="py-1 px-2 text-center border-r border-gray-200 w-10">No.</th><th class="py-1 px-2 text-center border-r border-gray-200 w-20">Code</th><th class="py-1 px-2 text-left border-r border-gray-200" id="preview-col-desc">Description</th><th class="py-1 px-2 text-center border-r border-gray-200 w-12" id="preview-col-qty">Qty</th><th class="py-1 px-2 text-center border-r border-gray-200 w-12" id="preview-col-unit">Unit</th><th class="py-1 px-2 text-right border-r border-gray-200 w-20" id="preview-col-price">Price</th><th class="py-1 px-2 text-right border-r border-gray-200 w-16 text-red-600" id="preview-col-disc">Disc</th><th class="py-1 px-2 text-right w-24" id="preview-col-amt">Amount</th></tr>
+                                                    </thead>
+                                                    <tbody id="preview-items-body" class="divide-y divide-gray-100 bg-white"></tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            <div class="flex items-stretch justify-between gap-4 mb-2 shrink-0">
+                                                <div class="flex-1 border border-sky-200 bg-sky-50 rounded flex items-center justify-center p-2"><span id="preview-amount-words" class="text-[12px] font-bold text-sky-800 text-center italic"></span></div>
+                                                <div class="w-[45%] border border-gray-200">
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-subtotal-row"><span class="font-bold text-gray-700" id="preview-lbl-sub"></span><span class="font-bold text-gray-900" id="preview-subtotal"></span></div>
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-vat-row"><span class="font-bold text-gray-700" id="preview-lbl-vat"></span><span class="font-bold text-gray-900" id="preview-vat"></span></div>
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50 text-red-600 hidden" id="preview-sso-row"><span class="font-bold">หักประกันสังคม (<span id="preview-sso-pct"></span>%)</span><span class="font-bold" id="preview-sso"></span></div>
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50 text-red-600 hidden" id="preview-wht-row"><span class="font-bold">หัก ณ ที่จ่าย (<span id="preview-wht-pct"></span>%)</span><span class="font-bold" id="preview-wht"></span></div>
+                                                    <div class="flex justify-between py-1.5 px-2 bg-gray-100 text-[14px]"><span class="font-bold text-gray-900" id="preview-lbl-grand"></span><span class="font-bold text-emerald-700 double-underline" id="preview-grandtotal"></span></div>
+                                                </div>
+                                            </div>
+                                            <div class="border border-gray-200 p-2 rounded bg-white flex-1 relative overflow-hidden mb-2">
+                                                <p class="font-bold text-gray-900 text-[14px] shrink-0 mb-1" id="preview-lbl-remark"></p>
+                                                <div class="absolute top-[28px] bottom-2 left-2 right-2 overflow-hidden"><div id="preview-remark" class="text-gray-800 text-[14px]" style="column-count: 2; column-gap: 20px; column-fill: auto; height: 100%; word-break: break-word; line-height: 1.4;"></div></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-between mt-auto pt-2 pb-2 relative z-10 shrink-0 print-footer">
+                                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-maker"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-maker"></p></div>
+                                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-auth"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-auth"></p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Main Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const $ = id => document.getElementById(id);
+        const val = id => $(id) ? $(id).value : '';
+        const txt = (id, text) => { if($(id)) $(id).innerHTML = text; };
+        const show = (id, cond) => { if($(id)) { if(cond) $(id).classList.remove('hidden'); else $(id).classList.add('hidden'); } };
+        
+        function showAlert(message) { txt('custom-alert-msg', message); show('custom-alert-modal', true); }
+        function showConfirm(message, onConfirm) {
+            txt('custom-confirm-msg', message); show('custom-confirm-modal', true);
+            const btnOk = $('custom-confirm-ok'), btnCancel = $('custom-confirm-cancel');
+            const newBtnOk = btnOk.cloneNode(true), newBtnCancel = btnCancel.cloneNode(true);
+            btnOk.replaceWith(newBtnOk); btnCancel.replaceWith(newBtnCancel);
+            newBtnOk.addEventListener('click', () => { show('custom-confirm-modal', false); onConfirm(); });
+            newBtnCancel.addEventListener('click', () => { show('custom-confirm-modal', false); });
+        }
+
+        // --- Firebase Configuration & Initialization ---
+        const providedConfig = {
+            apiKey: "AIzaSyCJKIN8gmZi-F8X4tZraWVOaM90H1e7k0E",
+            authDomain: "nualananerp-1.firebaseapp.com",
+            projectId: "nualananerp-1",
+            storageBucket: "nualananerp-1.firebasestorage.app",
+            messagingSenderId: "853204067868",
+            appId: "1:853204067868:web:550558eb3954a2544be1d9",
+            measurementId: "G-7WMKHQ77RE"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config ? JSON.parse(__firebase_config) : providedConfig;
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                $('login-screen').style.display = 'none';
+                $('main-app').style.display = 'flex';
+                initApp();
+            } else {
+                $('main-app').style.display = 'none';
+                $('login-screen').style.display = 'flex';
+                $('login-screen').style.opacity = '1';
+            }
+        });
+
+        const getUserCol = (colName) => collection(db, 'artifacts', appId, 'users', currentUser.uid, colName);
+        const getUserDoc = (colName, docId) => doc(db, 'artifacts', appId, 'users', currentUser.uid, colName, docId);
+
+        // Login Feature with Auto-Register
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = val('login-username');
+            const password = val('login-password');
+            const btn = $('btn-login-submit');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> กำลังตรวจสอบ...`;
+            btn.disabled = true;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                    try {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } catch (regError) {
+                        showLoginError(regError.message);
+                    }
+                } else {
+                    showLoginError("อีเมลหรือรหัสผ่านไม่ถูกต้อง!");
+                }
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showLoginError(msg) {
+            $('login-error').innerHTML = `<i class="ph ph-warning-circle inline-block align-middle mr-1"></i> ${msg}`;
+            show('login-error', true);
+            setTimeout(() => show('login-error', false), 4000);
+        }
+
+        function doLogout() {
+            showConfirm(currentLang === 'en' ? 'Are you sure you want to log out?' : 'คุณต้องการออกจากระบบหรือไม่?', () => {
+                signOut(auth);
+                $('login-password').value = '';
+            });
+        }
+
+        let currentLang = 'th', database = [], vatRate = 0.07, currentlyPreviewingDoc = null; 
+        let exchangeRates = { 'USD': 35.00, 'EUR': 38.00, 'JPY': 0.24, 'GBP': 44.00, 'CNY': 5.00 };
+        let companyProfile = { nameTh: "บริษัท โค้ดดิ้ง สตูดิโอ จำกัด", nameEn: "Coding Studio Co., Ltd.", taxId: "0105555555555", branch: "สำนักงานใหญ่", addressTh: "123/45 สุขุมวิท กทม.", addressEn: "123/45 Sukhumvit, BKK", phone: "02-123-4567", email: "info@codingstudio.co", logo: null };
+        let products = [{ id: '1', code: 'P-ERP-001', name: 'ระบบ ERP ภายในองค์กร', unit: 'SYS', price: 150000 }, { id: '2', code: 'K-MAT-A', name: 'วัตถุดิบชิ้นส่วน A', unit: 'KG', price: 500 }, { id: '3', code: 'G-GINGER', name: 'ขิงสด (ไม่มี VAT)', unit: 'KG', price: 150 }];
+        let customerRunningNumber = 2, editingCustomerId = null; 
+        let customers = [{ id: '1', code: 'C-0001', name: 'บริษัท ลูกค้าเอบีซี จำกัด', contactName: 'สมชาย', email: 'somchai@abc.com', taxId: '0105555555555', branch: '00000', address: '111 ถ.สีลม' }];
+        let employeeRunningNumber = 3, editingEmployeeId = null; 
+        let employees = [{ id: '1', code: 'E-0001', name: 'คุณสมรัก ยอดขาย', position: 'พนักงานขาย', email: 's@co.th', phone: '081', joinDate: '2023-01-15', status: 'active', resignDate: '', salary: 25000, basePct: '5', taxId: '1111111111111' }, { id: '2', code: 'E-0002', name: 'พนักงาน ใหม่', position: 'บัญชี', email: 'a@co.th', phone: '-', joinDate: '2024-03-01', status: 'active', resignDate: '', salary: 18000, basePct: '', taxId: '' }];
+        let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
+
+        const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
+        const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
+        const pendingStatusDocs = ['QT', 'EQT', 'SO', 'DO', 'INV', 'TINV', 'ABB', 'PI', 'CI', 'PO', 'PR', 'VB', 'PINV', 'PAYSLIP'], noVatDocs = ['EVAT', 'EQT', 'PI', 'CI', 'PL', 'STI', 'STO', 'STT', 'STA', 'PDO', 'MI', 'FGR', 'MR', 'RV', 'PV', 'JV', 'WHT', 'SHM', 'BC', 'BL', 'PR', 'PO', 'GRN', 'PAYSLIP'];
+        const todayRaw = new Date(), todayStr = `${todayRaw.getFullYear()}-${(todayRaw.getMonth() + 1).toString().padStart(2, '0')}-${todayRaw.getDate().toString().padStart(2, '0')}`;
+        
+        const translations = {
+            th: { menu_dashboard: "ภาพรวม (Dashboard)", menu_create: "สร้างเอกสารใหม่", menu_docs: "คลังเอกสารทั้งหมด", menu_customers: "ฐานข้อมูลคู่ค้า / ลูกค้าหลัก", menu_employees: "ฐานข้อมูลพนักงาน", menu_products: "ฐานข้อมูลสินค้า / บริการ", menu_vat: "รายงานภาษี", menu_settings: "ตั้งค่าระบบ", menu_company: "ข้อมูลพื้นฐานบริษัท", title_dashboard: "ภาพรวมธุรกิจ (Executive Dashboard)", dash_revenue: "ยอดขายสุทธิ (รวมภาษี)", dash_docs: "เอกสารทั้งหมดที่ออก", dash_invs: "ใบกำกับภาษีขาย", dash_doc_type_title: "จำนวนเอกสารแยกตามประเภท", dash_sales_by_product: "สัดส่วนยอดขายแยกตามสินค้า", dash_sales_by_customer: "สัดส่วนยอดขายแยกตามลูกค้า", currency: "บาท", unit_doc: "ฉบับ", title_create_doc: "สร้างเอกสารใหม่", label_doc_type: "ประเภทเอกสาร", opt_select_type: "-- เลือกประเภท --", label_customer: "ชื่อลูกค้า / คู่ค้า", opt_select_cust: "-- เลือกลูกค้า --", label_credit: "เครดิต (Credit)", label_seller: "พนักงานขาย", label_vendor_inv: "อ้างอิงใบกำกับภาษีผู้ขาย", label_vendor_inv_desc: "สำหรับรายงานภาษีซื้อ", export_details: "ข้อมูลการส่งออก", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "เงื่อนไขใบเสนอราคา", valid_until: "กำหนดยืนราคา", title_items: "รายละเอียดรายการ (Line Items)", btn_add_item: "เพิ่มรายการ", label_select_remarks: "เลือกข้อความหมายเหตุ", btn_save_doc: "บันทึกเอกสาร", title_doc_list: "คลังเอกสารทั้งหมด", col_doc_no: "เลขที่เอกสาร", col_type: "ประเภท", col_customer: "ลูกค้า/ผู้ติดต่อ", col_email: "อีเมล", col_date: "วันที่", col_status: "สถานะ", col_total: "ยอดสุทธิ", col_action: "จัดการ", col_ref_no: "อ้างอิง", title_customers: "ข้อมูลลูกค้า/คู่ค้า", title_add_cust: "เพิ่มลูกค้าใหม่", lbl_cust_name: "ชื่อบริษัท/องค์กร", lbl_cust_contact: "ชื่อลูกค้า", lbl_cust_email: "อีเมล", col_cust_code: "รหัส", lbl_cust_tax: "เลขภาษี", lbl_cust_branch: "สาขา", lbl_cust_addr: "ที่อยู่", btn_save_cust: "บันทึก", btn_update: "อัปเดต", btn_cancel: "ยกเลิก", title_employees: "ข้อมูลพนักงาน", title_add_emp: "เพิ่มพนักงานใหม่", lbl_emp_name: "ชื่อ-นามสกุล", lbl_emp_pos: "ตำแหน่ง", title_products: "รายการสินค้า", title_add_prod: "เพิ่มสินค้าใหม่", lbl_prod_name: "ชื่อสินค้า/บริการ", lbl_prod_price: "ราคา", btn_save_prod: "บันทึก", title_exchange_rate: "ตั้งค่าอัตราแลกเปลี่ยน", desc_exchange_rate: "* เทียบ 1 สกุลเงิน = ? บาท", btn_save: "บันทึก", menu_settings: "ตั้งค่าระบบ", title_vat_report: "รายงานภาษี (VAT)", lbl_report_type: "ประเภท", lbl_report_month: "เดือน/ปี", btn_view_report: "ดูรายงาน", btn_print_report: "พิมพ์", title_preview: "ตัวอย่างเอกสาร", btn_draft_email: "ร่างอีเมล (AI)", btn_print: "พิมพ์", btn_save_company: "บันทึกข้อมูลบริษัท", tax_id_label: "Tax ID:", phone_label: "โทร:", menu_payslip: "สลิปเงินเดือน" },
+            en: { menu_dashboard: "Dashboard", menu_create: "Create Doc", menu_docs: "All Docs", menu_customers: "Customers", menu_employees: "Employees", menu_products: "Products", menu_vat: "VAT Reports", menu_settings: "Settings", menu_company: "Company Profile", title_dashboard: "Executive Dashboard", dash_revenue: "Net Sales", dash_docs: "Total Docs", dash_invs: "Tax Invoices", dash_doc_type_title: "Docs by Type", dash_sales_by_product: "Sales by Product", dash_sales_by_customer: "Sales by Customer", currency: "THB", unit_doc: "Docs", title_create_doc: "Create New Document", label_doc_type: "Document Type", opt_select_type: "-- Select Type --", label_customer: "Customer / Vendor", opt_select_cust: "-- Select Customer --", label_credit: "Credit Term", label_seller: "Salesperson", label_vendor_inv: "Vendor Tax Inv No.", label_vendor_inv_desc: "Required for Input VAT", export_details: "Export Details", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "Quotation Details", valid_until: "Valid Until", title_items: "Line Items", btn_add_item: "Add Item", label_select_remarks: "Select Remarks", btn_save_doc: "Save Document", title_doc_list: "Document Library", col_doc_no: "Doc No.", col_type: "Type", col_customer: "Customer", col_email: "Email", col_date: "Date", col_status: "Status", col_total: "Net Total", col_action: "Action", col_ref_no: "Ref No.", title_customers: "Customers & Vendors", title_add_cust: "Add New", lbl_cust_name: "Company Name", lbl_cust_contact: "Contact Name", lbl_cust_email: "Email", col_cust_code: "Code", lbl_cust_tax: "Tax ID", lbl_cust_branch: "Branch", lbl_cust_addr: "Address", btn_save_cust: "Save", btn_update: "Update", btn_cancel: "Cancel", title_employees: "Employees", title_add_emp: "Add New Employee", lbl_emp_name: "Full Name", lbl_emp_pos: "Position", title_products: "Products", title_add_prod: "Add New", lbl_prod_name: "Product Name", lbl_prod_price: "Price", btn_save_prod: "Save", title_exchange_rate: "Exchange Rates", desc_exchange_rate: "* 1 FCY = ? THB", btn_save: "Save", menu_settings: "Settings", title_vat_report: "VAT Reports", lbl_report_type: "Type", lbl_report_month: "Month/Year", btn_view_report: "View Report", btn_print_report: "Print", title_preview: "Preview", btn_draft_email: "Draft Email", btn_print: "Print", btn_save_company: "Save Profile", tax_id_label: "Tax ID:", phone_label: "Tel:", menu_payslip: "Payslip" }
+        };
+
+        const formatMoney = amt => parseFloat(amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatDateThai = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${parseInt(d.split('-')[0]) + 543}` : '';
+        const formatDateEng = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${d.split('-')[0]}` : '';
+
+        function ThaiBahtTextHelper(numStr) {
+            let t = ""; let l = numStr.length; const words = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"]; const positions = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+            for(let i=0; i<l; i++) { let v = parseInt(numStr.charAt(i)); let p = l - i - 1; if(v !== 0) { if(p === 1 && v === 1) t += "สิบ"; else if(p === 1 && v === 2) t += "ยี่สิบ"; else if(p === 0 && v === 1 && l > 1 && numStr.charAt(i-1) !== '0') t += "เอ็ด"; else t += words[v] + positions[p]; } }
+            return t;
+        }
+        function numToWordsEN(n) {
+            if (n === 0) return 'Zero';
+            const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']; const g = ['', 'Thousand', 'Million', 'Billion'];
+            let word = ''; const makeGroup = (num) => { let str = ''; if (num > 99) { str += a[Math.floor(num/100)] + ' Hundred '; num %= 100; } if (num > 19) { str += b[Math.floor(num/10)] + ' '; num %= 10; } if (num > 0) str += a[num] + ' '; return str.trim(); };
+            let groupIdx = 0; while(n > 0) { let group = n % 1000; if(group > 0) word = makeGroup(group) + ' ' + g[groupIdx] + ' ' + word; n = Math.floor(n / 1000); groupIdx++; }
+            return word.trim();
+        }
+        function getAmountText(amount, currency, lang) {
+            let n = parseFloat(amount); if (isNaN(n)) return ""; n = Math.abs(n).toFixed(2); let major = parseInt(n.split('.')[0]); let minorStr = n.split('.')[1]; let minor = parseInt(minorStr);
+            const thC = { 'THB': ['บาท', 'สตางค์'], 'USD': ['ดอลลาร์สหรัฐ', 'เซนต์'], 'EUR': ['ยูโร', 'เซนต์'], 'JPY': ['เยน', ''], 'GBP': ['ปอนด์', 'เพนนี'], 'CNY': ['หยวน', 'เฟิน'] };
+            const enC = { 'THB': ['Baht', 'Satang'], 'USD': ['Dollars', 'Cents'], 'EUR': ['Euros', 'Cents'], 'JPY': ['Yen', ''], 'GBP': ['Pounds', 'Pence'], 'CNY': ['Yuan', 'Fen'] };
+            if (lang === 'en') { let cN = enC[currency] || [currency, 'Cents']; let res = numToWordsEN(major) + ' ' + cN[0]; if (minor > 0 && cN[1]) res += ' and ' + numToWordsEN(minor) + ' ' + cN[1]; else res += ' Only'; return `(${res})`; }
+            else { let cN = thC[currency] || [currency, 'เซนต์']; let res = ""; let mStr = major.toString(); if(major > 0) { if(mStr.length > 6) res += ThaiBahtTextHelper(mStr.substring(0, mStr.length - 6)) + "ล้าน" + ThaiBahtTextHelper(mStr.substring(mStr.length - 6)) + cN[0]; else res += ThaiBahtTextHelper(mStr) + cN[0]; } else res += "ศูนย์" + cN[0]; if(minor > 0 && cN[1]) res += ThaiBahtTextHelper(minorStr) + cN[1]; else res += "ถ้วน"; return `(${res})`; }
+        }
+        function formatTaxIdBoxes(taxId) { return (taxId || '').replace(/\D/g, '').padEnd(13, ' ').split('').slice(0,13).map(c => `<span class="border border-black w-6 h-8 flex items-center justify-center text-sm font-bold text-black">${c.trim()}</span>`).join(''); }
+
+        function toggleSubmenu(id) { const el = $(id), icon = $('icon-' + id); if(el && icon) { el.classList.toggle('hidden'); icon.classList.replace(el.classList.contains('hidden') ? 'ph-caret-up' : 'ph-caret-down', el.classList.contains('hidden') ? 'ph-caret-down' : 'ph-caret-up'); } }
+        function handleMenuClick(moduleType, category) {
+            if (category === 'create') { switchTab('create-doc'); if($('doc-type')) $('doc-type').value = moduleType; checkDocType(); }
+            else if (category === 'report') { if(moduleType === 'VATOUT' || moduleType === 'VATIN') { switchTab('vat-report'); if($('vat-type-filter')) $('vat-type-filter').value = moduleType === 'VATOUT' ? 'output' : 'input'; generateVatReport(); } else if(moduleType === 'STC') { switchTab('stock-card'); renderStockCardDropdown(); } else { switchTab('reports-center'); generateUnifiedReport(moduleType); } }
+            else if (category === 'label') { switchTab('shipping-mark'); renderShippingMarkDropdown(); } 
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport };
+            if (renders[tabId]) renders[tabId]();
+            if(tabId === 'create-doc') { 
+                if($('doc-date')) $('doc-date').value = todayStr;
+                populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
+                if($('items-container') && $('items-container').children.length === 0) addLineItem(); renderRemarksCheckboxes();
+            }
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'th' ? 'en' : 'th'; txt('current-lang-display', currentLang.toUpperCase());
+            document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(translations[currentLang][key]) el.innerHTML = translations[currentLang][key]; });
+            renderProductDropdowns(); checkDocType(); renderEmployeeDropdownForSeller();
+            const gDisc = $('global-disc-type'); if (gDisc) { const isGp = gDisc.value === 'gp_%'; gDisc.innerHTML = `<option value="disc_%" ${!isGp ? 'selected' : ''}>${currentLang === 'en' ? 'Discount (%)' : 'ส่วนลด (%)'}</option><option value="gp_%" ${isGp ? 'selected' : ''}>GP (%)</option>`; }
+            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDocumentTable(); 
+        }
+
+        if ($('comp-logo-input')) { 
+            $('comp-logo-input').addEventListener('change', e => { 
+                const file = e.target.files[0]; 
+                if (file) { 
+                    const reader = new FileReader(); 
+                    reader.onload = evt => { 
+                        companyProfile.logo = evt.target.result; 
+                        if($('comp-logo-preview')) {
+                            $('comp-logo-preview').src = evt.target.result; 
+                            show('comp-logo-preview', true); 
+                        }
+                    }; 
+                    reader.readAsDataURL(file); 
+                } 
+            }); 
+        }
+
+        function updateCompanyHeader() { txt('header-company-name', currentLang === 'th' ? companyProfile.nameTh : companyProfile.nameEn); txt('header-company-tax', companyProfile.taxId); txt('header-company-phone', companyProfile.phone); }
+        function populateCompanyForm() { 
+            if($('comp-name-th')) $('comp-name-th').value = companyProfile.nameTh || '';
+            if($('comp-name-en')) $('comp-name-en').value = companyProfile.nameEn || '';
+            if($('comp-addr-th')) $('comp-addr-th').value = companyProfile.addressTh || '';
+            if($('comp-addr-en')) $('comp-addr-en').value = companyProfile.addressEn || '';
+            if($('comp-tax')) $('comp-tax').value = companyProfile.taxId || '';
+            if($('comp-branch')) $('comp-branch').value = companyProfile.branch || '';
+            if($('comp-phone')) $('comp-phone').value = companyProfile.phone || '';
+            if($('comp-email')) $('comp-email').value = companyProfile.email || '';
+            if (companyProfile.logo) { if($('comp-logo-preview')) { $('comp-logo-preview').src = companyProfile.logo; show('comp-logo-preview', true); } } 
+        }
+
+        if($('company-profile-form')) { 
+            $('company-profile-form').addEventListener('submit', e => { 
+                e.preventDefault(); 
+                companyProfile.nameTh = val('comp-name-th');
+                companyProfile.nameEn = val('comp-name-en');
+                companyProfile.addressTh = val('comp-addr-th');
+                companyProfile.addressEn = val('comp-addr-en');
+                companyProfile.taxId = val('comp-tax'); 
+                companyProfile.branch = val('comp-branch'); 
+                companyProfile.phone = val('comp-phone'); 
+                companyProfile.email = val('comp-email'); 
+                
+                if (currentUser) {
+                    setDoc(getUserDoc("settings", "companyProfile"), companyProfile).then(() => {
+                        updateCompanyHeader(); 
+                        showAlert(currentLang === 'en' ? 'Company Profile saved!' : 'บันทึกข้อมูลบริษัทสำเร็จ!'); 
+                    }).catch(err => console.error(err));
+                }
+            }); 
+        }
+
+        function renderExchangeRates() { ['USD','EUR','JPY','GBP','CNY'].forEach(c => { if($(`rate-${c}`)) $(`rate-${c}`).value = exchangeRates[c]; }); }
+        if($('exchange-rate-form')) $('exchange-rate-form').addEventListener('submit', e => { 
+            e.preventDefault(); 
+            ['USD','EUR','JPY','GBP','CNY'].forEach(c => exchangeRates[c] = parseFloat(val(`rate-${c}`)) || 1); 
+            if (currentUser) {
+                setDoc(getUserDoc("settings", "exchangeRates"), exchangeRates).then(() => {
+                    showAlert(currentLang === 'en' ? 'Exchange rates updated!' : 'บันทึกอัตราแลกเปลี่ยนเรียบร้อยแล้ว!'); 
+                }).catch(err => console.error(err));
+            }
+        });
+        
+        function convertPriceFromTHB(thbPrice) { const pre = val('doc-type'); if(['EQT','PI','CI','PL','EVAT'].includes(pre) && val('doc-currency') !== 'THB' && exchangeRates[val('doc-currency')]) return thbPrice / exchangeRates[val('doc-currency')]; return thbPrice; }
+        function handleCurrencyChange() { document.querySelectorAll('.item-row').forEach(row => { const bp = row.querySelector('.item-base-price'); if(bp && bp.value) row.querySelector('.item-price').value = convertPriceFromTHB(parseFloat(bp.value) || 0).toFixed(2); }); calculateLiveTotal(); }
+
+        function toggleResignDate() { show('resign-date-container', val('new-emp-status') === 'resigned'); if(val('new-emp-status') !== 'resigned') if($('new-emp-resign-date')) $('new-emp-resign-date').value = ''; }
+
+        function renderEmployees() { 
+            if(!$('employees-table-body')) return; 
+            $('employees-table-body').innerHTML = employees.map(e => `<tr class="hover:bg-gray-50 transition"><td class="p-4"><div class="font-bold text-emerald-700">${e.code}</div><span class="${e.status==='resigned'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'} px-2 py-0.5 rounded text-[10px] font-bold uppercase block mt-1 w-max">${e.status==='resigned'?`ลาออก${e.resignDate?' ('+e.resignDate+')':''}`:'ทำงานอยู่'}</span></td><td class="p-4"><div class="font-medium text-gray-800">${e.name}</div><div class="text-xs text-gray-500">${e.position || '-'}</div><div class="text-xs text-gray-500">Tax ID: ${e.taxId || '-'}</div></td><td class="p-4"><div class="font-bold text-gray-700">${formatMoney(e.salary || 0)}</div><div class="text-[10px] text-gray-400">ฐานคำนวณ: ${e.basePct !== '' ? e.basePct + '%' : '-'}</div></td><td class="p-4 text-gray-600">${e.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${e.email}</div>` : ''}<div class="text-xs text-gray-400 mt-1"><i class="ph ph-phone"></i> ${e.phone || '-'}</div></td><td class="p-4 text-center"><button onclick="editEmployee('${e.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1"><i class="ph ph-pencil"></i></button><button onclick="deleteEmployee('${e.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition"><i class="ph ph-trash"></i></button></td></tr>`).join(''); 
+        }
+
+        if($('add-employee-form')) $('add-employee-form').addEventListener('submit', e => { 
+            e.preventDefault(); 
+            const data = { name: val('new-emp-name'), position: val('new-emp-pos'), email: val('new-emp-email'), phone: val('new-emp-phone'), joinDate: val('new-emp-join-date'), status: val('new-emp-status'), resignDate: val('new-emp-resign-date'), salary: parseFloat(val('new-emp-salary')) || 0, basePct: val('new-emp-base-pct') !== '' ? parseFloat(val('new-emp-base-pct')) : '', taxId: val('new-emp-taxid') };
+            if (editingEmployeeId) { 
+                if (currentUser) setDoc(getUserDoc("employees", editingEmployeeId), data, {merge: true});
+                showAlert(currentLang === 'en' ? 'Employee updated!' : 'อัปเดตสำเร็จ!'); 
+            } else { 
+                let max = 0; employees.forEach(emp => { let n = parseInt(emp.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; });
+                const code = 'E-' + String(max + 1).padStart(4, '0');
+                const newEmp = { id: Date.now().toString(), code, ...data };
+                if (currentUser) setDoc(getUserDoc("employees", newEmp.id), newEmp);
+                showAlert(currentLang === 'en' ? 'Employee added!' : 'เพิ่มพนักงานใหม่สำเร็จ!'); 
+            } 
+            cancelEditEmployee(); 
+        });
+
+        function editEmployee(id) { const emp = employees.find(x => x.id === id); if (!emp) return; editingEmployeeId = id; ['name', 'pos:position', 'email', 'phone', 'join-date:joinDate', 'status', 'resign-date:resignDate', 'salary', 'base-pct:basePct', 'taxid:taxId'].forEach(k => { const [eid, okey] = k.split(':'); if($(`new-emp-${eid}`)) $(`new-emp-${eid}`).value = emp[okey || eid] || ''; }); toggleResignDate(); txt('form-emp-title', currentLang === 'en' ? 'Edit Employee' : 'แก้ไขข้อมูลพนักงาน'); txt('btn-save-emp', translations[currentLang]['btn_update']); show('btn-cancel-emp', true); }
+        function cancelEditEmployee() { editingEmployeeId = null; if($('add-employee-form')) $('add-employee-form').reset(); toggleResignDate(); txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false); }
+        function deleteEmployee(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc("employees", id)); }); }
+
+        function renderCustomers() { if($('customers-table-body')) $('customers-table-body').innerHTML = customers.map(c => `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${c.code}</td><td class="p-4 font-medium text-gray-800">${c.name}</td><td class="p-4 text-gray-600">${c.contactName || '-'}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${c.email}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${c.taxId || '-'} (${c.branch || '-'})</div></td><td class="p-4 text-center"><button onclick="editCustomer('${c.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1"><i class="ph ph-pencil"></i></button><button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
+        if($('add-customer-form')) $('add-customer-form').addEventListener('submit', e => { 
+            e.preventDefault(); 
+            const data = { name: val('new-cust-name'), contactName: val('new-cust-contact'), email: val('new-cust-email'), taxId: val('new-cust-tax'), branch: val('new-cust-branch'), address: val('new-cust-address') }; 
+            if (editingCustomerId) { 
+                if (currentUser) setDoc(getUserDoc("customers", editingCustomerId), data, {merge: true});
+                showAlert(currentLang === 'en' ? 'Updated!' : 'อัปเดตสำเร็จ!'); 
+            } else { 
+                let max = 0; customers.forEach(c => { let n = parseInt(c.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; });
+                const code = 'C-' + String(max + 1).padStart(4, '0');
+                const newCust = { id: Date.now().toString(), code, ...data };
+                if (currentUser) setDoc(getUserDoc("customers", newCust.id), newCust);
+                showAlert(currentLang === 'en' ? 'Added!' : 'เพิ่มลูกค้าสำเร็จ!'); 
+            } 
+            cancelEditCustomer();
+        });
+        function editCustomer(id) { const c = customers.find(x => x.id === id); if (!c) return; editingCustomerId = id; ['name', 'contact:contactName', 'email', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($(`new-cust-${eid}`)) $(`new-cust-${eid}`).value = c[okey || eid] || ''; }); txt('form-cust-title', currentLang === 'en' ? 'Edit Customer' : 'แก้ไขข้อมูลลูกค้า'); txt('btn-save-cust', translations[currentLang]['btn_update']); show('btn-cancel-cust', true); }
+        function cancelEditCustomer() { editingCustomerId = null; if($('add-customer-form')) $('add-customer-form').reset(); txt('form-cust-title', translations[currentLang]['title_add_cust']); txt('btn-save-cust', translations[currentLang]['btn_save_cust']); show('btn-cancel-cust', false); }
+        function deleteCustomer(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันการลบ?', () => { if (currentUser) deleteDoc(getUserDoc("customers", id)); }); }
+
+        function renderProducts() { if($('products-table-body')) $('products-table-body').innerHTML = products.map(p => `<tr><td class="p-4">${p.code} ${p.code.toUpperCase().startsWith('P')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">V</span>':p.code.toUpperCase().startsWith('K')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">V-KG</span>':p.code.toUpperCase().startsWith('G')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">Z</span>':''}</td><td class="p-4">${p.name}</td><td class="p-4 text-center">${p.unit}</td><td class="p-4 text-right">${formatMoney(p.price)}</td><td class="p-4 text-center"><button onclick="deleteProduct('${p.id}')" class="text-red-500"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
+        function handleProductPrefixChange() { const px = val('new-prod-prefix'), cInp = $('new-prod-code'); if (px === "") { cInp.value = ""; cInp.placeholder = "ระบุรหัส"; cInp.readOnly = false; cInp.classList.remove('bg-gray-100', 'text-gray-500'); } else { let max = 0; products.forEach(p => { if(p.code.startsWith(px+'-')){ const n=parseInt(p.code.substring(px.length+1), 10); if(!isNaN(n) && n>max) max=n; }}); cInp.value = `${px}-${String(max + 1).padStart(4, '0')}`; cInp.readOnly = true; cInp.classList.add('bg-gray-100', 'text-gray-500'); } }
+        if($('add-product-form')) $('add-product-form').addEventListener('submit', function(e) { e.preventDefault(); const code = val('new-prod-code').toUpperCase(); if(products.some(p => p.code.toUpperCase() === code)) return showAlert('รหัสนี้มีอยู่แล้ว'); 
+            const newProd = { id: Date.now().toString(), code, name: val('new-prod-name'), unit: val('new-prod-unit'), price: parseFloat(val('new-prod-price')) };
+            if (currentUser) {
+                setDoc(getUserDoc("products", newProd.id), newProd).then(() => {
+                    this.reset(); handleProductPrefixChange(); showAlert('บันทึกสำเร็จ');
+                });
+            }
+        });
+        function deleteProduct(id) { showConfirm('ยืนยันลบ?', () => { if (currentUser) deleteDoc(getUserDoc("products", id)); }); }
+
+        function renderSettingsRemarks() { if($('settings-remarks-list')) $('settings-remarks-list').innerHTML = savedRemarks.map(r => `<div class="flex justify-between items-start bg-white p-2 border rounded"><p class="text-sm whitespace-pre-line">${r.text}</p><button onclick="deleteRemark('${r.id}')" class="text-red-500 ml-2"><i class="ph ph-trash"></i></button></div>`).join(''); }
+        function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); }
+        if($('add-remark-form')) $('add-remark-form').addEventListener('submit', e => { e.preventDefault(); const t = val('new-remark-text').trim(); if(t) { 
+            const newRem = { id: Date.now().toString(), text: t };
+            if (currentUser) {
+                setDoc(getUserDoc("savedRemarks", newRem.id), newRem).then(() => {
+                    if($('new-remark-text')) $('new-remark-text').value = ''; if($('new-remark-text')) $('new-remark-text').focus();
+                });
+            }
+        } });
+        function deleteRemark(id) { showConfirm('ยืนยันลบ?', () => { if (currentUser) deleteDoc(getUserDoc("savedRemarks", id)); }); }
+        function filterRemarks() { const q = val('search-remark').toLowerCase(); document.querySelectorAll('#doc-remarks-selections label').forEach(l => l.style.display = l.textContent.toLowerCase().includes(q) ? 'flex' : 'none'); }
+
+        function getProductListItems(rowId) {
+            const defText = currentLang === 'en' ? '-- Select --' : '-- เลือก --';
+            return `<li onclick="selectProductItem('${rowId}', '', '${defText}', '', '', 0)" class="p-2.5 hover:bg-gray-100 cursor-pointer text-gray-500 text-sm border-b">${defText}</li>` + 
+            products.map(p => `<li onclick="selectProductItem('${rowId}', '${p.code}', '${p.code} : ${p.name}', '${p.name.replace(/'/g, "\\'")}', '${p.unit}', ${p.price})" class="p-2.5 hover:bg-gray-100 cursor-pointer text-gray-800 text-sm border-b">${p.code} : ${p.name}</li>`).join('');
+        }
+        function renderProductDropdowns() { document.querySelectorAll('.item-row').forEach(row => { const ul = row.querySelector('.custom-search-menu ul'); if (ul) { const rowId = ul.id.replace('-options-list', ''); ul.innerHTML = getProductListItems(rowId); if (!val(`${rowId}-code`)) txt(`${rowId}-display-text`, currentLang === 'en' ? '-- Select --' : '-- เลือก --'); } }); }
+
+        function buildDropdown(menuId, list, defaultText, isEmp = false, cbName = null) {
+            const ul = $(`${menuId}-options-list`); if(!ul) return;
+            const currentVal = val(`${menuId}-select`);
+            let foundText = defaultText, html = `<li onclick="selectCustomOption('${menuId}', '', '${defaultText}', ${cbName ? "'"+cbName+"'" : null})" class="p-2.5 hover:bg-gray-100 cursor-pointer text-gray-500 text-sm border-b">${defaultText}</li>`;
+            list.forEach(item => {
+                const text = isEmp ? `[${item.code}] ${item.name}` : (item.docNo ? `${item.docNo} - ${item.customerName}` : `[${item.code}] ${item.name}`);
+                if ((item.id || item.docNo) === currentVal) foundText = text;
+                html += `<li onclick="selectCustomOption('${menuId}', '${item.id || item.docNo}', '${text}', ${cbName ? "'"+cbName+"'" : null})" class="p-2.5 hover:bg-gray-100 cursor-pointer text-gray-800 text-sm border-b">${text}</li>`;
+            });
+            ul.innerHTML = html;
+            const disp = $(`${menuId}-display-text`);
+            if(disp) { disp.textContent = foundText; disp.className = `truncate ${currentVal ? 'text-gray-900' : 'text-gray-500'}`; }
+        }
+        function renderCustomerDropdown(isEmp) { buildDropdown('customer', isEmp ? employees : customers, currentLang === 'th' ? '-- เลือกลูกค้า --' : '-- Select --', isEmp); }
+        function renderEmployeeDropdownForSeller() { buildDropdown('seller', employees, '-- ไม่ระบุ --', true); }
+        function populateRefDocDatalist() { buildDropdown('ref-qt', database, '-- ไม่ดึงข้อมูล (Manual) --', false, 'pullDataFromQuotation'); }
+        function populateAllDocsDatalist() { if($('all-docs-list')) $('all-docs-list').innerHTML = [...database].reverse().map(d => `<option value="${d.docNo}">`).join(''); }
+
+        function toggleSearchMenu(menuId) {
+            document.querySelectorAll('.custom-search-menu').forEach(el => { if (el.id !== `${menuId}-search-menu`) el.classList.add('hidden'); });
+            const m = $(`${menuId}-search-menu`), inp = $(`${menuId}-search-input`);
+            if (m) m.classList.toggle('hidden');
+            if (m && !m.classList.contains('hidden')) { if(inp) inp.value = ''; filterCustomDropdown(menuId); setTimeout(() => { if(inp) inp.focus(); }, 50); }
+        }
+        function filterCustomDropdown(menuId) { const q = val(`${menuId}-search-input`).toLowerCase(); document.querySelectorAll(`#${menuId}-options-list li`).forEach(li => li.style.display = li.textContent.toLowerCase().includes(q) ? 'block' : 'none'); }
+        
+        function selectCustomOption(menuId, value, text, callback = null) {
+            if($(menuId+'-select')) $(menuId+'-select').value = value;
+            const disp = $(menuId+'-display-text');
+            if(disp) { disp.textContent = text; disp.className = `truncate ${value ? 'text-gray-900' : 'text-gray-500'}`; }
+            show(`${menuId}-search-menu`, false);
+            if(callback && typeof window[callback] === 'function') window[callback]();
+
+            if (menuId === 'customer' && val('doc-type') === 'PAYSLIP' && value) {
+                const emp = employees.find(e => e.id === value);
+                if (emp && $('items-container')) {
+                    $('items-container').innerHTML = '';
+                    const baseSalary = parseFloat(emp.salary) || 0;
+                    addLineItem({ code: 'SALARY', name: 'เงินเดือนพื้นฐาน (Base Salary)', qty: 1, unit: 'เดือน', price: baseSalary, basePrice: baseSalary, discVal: 0 });
+                    if (emp.basePct !== '' && emp.basePct !== null && parseFloat(emp.basePct) !== 0) {
+                        const pct = parseFloat(emp.basePct), adjAmount = baseSalary * (pct / 100);
+                        addLineItem({ code: pct > 0 ? 'ADJ-IN' : 'ADJ-OUT', name: `${pct > 0 ? 'เงินเพิ่ม / โบนัส (Bonus)' : 'รายการหัก (Deduction)'} [ฐาน ${pct}% จากเงินเดือน]`, qty: 1, unit: 'รายการ', price: adjAmount, basePrice: adjAmount, discVal: 0 });
+                    }
+                }
+            }
+        }
+
+        function checkDocType() {
+            const type = val('doc-type');
+            show('seller-container', ['QT', 'SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI'].includes(type));
+            if(type === 'PAYSLIP') { txt('label_customer_wrap', (currentLang === 'en' ? 'Employee Name' : 'ชื่อพนักงาน') + ' <span class="text-red-500">*</span>'); renderCustomerDropdown(true); } else { txt('label_customer_wrap', translations[currentLang]['label_customer'] + ' <span class="text-red-500">*</span>'); renderCustomerDropdown(false); }
+            show('vendor-inv-container', type === 'PINV'); if($('vendor-inv-no')) type === 'PINV' ? $('vendor-inv-no').setAttribute('required', 'true') : ($('vendor-inv-no').removeAttribute('required'), $('vendor-inv-no').value = '');
+            show('ref-qt-container', salesAndExportDocs.includes(type)); if(salesAndExportDocs.includes(type)) populateRefDocDatalist(); else { if($('ref-qt-select')) $('ref-qt-select').value = ""; txt('ref-qt-display-text', '-- ไม่ดึงข้อมูล (Manual) --'); }
+            show('qt-details-container', ['QT', 'EQT', 'PI'].includes(type)); if (['QT', 'EQT', 'PI'].includes(type) && !val('doc-expire-date')) { const f = new Date(); f.setDate(f.getDate() + 30); if($('doc-expire-date')) $('doc-expire-date').value = `${f.getFullYear()}-${(f.getMonth() + 1).toString().padStart(2, '0')}-${f.getDate().toString().padStart(2, '0')}`; } else if(!['QT', 'EQT', 'PI'].includes(type)) if($('doc-expire-date')) $('doc-expire-date').value = '';
+            show('export-details-container', ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(type)); if(!['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(type) && val('doc-currency') !== 'THB') { if($('doc-currency')) $('doc-currency').value = 'THB'; handleCurrencyChange(); }
+            
+            show('payslip-deductions-container', type === 'PAYSLIP');
+            calculateLiveTotal();
+        }
+
+        function pullDataFromQuotation() {
+            const qtNo = val('ref-qt-select'); if(!qtNo) return;
+            if ($('doc-ref-manual')) $('doc-ref-manual').value = qtNo;
+            const qtDoc = database.find(d => d.docNo === qtNo); if(!qtDoc) return;
+            if (qtDoc.customerName) document.querySelectorAll('#customer-options-list li').forEach(li => { if(li.textContent.includes(qtDoc.customerName)) li.click(); });
+            if($('items-container')) { $('items-container').innerHTML = ''; qtDoc.items.forEach(it => addLineItem(it)); }
+            if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(val('doc-type'))) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const [id, def] = k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = qtDoc[id] || def || ''; }); }
+            setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(chk => { chk.checked = qtDoc.remarkIds?.includes(chk.value) || (!qtDoc.remarkIds && qtDoc.remark?.includes(savedRemarks.find(r=>r.id===chk.value)?.text.trim())); }); }, 50);
+            calculateLiveTotal();
+        }
+
+        function selectProductItem(rowId, code, displayText, name, unit, price) {
+            if($(`${rowId}-code`)) $(`${rowId}-code`).value = code; txt(`${rowId}-display-text`, code || displayText); if($(`${rowId}-display-text`)) $(`${rowId}-display-text`).className = `truncate ${code ? 'text-gray-900' : 'text-gray-500'} font-bold`; show(`${rowId}-search-menu`, false);
+            const row = $(`${rowId}-code`)?.closest('.item-row');
+            if (row) { const pr = parseFloat(price) || 0; ['name', 'unit:PCS', 'base-price:0', 'price:0'].forEach(k => { const [cls, def] = k.split(':'); const el = row.querySelector(`.item-${cls}`); if(el) el.value = code ? (cls==='price'?convertPriceFromTHB(pr).toFixed(2):cls==='base-price'?pr:eval(cls)) : (def||''); }); }
+            calculateLiveTotal();
+        }
+
+        function addLineItem(data = null) {
+            if(!$('items-container')) return; const nr = document.createElement('div'); nr.className = 'item-grid item-row border-b border-gray-100 pb-2'; const id = 'item-' + Date.now() + Math.floor(Math.random() * 1000);
+            const bp = data?.basePrice ?? data?.price ?? '', cd = data?.code ?? '', dt = cd || (currentLang === 'en' ? '-- Select --' : '-- เลือก --'), tc = cd ? 'text-gray-900' : 'text-gray-500';
+            nr.innerHTML = `<div class="custom-dropdown-container relative"><input type="text" class="item-code hidden" id="${id}-code" value="${cd}"><input type="hidden" class="item-base-price" id="${id}-base-price" value="${bp}"><button type="button" onclick="toggleSearchMenu('${id}')" onkeydown="handleEnter(event, this)" class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none bg-white text-left flex justify-between shadow-sm"><span id="${id}-display-text" class="truncate ${tc} font-bold">${dt}</span><i class="ph ph-caret-down text-gray-400"></i></button><div id="${id}-search-menu" class="custom-search-menu hidden absolute z-[90] w-[300px] mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden left-0 top-full"><div class="p-2 border-b bg-gray-50"><input type="text" id="${id}-search-input" class="w-full border p-1.5 text-[12px] outline-none" placeholder="🔍 ค้นหา..." onkeyup="filterCustomDropdown('${id}')" onkeydown="handleEnter(event, this)"></div><ul id="${id}-options-list" class="max-h-48 overflow-y-auto">${getProductListItems(id)}</ul></div></div><div><input type="text" class="item-name w-full border p-1.5 text-sm outline-none" placeholder="รายละเอียด" value="${data?.name||''}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-qty w-full border p-1.5 text-center text-sm outline-none" min="1" value="${data?.qty||'1'}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="text" class="item-unit w-full border p-1.5 text-center text-sm outline-none" placeholder="หน่วย" value="${data?.unit||'PCS'}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-price w-full border p-1.5 text-right text-sm outline-none" min="0" step="0.01" value="${data?.price||'0'}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div class="relative"><input type="number" class="item-disc-val w-full border p-1.5 text-right text-sm outline-none pr-5" step="0.01" placeholder="0" value="${data?.discVal||''}" oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold pointer-events-none">%</span></div><div class="text-right font-bold text-sm text-gray-700 self-center item-row-total">${formatMoney(data?.total||0)}</div><div class="text-right"><button type="button" onclick="this.closest('.item-row').remove(); calculateLiveTotal();" class="text-red-500 hover:bg-red-50 p-1.5 rounded" tabindex="-1"><i class="ph ph-trash"></i></button></div>`;
+            $('items-container').appendChild(nr);
+        }
+        function handleEnter(e, el) { 
+            if (e.key === 'Enter') { 
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const menu = el.closest('.custom-search-menu');
+                if (menu) menu.classList.add('hidden');
+
+                const rows = document.querySelectorAll('.item-row'); 
+                if (el.closest('.item-row') === rows[rows.length - 1]) { 
+                    addLineItem(); 
+                    setTimeout(() => {
+                        const newRows = document.querySelectorAll('.item-row');
+                        const newRowBtn = newRows[newRows.length - 1].querySelector('button');
+                        if (newRowBtn) newRowBtn.focus();
+                    }, 50); 
+                } 
+            } 
+        }
+
+        function calculateLiveTotal() {
+            let gTotal = 0, tVat = 0, sub = 0; const pre = val('doc-type');
+            
+            document.querySelectorAll('.item-row').forEach(row => {
+                const c = row.querySelector('.item-code')?.value.toUpperCase()||'', q = parseFloat(row.querySelector('.item-qty')?.value)||0, p = parseFloat(row.querySelector('.item-price')?.value)||0, dv = parseFloat(row.querySelector('.item-disc-val')?.value)||0;
+                let net = (q * p) * (1 - dv/100);
+                if(row.querySelector('.item-row-total')) row.querySelector('.item-row-total').textContent = formatMoney(net);
+                gTotal += net; let iv = 0, ib = net;
+                if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
+                tVat += iv; sub += ib;
+            });
+            
+            if (noVatDocs.includes(pre)) { 
+                tVat = 0; sub = gTotal; 
+                show('live-subtotal-row', pre === 'PAYSLIP'); 
+                show('live-vat-row', false); 
+            } else { 
+                show('live-subtotal-row', true); show('live-vat-row', true); 
+            }
+
+            let ssoAmt = 0, whtAmt = 0;
+            if (pre === 'PAYSLIP') {
+                const ssoPct = parseFloat(val('payslip-sso-pct')) || 0;
+                const whtPct = parseFloat(val('payslip-wht-pct')) || 0;
+                ssoAmt = sub * (ssoPct / 100);
+                whtAmt = sub * (whtPct / 100);
+                gTotal = sub - ssoAmt - whtAmt;
+                
+                show('live-sso-row', ssoPct > 0);
+                if($('live-sso')) $('live-sso').textContent = `-${formatMoney(ssoAmt)}`;
+                show('live-wht-row', whtPct > 0);
+                if($('live-wht')) $('live-wht').textContent = `-${formatMoney(whtAmt)}`;
+                if($('live-subtotal-label')) $('live-subtotal-label').textContent = "เงินเดือนรวม:";
+            } else {
+                show('live-sso-row', false); show('live-wht-row', false);
+                if($('live-subtotal-label')) $('live-subtotal-label').textContent = "มูลค่าก่อนภาษี:";
+            }
+
+            txt('live-subtotal', formatMoney(sub)); txt('live-vat', formatMoney(tVat)); txt('live-grand', formatMoney(gTotal));
+        }
+
+        function generateDocNo(prefix, docDateStr) {
+            const docYear = new Date(docDateStr).getFullYear().toString(); 
+            let maxNum = 0;
+            database.forEach(d => { 
+                if (d.prefix === prefix && (d.rawDate instanceof Date ? d.rawDate : new Date(d.rawDate)).getFullYear().toString() === docYear) { 
+                    const parts = d.docNo.split('-'); 
+                    if (parts.length >= 3) { const num = parseInt(parts[parts.length - 1], 10); if (!isNaN(num) && num > maxNum) maxNum = num; } 
+                } 
+            });
+            return `${prefix}-${docYear}-${String(maxNum + 1).padStart(3, '0')}`;
+        }
+
+        if($('create-doc-form')) $('create-doc-form').addEventListener('submit', function(e) {
+            e.preventDefault(); const pre = val('doc-type'), custId = val('customer-select');
+            if (!custId) return showAlert(currentLang === 'en' ? 'Select Customer/Employee.' : 'เลือกลูกค้าหรือพนักงาน');
+            const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId), docDate = val('doc-date');
+            let gTotal = 0, tVat = 0, sub = 0; const items = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                const c = row.querySelector('.item-code')?.value.toUpperCase()||'', n = row.querySelector('.item-name').value, q = parseFloat(row.querySelector('.item-qty').value)||0, u = row.querySelector('.item-unit').value, p = parseFloat(row.querySelector('.item-price').value)||0, bp = parseFloat(row.querySelector('.item-base-price')?.value)||p, dv = parseFloat(row.querySelector('.item-disc-val').value)||0;
+                let net = (q * p) * (1 - dv/100), iv = 0, ib = net;
+                if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
+                gTotal += net; tVat += iv; sub += ib; items.push({ code: c, name: n, qty: q, unit: u, price: p, basePrice: bp, discVal: dv, discType: val('global-disc-type') || 'disc_%', rowDisc: (q*p)-net, total: net, itemBeforeVat: ib, itemVat: iv });
+            });
+            let rIds = [], rems = []; document.querySelectorAll('.remark-checkbox:checked').forEach(c => { rIds.push(c.value); const r = savedRemarks.find(rm => rm.id === c.value); if(r) rems.push(r.text.trim().startsWith('-') ? r.text.trim() : "- " + r.text.trim()); });
+            
+            let ssoPct = 0, whtPct = 0, ssoAmt = 0, whtAmt = 0;
+            if (noVatDocs.includes(pre)) { tVat = 0; sub = gTotal; }
+            if (isPay) {
+                ssoPct = parseFloat(val('payslip-sso-pct')) || 0;
+                whtPct = parseFloat(val('payslip-wht-pct')) || 0;
+                ssoAmt = sub * (ssoPct / 100);
+                whtAmt = sub * (whtPct / 100);
+                gTotal = sub - ssoAmt - whtAmt;
+            }
+            
+            const docNo = generateDocNo(pre, docDate);
+            
+            let cur = 'THB', exRate = 1; if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(pre)) { cur = val('doc-currency'); exRate = cur !== 'THB' ? (exchangeRates[cur]||1) : 1; }
+            let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
+            if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
+
+            const newDoc = { docNo, refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: new Date(docDate).toISOString(), inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: rems.join('\n'), remarkIds: rIds, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+            
+            if (currentUser) {
+                setDoc(getUserDoc("documents", docNo), newDoc).then(() => {
+                    showAlert(`บันทึก ${docNo} สำเร็จ!`); this.reset(); if($('search-remark')) $('search-remark').value = ''; filterRemarks(); if($('doc-date')) $('doc-date').value = todayStr; checkDocType(); if($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); } switchTab('document-list');
+                }).catch(err => {
+                    console.error("Firestore Error:", err);
+                    if (err.code === 'permission-denied') {
+                        showAlert('ไม่สามารถบันทึกข้อมูลได้ เนื่องจากติดสิทธิ์การเข้าถึง (Permission Denied)!');
+                    }
+                });
+            }
+        });
+
+        function updateDashboard() {
+            let tRev = 0, iCnt = 0; const ty = {}, pS = {}, cS = {};
+            database.forEach(d => { 
+                ty[d.docName] = (ty[d.docName] || 0) + 1; 
+                if (d.isRevenue) { 
+                    const r = d.exchangeRate || 1; const thb = d.grandTotal * r; tRev += thb; iCnt++; 
+                    cS[d.customerName || 'Unknown'] = (cS[d.customerName || 'Unknown'] || 0) + thb; 
+                    d.items.forEach(i => { const pk = i.code ? `[${i.code}] ${i.name}` : i.name; pS[pk] = (pS[pk] || 0) + (i.total * r); }); 
+                } 
+            });
+            txt('dash-total-revenue', `${formatMoney(tRev)} <span class="text-sm text-gray-500">${currentLang==='th'?'บาท':'THB'}</span>`);
+            txt('dash-total-docs', `${database.length} <span class="text-sm text-gray-500">${currentLang==='th'?'ฉบับ':'Docs'}</span>`);
+            txt('dash-total-invs', `${iCnt} <span class="text-sm text-gray-500">${currentLang==='th'?'ฉบับ':'Docs'}</span>`);
+            if($('dash-doc-types')) $('dash-doc-types').innerHTML = Object.keys(ty).length ? Object.entries(ty).map(([n,c]) => `<li class="flex justify-between items-center bg-gray-50 p-3 border rounded"><span class="font-medium text-xs">${n}</span><span class="bg-blue-100 text-blue-800 py-1 px-2 rounded text-xs font-bold">${c}</span></li>`).join('') : `<li class="text-gray-500 italic">${currentLang==='th'?'ยังไม่มีข้อมูล':'No docs'}</li>`;
+            const mapBars = (obj, cont) => { if($(cont)) { const sorted = Object.entries(obj).sort((a,b)=>b[1]-a[1]); const tot = sorted.reduce((s,[_,a])=>s+a,0); $(cont).innerHTML = sorted.length ? sorted.map(([n,a]) => `<div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-gray-700 truncate pr-2 w-2/3" title="${n}">${n}</span><span class="text-gray-600 font-bold whitespace-nowrap">${formatMoney(a)} (${tot>0?((a/tot)*100).toFixed(1):0}%)</span></div><div class="w-full bg-gray-100 rounded-full h-1.5"><div class="bg-${cont==='dash-sales-by-product'?'emerald':'blue'}-500 h-1.5 rounded-full" style="width: ${tot>0?(a/tot)*100:0}%"></div></div></div>`).join('') : `<li class="text-gray-500 italic text-sm list-none">${currentLang==='th'?'ยังไม่มีข้อมูล':'No sales'}</li>`; } };
+            mapBars(pS, 'dash-sales-by-product'); mapBars(cS, 'dash-sales-by-customer');
+        }
+
+        function updateAllStatuses() {
+            database.forEach(doc => { if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
+            const adj = {}; database.forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
+            const visited = new Set();
+            for (const doc of database) { if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
+        }
+
+        function updateDocumentTable() {
+            updateAllStatuses(); if(!$('document-table-body')) return;
+            $('document-table-body').innerHTML = database.length ? [...database].reverse().map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||d.prefix.includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span></td><td class="p-4 text-center"><div class="flex justify-center gap-1"><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">ยังไม่มีเอกสารในระบบ</td></tr>`;
+        }
+
+        function deleteDocument(docNo) { 
+            showConfirm(currentLang === 'en' ? `Delete ${docNo}?` : `ยืนยันลบ ${docNo}?`, () => { 
+                if (currentUser) deleteDoc(getUserDoc("documents", docNo));
+            }); 
+        }
+        function editDocument(docNo) {
+            const d = database.find(x => x.docNo === docNo); if(!d) return;
+            showConfirm(currentLang === 'en' ? 'Load for editing? (Saves as new doc)' : 'โหลดเพื่อแก้ไข? (บันทึกเป็นเลขใหม่)', () => {
+                switchTab('create-doc'); if($('doc-type')) $('doc-type').value = d.prefix; checkDocType(); 
+                if (d.customerName) document.querySelectorAll('#customer-options-list li').forEach(l => { if(l.textContent.includes(d.customerName)) l.click(); });
+                if (d.sellerName) document.querySelectorAll('#seller-options-list li').forEach(l => { if(l.textContent.includes(d.sellerName)) l.click(); });
+                ['date:inputDate', 'credit:creditTerm', 'ref-manual:docNo'].forEach(k => { const[id,v]=k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = d[v==='docNo'?docNo:v] || (id==='date'?todayStr:id==='credit'?'เงินสด (Cash)':''); });
+                if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix)) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const[id,def]=k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = d[id] || def || ''; }); }
+                if($('global-disc-type')) $('global-disc-type').value = d.items[0]?.discType || 'disc_%';
+                if($('payslip-sso-pct')) $('payslip-sso-pct').value = d.ssoPct || 0;
+                if($('payslip-wht-pct')) $('payslip-wht-pct').value = d.whtPct || 0;
+                if($('items-container')) { $('items-container').innerHTML = ''; d.items.forEach(it => addLineItem(it)); }
+                setTimeout(() => document.querySelectorAll('.remark-checkbox').forEach(c => c.checked = d.remarkIds?.includes(c.value) || (!d.remarkIds && d.remark?.includes(savedRemarks.find(r=>r.id===c.value)?.text.trim()))), 150);
+                calculateLiveTotal(); showAlert(currentLang === 'en' ? 'Loaded as draft.' : 'โหลดข้อมูลสำเร็จ!');
+            });
+        }
+
+        // ================= PREVIEW, PRINT, EMAIL LOGIC =================
+        function updatePreviewScale(val) {
+            const paper = $('paper-preview');
+            const wrapper = $('paper-wrapper');
+            if(paper) {
+                paper.style.transform = `scale(${val})`;
+                paper.style.transformOrigin = 'top left';
+                if(wrapper) {
+                    wrapper.style.width = `calc(210mm * ${val})`;
+                    wrapper.style.height = `calc(297mm * ${val})`;
+                }
+                txt('scale-percent', Math.round(val * 100) + '%');
+                if($('preview-scale-slider')) $('preview-scale-slider').value = val;
+            }
+        }
+
+        function previewDocument(docNo) {
+            const d = database.find(x => x.docNo === docNo); if (!d) return; currentlyPreviewingDoc = d;
+            const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', cur = d.currency || 'THB';
+            
+            // Reset Scale to Default (80%)
+            updatePreviewScale(0.8);
+
+            txt('preview-company-name', isEn ? companyProfile.nameEn : companyProfile.nameTh);
+            txt('preview-company-addr', isEn ? companyProfile.addressEn : companyProfile.addressTh);
+            txt('preview-company-tax-label', isEn ? "Tax ID: " : "เลขประจำตัวผู้เสียภาษี: ");
+            txt('preview-company-tel-label', isEn ? "Tel: " : "โทร: ");
+            txt('preview-cust-label', isPay ? (isEn ? "Employee:" : "ชื่อพนักงาน / Employee:") : (isEn ? "Customer / Consignee:" : "ลูกค้า / Customer:"));
+            txt('preview-docno-label', isEn ? "Doc No.:" : "เลขที่เอกสาร:");
+            txt('preview-date-label', isEn ? "Date:" : "วันที่:");
+            txt('preview-expire-label', isEn ? "Valid Until:" : "กำหนดยืนราคา:");
+            txt('preview-credit-label', isEn ? "Credit:" : "เครดิต (Credit):");
+            txt('preview-ref-label', isEn ? "Ref No.:" : "อ้างอิง:");
+            txt('preview-col-desc', isPay ? (isEn ? "Earnings / Deductions" : "รายการเงินได้ / รายการหัก") : (isEn ? "Description" : "รายละเอียด<br>(Description)"));
+            txt('preview-col-qty', isEn ? "Qty" : "จำนวน<br>(Qty)");
+            txt('preview-col-unit', isEn ? "Unit" : "หน่วย<br>(Unit)");
+            txt('preview-col-price', isEn ? `Unit Price<br>(${cur})` : `ราคา/หน่วย<br>(${cur})`);
+            txt('preview-col-disc', d.items[0]?.discType === 'gp_%' ? 'GP (%)' : (isEn ? 'Discount (%)' : 'ส่วนลด (%)'));
+            txt('preview-col-amt', isEn ? `Amount<br>(${cur})` : `จำนวนเงิน<br>(${cur})`);
+            txt('preview-lbl-sub', isPay ? (isEn ? "Gross Salary" : "เงินเดือนรวม (Gross)") : (isEn ? "Amount Before VAT" : "มูลค่าสินค้าก่อนภาษี (Amount Before VAT)"));
+            txt('preview-lbl-vat', isEn ? "VAT" : "ภาษีมูลค่าเพิ่ม (VAT 7%)");
+            txt('preview-lbl-grand', isEn ? "Grand Total" : "ยอดรวมสุทธิ (Grand Total)");
+            txt('preview-lbl-remark', isEn ? "Conditions/Remarks:" : "เงื่อนไข/หมายเหตุ (Conditions/Remarks):");
+            txt('preview-lbl-maker', isPay ? (isEn ? "Employee Signature" : "ผู้รับเงิน (พนักงาน)") : (isEn ? "Buyer" : "ผู้สั่งซื้อ (Buyer)"));
+            txt('preview-lbl-auth', isPay ? (isEn ? "Authorized Signature" : "ผู้จ่ายเงิน / ผู้อนุมัติ") : (isEn ? "Seller" : "ผู้ขาย (Seller)"));
+            
+            let authStamp = isPay ? "" : (isEn ? "Company Stamp (if any)" : "ตราประทับ (ถ้ามี)");
+            if (d.sellerName && !['PAYSLIP', 'PR', 'PO', 'GRN', 'VB', 'PINV'].includes(d.prefix)) authStamp = `( ${d.sellerName} )<br>${authStamp}`;
+            txt('preview-lbl-stamp-auth', authStamp);
+            txt('preview-lbl-stamp-maker', isPay ? "" : (isEn ? "Company Stamp (if any)" : "ตราประทับ (ถ้ามี)"));
+            txt('pv-comp-tax', companyProfile.taxId); txt('pv-comp-phone', companyProfile.phone);
+            txt('preview-doc-name', isPay ? (isEn ? "PAYSLIP" : "สลิปเงินเดือน (PAYSLIP)") : (isEn ? (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName) : d.docName));
+            txt('preview-customer', d.customerName);
+            txt('preview-customer-tax', isPay ? "" : (d.customerTaxId ? `Tax ID: ${d.customerTaxId}` : ''));
+            txt('preview-customer-branch', isPay ? "" : (d.customerBranch ? `Branch: ${d.customerBranch}` : ''));
+            txt('preview-customer-addr', isPay ? (d.customerAddr ? `ตำแหน่ง: ${d.customerAddr}` : '') : (d.customerAddr || ''));
+            txt('preview-doc-no', d.docNo); txt('preview-date', d.dateStr); txt('preview-credit', d.creditTerm || '-'); txt('preview-ref-no', d.refDocManual || '-');
+            
+            if($('preview-company-logo')) { $('preview-company-logo').src = companyProfile.logo || ''; show('preview-company-logo', !!companyProfile.logo); }
+            show('preview-expire-container', ['QT', 'EQT', 'PI'].includes(d.prefix) && d.expireDateStr); txt('preview-expire-date', d.expireDateStr);
+            txt('preview-stamp-container', d.status === 'paid' ? `<div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-[-30deg] text-green-500 border-[10px] border-green-500 rounded-2xl p-6 opacity-20 text-8xl font-black tracking-widest z-0 uppercase pointer-events-none">PAID</div>` : '');
+            
+            const isExp = ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix), sExp = isExp && (d.incoterm || d.pol || d.pod);
+            show('preview-export-details', sExp); if (sExp) { txt('preview-incoterm', d.incoterm || '-'); txt('preview-pol', d.pol || '-'); txt('preview-pod', d.pod || '-'); txt('preview-currency-label', cur); }
+            
+            if($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${i.code||'-'}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${i.name}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.unit||'-'}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(i.total)}</td></tr>`).join('');
+            
+            txt('preview-amount-words', getAmountText(d.grandTotal, cur, currentLang));
+            const hv = noVatDocs.includes(d.prefix); 
+            show('preview-subtotal-row', !hv || isPay); 
+            show('preview-vat-row', !hv);
+            
+            if (isPay) {
+                show('preview-sso-row', d.ssoPct > 0);
+                if($('preview-sso-pct')) $('preview-sso-pct').textContent = d.ssoPct;
+                if($('preview-sso')) $('preview-sso').textContent = `-${formatMoney(d.ssoAmt)} ${cur}`;
+                
+                show('preview-wht-row', d.whtPct > 0);
+                if($('preview-wht-pct')) $('preview-wht-pct').textContent = d.whtPct;
+                if($('preview-wht')) $('preview-wht').textContent = `-${formatMoney(d.whtAmt)} ${cur}`;
+            } else {
+                show('preview-sso-row', false);
+                show('preview-wht-row', false);
+            }
+
+            txt('preview-subtotal', `${formatMoney(d.subtotal)} ${cur}`); txt('preview-vat', `${formatMoney(d.vat)} ${cur}`); txt('preview-grandtotal', `${formatMoney(d.grandTotal)} ${cur}`);
+            txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${l}</div>`).join('') : '-');
+            
+            if($('doc-copy-type')) txt('preview-copy-type', val('doc-copy-type')); show('ai-email-container', false);
+            show('document-preview-modal', true); document.body.classList.add('modal-open');
+        }
+
+        function closePreview() { show('document-preview-modal', false); document.body.classList.remove('modal-open'); currentlyPreviewingDoc = null; }
+        
+        function printDocumentList(docNo) { 
+            previewDocument(docNo); 
+            setTimeout(() => { 
+                document.body.classList.add('modal-open', 'printing-modal'); 
+                window.print(); 
+            }, 150); 
+        }
+        
+        window.addEventListener('afterprint', () => {
+            document.body.classList.remove('modal-open', 'printing-modal');
+        });
+
+        function emailDocumentList(docNo) { 
+            previewDocument(docNo); 
+            setTimeout(draftAIEmail, 100); 
+        }
+
+        function draftAIEmail() {
+            if(!currentlyPreviewingDoc) return; const d = currentlyPreviewingDoc, t = (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName);
+            const m = currentLang === 'en' ? `Subject: ${t} No. ${d.docNo} from ${companyProfile.nameEn}\n\nDear ${d.customerName},\n\nPlease find attached the ${t} (Doc No: ${d.docNo}) dated ${d.dateStr} for your reference.\n\nThe total amount due is ${formatMoney(d.grandTotal)} THB. If you have any questions regarding this document, please feel free to contact us.\n\nBest regards,\n${companyProfile.nameEn}` : `หัวข้อ: นำส่งเอกสาร ${t} เลขที่ ${d.docNo} จาก ${companyProfile.nameTh}\n\nเรียน ทีมงาน ${d.customerName}\n\nทางบริษัทฯ ขอแนบเอกสาร ${t} (เลขที่: ${d.docNo}) ลงวันที่ ${d.dateStr} มาเพื่อโปรดพิจารณาและดำเนินการในส่วนที่เกี่ยวข้องครับ/ค่ะ\n\nโดยมียอดรวมสุทธิทั้งสิ้น ${formatMoney(d.grandTotal)} บาท หากมีข้อสงสัยประการใดสามารถติดต่อสอบถามได้ทันทีครับ\n\nขอแสดงความนับถือ\n${companyProfile.nameTh}`;
+            if($('ai-email-to')) $('ai-email-to').value = d.customerEmail || ''; if($('ai-email-body')) $('ai-email-body').value = m; show('ai-email-container', true);
+        }
+        
+        function copyEmailText() { 
+            if($('ai-email-body')) { 
+                $('ai-email-body').select(); 
+                document.execCommand('copy'); 
+                showAlert(currentLang === 'en' ? 'Copied to clipboard!' : 'คัดลอกข้อความสำเร็จ!'); 
+            } 
+        }
+
+        function renderStockCardDropdown() { if($('stc-product-select')) $('stc-product-select').innerHTML = '<option value="">-- เลือกสินค้า --</option>' + products.map(p => `<option value="${p.code}">${p.code} : ${p.name}</option>`).join(''); }
+        function generateStockCard() {
+            const pc = val('stc-product-select'); if(!pc || !$('stc-table-body')) return; const pObj = products.find(p => p.code === pc); txt('stc-title-item', pObj ? pObj.name : pc);
+            let h = [], bal = 0, i = 1; const iT = ['STI','GRN','FGR','MR'], oT = ['STO','DO','ABB','MI','PL'];
+            database.forEach(d => d.items.forEach(it => { if(it.code === pc || it.name === pObj?.name) h.push({ d: d.rawDate, ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
+            h.sort((a,b) => a.d - b.d);
+            $('stc-table-body').innerHTML = h.length ? h.map(r => { let iq = 0, oq = 0; if(iT.includes(r.t)){ iq=r.q; bal+=r.q; }else if(oT.includes(r.t)){ oq=r.q; bal-=r.q; }else return ''; return `<tr class="border-b"><td class="p-3 text-center border-r">${i++}</td><td class="p-3 border-r">${r.ds}</td><td class="p-3 border-r font-bold text-blue-600">${r.no}</td><td class="p-3 border-r">${docTypeNames[r.t] || r.t}</td><td class="p-3 text-center bg-green-50 text-green-700 font-bold border-r">${iq||'-'}</td><td class="p-3 text-center bg-red-50 text-red-700 font-bold border-r">${oq||'-'}</td><td class="p-3 text-center font-bold bg-gray-50 text-lg">${bal}</td></tr>`; }).join('') : '<tr><td colspan="7" class="p-8 text-center text-gray-500">ไม่มีการเคลื่อนไหว</td></tr>';
+        }
+
+        function generateUnifiedReport(type) {
+            const t = type==='BRC'?"รายงานเงินสด/กระทบยอดธนาคาร (Cash & Bank)":type==='WHTSUM'?"สรุปภาษีหัก ณ ที่จ่าย (WHT Summary)":"รายงานสรุปการผลิต (Yield & Scrap)"; const aP = type==='BRC'?['RV','PV','JV','RE','RETAX']:type==='WHTSUM'?['WHT']:['PDO','MI','FGR','MR'];
+            txt('ur-header-title', `<i class="ph ph-file-text"></i> ${t}`); let tot = 0, fD = database.filter(d => aP.includes(d.prefix));
+            if($('ur-table-body')) $('ur-table-body').innerHTML = fD.length ? fD.map((d, i) => { let amt = d.grandTotal * (d.exchangeRate||exchangeRates[d.currency]||1); if(type==='BRC'&&d.prefix==='PV') amt = -Math.abs(amt); tot+=amt; return `<tr class="border-b"><td class="p-4 text-center border-r">${i+1}</td><td class="p-4 border-r">${d.dateStr}</td><td class="p-4 border-r font-bold text-blue-600">${d.docNo}</td><td class="p-4 border-r">${d.customerName}</td><td class="p-4 text-right ${amt<0?'text-red-600':''}">${formatMoney(amt)}</td></tr>`; }).join('') : '<tr><td colspan="5" class="p-8 text-center text-gray-500">ไม่มีข้อมูล</td></tr>';
+            txt('ur-total-amt', formatMoney(tot));
+        }
+
+        function renderShippingMarkDropdown() { if($('shm-doc-select')) $('shm-doc-select').innerHTML = '<option value="">-- เลือก Packing List หรือ Invoice --</option>' + database.filter(d => ['PL','CI','INV','RETAX'].includes(d.prefix)).map(d => `<option value="${d.docNo}">${d.docNo} - ${d.customerName}</option>`).join(''); }
+        function generateShippingMark() {
+            const docNo = val('shm-doc-select'), ctn = parseInt(val('shm-ctn'))||1; if(!docNo || !$('shm-print-area')) return; const d = database.find(x => x.docNo === docNo); if(!d) return;
+            $('shm-print-area').innerHTML = Array.from({length: ctn}, (_, i) => `<div class="border-4 border-gray-800 p-8 flex flex-col justify-center h-[400px] break-inside-avoid print-area"><h2 class="text-4xl font-black text-center mb-6 uppercase tracking-widest">${d.customerName}</h2><div class="text-xl mb-4"><strong>REF DOC:</strong> ${d.docNo}</div><div class="text-xl mb-4"><strong>DATE:</strong> ${d.dateStr}</div><div class="text-xl mb-4"><strong>DESTINATION:</strong> <span class="uppercase">${d.customerBranch || 'HEAD OFFICE'}</span></div><div class="mt-auto flex justify-between items-end border-t-2 border-gray-400 pt-4"><div class="text-xl font-bold">MADE IN THAILAND</div><div class="text-4xl font-black">CTN No. <span class="text-red-600">${i+1}</span> / ${ctn}</div></div></div>`).join('');
+        }
+
+        function generateVatReport() {
+            const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
+            const fD = database.filter(d => ((rt==='output'&&d.isRevenue)||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
+            const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
+            
+            txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);
+            txt('vat-official-comp-name', currentLang==='en'?companyProfile.nameEn:companyProfile.nameTh); txt('vat-official-comp-name2', currentLang==='en'?companyProfile.nameEn:companyProfile.nameTh);
+            if($('vat-official-comp-tax')) $('vat-official-comp-tax').innerHTML = formatTaxIdBoxes(companyProfile.taxId);
+            const isHq = companyProfile.branch === 'สำนักงานใหญ่' || companyProfile.branch === '00000' || !companyProfile.branch;
+            if($('vat-hq-check')) $('vat-hq-check').checked = isHq; 
+            if($('vat-branch-check')) $('vat-branch-check').checked = !isHq; 
+            txt('vat-official-branch-no', isHq ? '' : companyProfile.branch);
+            
+            let sAmt = 0, sVat = 0;
+            if($('vat-table-body')) $('vat-table-body').innerHTML = fD.length ? fD.map((d, i) => { const r=d.exchangeRate||exchangeRates[d.currency]||1, sb=d.subtotal*r, vt=d.vat*r; sAmt+=sb; sVat+=vt; return `<tr class="hover:bg-gray-50"><td class="p-2 text-center border border-gray-800">${i+1}</td><td class="p-2 text-center border border-gray-800" contenteditable="true">${d.dateStr}</td><td class="p-2 text-center text-blue-600 font-bold border border-gray-800" contenteditable="true">${rt==='input'?d.vendorInvNo:d.docNo}</td><td class="p-2 text-left border border-gray-800 pl-4" contenteditable="true">${d.customerName}</td><td class="p-2 text-center border border-gray-800 tracking-widest" contenteditable="true">${d.customerTaxId || '-'}</td><td class="p-2 text-center border border-gray-800" contenteditable="true">${d.customerBranch || '-'}</td><td class="p-2 text-right border border-gray-800 pr-4 editable-amt" contenteditable="true" oninput="recalcVatTotal()">${formatMoney(sb)}</td><td class="p-2 text-right text-emerald-700 font-medium border border-gray-800 pr-4 editable-vat" contenteditable="true" oninput="recalcVatTotal()">${formatMoney(vt)}</td></tr>`; }).join('') : `<tr><td colspan="8" class="p-8 text-center text-gray-500 border border-gray-800">ไม่มีข้อมูล</td></tr>`;
+            txt('vat-total-amt', formatMoney(sAmt)); txt('vat-total-vat', formatMoney(sVat));
+        }
+
+        function recalcVatTotal() {
+            let sAmt = 0, sVat = 0;
+            document.querySelectorAll('.editable-amt').forEach(td => sAmt += parseFloat(td.innerText.replace(/,/g, ''))||0);
+            document.querySelectorAll('.editable-vat').forEach(td => sVat += parseFloat(td.innerText.replace(/,/g, ''))||0);
+            txt('vat-total-amt', formatMoney(sAmt)); txt('vat-total-vat', formatMoney(sVat));
+        }
+
+        function exportVatToCSV() {
+            const table = document.querySelector('.vat-table'); if(!table) return;
+            let csv = Array.from(table.querySelectorAll('tr')).map(r => Array.from(r.querySelectorAll('td, th')).map(c => `"${c.innerText.replace(/(\r\n|\n|\r)/gm, '').trim().replace(/"/g, '""')}"`).join(','));
+            const dl = document.createElement("a"); dl.download = `VAT_${val('vat-type-filter')||'output'}_${val('vat-month-filter')||'report'}.csv`;
+            dl.href = window.URL.createObjectURL(new Blob(["\uFEFF"+csv.join('\n')], {type: 'text/csv;charset=utf-8;'})); dl.click();
+        }
+
+        function resetSystem() { 
+            showConfirm('⚠️ ลบข้อมูลทั้งหมด (Set Zero)?\nข้อมูลจะถูกลบทั้งหมด', () => { 
+                if (currentUser) {
+                    database.forEach(d => deleteDoc(getUserDoc("documents", d.docNo)).catch(err => console.error(err)));
+                }
+                showAlert('รีเซ็ตเรียบร้อยแล้ว'); 
+            }); 
+        }
+
+        // --- Window Binding for Inline Handlers ---
+        Object.assign(window, {
+            toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown, 
+            selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
+            cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee, 
+            handleProductPrefixChange, deleteProduct, deleteRemark, generateStockCard, generateShippingMark, generateVatReport, 
+            exportVatToCSV, recalcVatTotal, draftAIEmail, printDocumentList, closePreview, copyEmailText, updatePreviewScale, 
+            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin
+        });
+
+        // --- Firebase Initial Data Sync ---
+        async function initFirebaseData() {
+            if (!currentUser) return;
+
+            const errHandler = (err) => {
+                console.error("Firestore Error:", err);
+                if (err.code === 'permission-denied') {
+                    showAlert('ติดสิทธิ์การเข้าถึงข้อมูล (Permission Denied)!<br><br>กรุณาไปที่ <b>Firebase Console > Firestore Database > แท็บ Rules</b><br>แล้วเปลี่ยนเป็น <br><code>allow read, write: if true;</code>');
+                }
+            };
+
+            try {
+                const profileRef = getUserDoc("settings", "companyProfile");
+                const docSnap = await getDoc(profileRef);
+                if (!docSnap.exists()) {
+                    console.log("Seeding initial data...");
+                    await setDoc(profileRef, companyProfile);
+                    await setDoc(getUserDoc("settings", "exchangeRates"), exchangeRates);
+                    products.forEach(p => setDoc(getUserDoc("products", p.id), p));
+                    customers.forEach(c => setDoc(getUserDoc("customers", c.id), c));
+                    employees.forEach(e => setDoc(getUserDoc("employees", e.id), e));
+                    savedRemarks.forEach(r => setDoc(getUserDoc("savedRemarks", r.id), r));
+                }
+            } catch (err) {
+                errHandler(err);
+                return; // Stop initialization if permission denied
+            }
+
+            // Real-time Listeners
+            onSnapshot(getUserDoc("settings", "companyProfile"), (docSnap) => {
+                if(docSnap.exists()) { companyProfile = docSnap.data(); updateCompanyHeader(); populateCompanyForm(); }
+            }, errHandler);
+            
+            onSnapshot(getUserDoc("settings", "exchangeRates"), (docSnap) => {
+                if(docSnap.exists()) { exchangeRates = docSnap.data(); renderExchangeRates(); }
+            }, errHandler);
+            
+            onSnapshot(getUserCol("products"), (snap) => {
+                products = snap.docs.map(d => d.data()); renderProducts(); renderProductDropdowns();
+            }, errHandler);
+            
+            onSnapshot(getUserCol("customers"), (snap) => {
+                customers = snap.docs.map(d => d.data()); renderCustomers();
+            }, errHandler);
+            
+            onSnapshot(getUserCol("employees"), (snap) => {
+                employees = snap.docs.map(d => d.data()); renderEmployees(); renderEmployeeDropdownForSeller();
+            }, errHandler);
+            
+            onSnapshot(getUserCol("savedRemarks"), (snap) => {
+                savedRemarks = snap.docs.map(d => d.data()); renderSettingsRemarks(); renderRemarksCheckboxes();
+            }, errHandler);
+            
+            onSnapshot(getUserCol("documents"), (snap) => {
+                database = snap.docs.map(d => {
+                    let data = d.data();
+                    if(data.rawDate && data.rawDate.toDate) data.rawDate = data.rawDate.toDate();
+                    else if (data.rawDate && typeof data.rawDate === 'string') data.rawDate = new Date(data.rawDate);
+                    return data;
+                });
+                updateDashboard(); updateDocumentTable(); populateRefDocDatalist(); populateAllDocsDatalist();
+            }, errHandler);
+        }
+
+        function initApp() {
+            if (window.appInitialized) return;
+            initFirebaseData();
+            window.appInitialized = true;
+        }
+
+        // INIT UI ON LOAD
+        window.addEventListener('DOMContentLoaded', () => {
+            if($('login-form')) $('login-form').addEventListener('submit', handleLogin);
+        });
+
+    </script>
+</body>
+</html>
