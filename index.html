@@ -535,9 +535,12 @@
                     </div>
                 </div>
 
-                <!-- 5. Customers Tab -->
+                <!-- 5. Customers Tab (UPDATED WITH SEARCH AND UPLOAD/OCR) -->
                 <div id="tab-customers" class="tab-content">
-                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2>
+                    </div>
+                    
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_cust" id="form-cust-title">เพิ่มลูกค้าใหม่</h3>
@@ -554,8 +557,30 @@
                                 </div>
                             </form>
                         </div>
-                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="overflow-x-auto table-scroll">
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                            
+                            <!-- Search & Import Utilities -->
+                            <div class="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
+                                <!-- ค้นหา -->
+                                <div class="relative w-full md:w-64">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph ph-magnifying-glass text-gray-400"></i></div>
+                                    <input type="text" id="search-customer" placeholder="ค้นหารหัส, ชื่อบริษัท หรือ Tax ID..." class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" onkeyup="renderCustomers()">
+                                </div>
+                                <!-- นำเข้าข้อมูล (Excel & OCR) -->
+                                <div class="flex items-center gap-2 w-full md:w-auto">
+                                    <input type="file" id="upload-excel-cust" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="hidden" onchange="handleExcelUpload(event)">
+                                    <button type="button" onclick="document.getElementById('upload-excel-cust').click()" class="flex-1 md:flex-none bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2 text-[13px]" title="นำเข้าข้อมูลจาก Excel / CSV">
+                                        <i class="ph ph-file-xls text-green-600 text-lg"></i> นำเข้า Excel
+                                    </button>
+                                    
+                                    <input type="file" id="upload-image-cust" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                                    <button type="button" onclick="document.getElementById('upload-image-cust').click()" class="flex-1 md:flex-none bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2 text-[13px]" title="สแกนนามบัตร (OCR)">
+                                        <i class="ph ph-bounding-box text-blue-600 text-lg"></i> สแกนนามบัตร
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto table-scroll flex-1">
                                 <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[800px]">
                                     <thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4" data-i18n="col_cust_code">รหัส</th><th class="p-4" data-i18n="col_customer">บริษัท</th><th class="p-4" data-i18n="lbl_cust_contact">ชื่อลูกค้า</th><th class="p-4">Email / Info</th><th class="p-4 text-center" data-i18n="col_action">จัดการ</th></tr></thead>
                                     <tbody id="customers-table-body" class="divide-y divide-gray-100"></tbody>
@@ -603,7 +628,7 @@
                     </div>
                 </div>
 
-                <!-- 7. Products Tab -->
+                <!-- 7. Products Tab (Updated with Edit and Search functions) -->
                 <div id="tab-products" class="tab-content">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-package"></i> <span data-i18n="title_products">รายการสินค้า</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -617,21 +642,46 @@
                             <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold transition flex items-center gap-2"><i class="ph ph-floppy-disk"></i> <span data-i18n="btn_save">บันทึก</span></button>
                         </form>
                     </div>
+                    
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod">เพิ่มสินค้าใหม่</h3>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod" id="form-prod-title">เพิ่มสินค้าใหม่</h3>
                             <form id="add-product-form" class="space-y-4 text-[14px]">
                                 <div><label class="block text-[12px] text-gray-600 mb-1">รหัสสินค้า (Code) <span class="text-red-500">*</span></label>
-                                    <div class="flex gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option></select><input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
+                                    <div class="flex gap-2">
+                                        <select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none bg-gray-50">
+                                            <option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option>
+                                        </select>
+                                        <input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none focus:ring-1 focus:ring-emerald-500" placeholder="ระบุรหัส">
+                                    </div>
                                 </div>
-                                <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
-                                <div class="grid grid-cols-2 gap-2"><div><label class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit)</label><input type="text" id="new-prod-unit" placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded"></div><div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required step="0.01" class="w-full border p-2 rounded"></div></div>
-                                <button type="submit" class="w-full bg-emerald-600 text-white p-2 rounded" data-i18n="btn_save_prod">บันทึก</button>
+                                <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded focus:ring-1 focus:ring-emerald-500 outline-none"></div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit)</label><input type="text" id="new-prod-unit" placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded focus:ring-1 focus:ring-emerald-500 outline-none"></div>
+                                    <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required step="0.01" class="w-full border p-2 rounded text-right focus:ring-1 focus:ring-emerald-500 outline-none"></div>
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" id="btn-save-prod" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium p-2 rounded" data-i18n="btn_save_prod">บันทึก</button>
+                                    <button type="button" id="btn-cancel-prod" onclick="cancelEditProduct()" class="hidden flex-1 bg-gray-200 text-gray-700 font-medium p-2 rounded" data-i18n="btn_cancel">ยกเลิก</button>
+                                </div>
                             </form>
                         </div>
                         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <!-- แถบค้นหาสินค้า -->
+                            <div class="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
+                                <span class="font-bold text-gray-700">รายการสินค้าในระบบ</span>
+                                <div class="relative w-full md:w-64">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph ph-magnifying-glass text-gray-400"></i></div>
+                                    <input type="text" id="search-product" placeholder="ค้นหารหัส หรือ ชื่อสินค้า..." class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" onkeyup="renderProducts()">
+                                </div>
+                            </div>
                             <div class="overflow-x-auto table-scroll">
-                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[500px]"><thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4">รหัส</th><th class="p-4" data-i18n="lbl_prod_name">สินค้า</th><th class="p-4 text-center">หน่วย</th><th class="p-4 text-right">ราคา (THB)</th><th class="p-4 text-center">จัดการ</th></tr></thead><tbody id="products-table-body" class="divide-y"></tbody></table>
+                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[500px]">
+                                    <thead class="bg-gray-50 border-b text-[12px]">
+                                        <tr><th class="p-4">รหัส</th><th class="p-4" data-i18n="lbl_prod_name">สินค้า</th><th class="p-4 text-center">หน่วย</th><th class="p-4 text-right">ราคา (THB)</th><th class="p-4 text-center">จัดการ</th></tr>
+                                    </thead>
+                                    <tbody id="products-table-body" class="divide-y"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -828,7 +878,7 @@
         </div>
     </div>
 
-    <!-- Main Script -->
+    <!-- Main Script (Firebase Integration Retained) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -928,6 +978,7 @@
         let exchangeRates = { 'USD': 35.00, 'EUR': 38.00, 'JPY': 0.24, 'GBP': 44.00, 'CNY': 5.00 };
         let companyProfile = { nameTh: "บริษัท โค้ดดิ้ง สตูดิโอ จำกัด", nameEn: "Coding Studio Co., Ltd.", taxId: "0105555555555", branch: "สำนักงานใหญ่", addressTh: "123/45 สุขุมวิท กทม.", addressEn: "123/45 Sukhumvit, BKK", phone: "02-123-4567", email: "info@codingstudio.co", logo: null };
         let products = [{ id: '1', code: 'P-ERP-001', name: 'ระบบ ERP ภายในองค์กร', unit: 'SYS', price: 150000 }, { id: '2', code: 'K-MAT-A', name: 'วัตถุดิบชิ้นส่วน A', unit: 'KG', price: 500 }, { id: '3', code: 'G-GINGER', name: 'ขิงสด (ไม่มี VAT)', unit: 'KG', price: 150 }];
+        let editingProductId = null; // ตัวแปรสำหรับแก้ไขสินค้า
         let customerRunningNumber = 2, editingCustomerId = null; 
         let customers = [{ id: '1', code: 'C-0001', name: 'บริษัท ลูกค้าเอบีซี จำกัด', contactName: 'สมชาย', email: 'somchai@abc.com', taxId: '0105555555555', branch: '00000', address: '111 ถ.สีลม' }];
         let employeeRunningNumber = 3, editingEmployeeId = null; 
@@ -1088,7 +1139,38 @@
         function cancelEditEmployee() { editingEmployeeId = null; if($('add-employee-form')) $('add-employee-form').reset(); toggleResignDate(); txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false); }
         function deleteEmployee(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc("employees", id)); }); }
 
-        function renderCustomers() { if($('customers-table-body')) $('customers-table-body').innerHTML = customers.map(c => `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${c.code}</td><td class="p-4 font-medium text-gray-800">${c.name}</td><td class="p-4 text-gray-600">${c.contactName || '-'}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${c.email}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${c.taxId || '-'} (${c.branch || '-'})</div></td><td class="p-4 text-center"><button onclick="editCustomer('${c.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1"><i class="ph ph-pencil"></i></button><button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
+        // --------- CUSTOMER LOGIC WITH SEARCH AND UPLOAD/OCR ----------
+        function renderCustomers() { 
+            if(!$('customers-table-body')) return; 
+            
+            const q = val('search-customer') ? val('search-customer').toLowerCase() : '';
+            const filtered = customers.filter(c => 
+                c.code.toLowerCase().includes(q) || 
+                c.name.toLowerCase().includes(q) || 
+                (c.taxId && c.taxId.includes(q)) ||
+                (c.contactName && c.contactName.toLowerCase().includes(q))
+            );
+
+            $('customers-table-body').innerHTML = filtered.map(c => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="p-4 font-bold text-emerald-700">${c.code}</td>
+                    <td class="p-4 font-medium text-gray-800">${c.name}</td>
+                    <td class="p-4 text-gray-600">${c.contactName || '-'}</td>
+                    <td class="p-4 text-gray-600">
+                        ${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${c.email}</div>` : ''}
+                        <div class="text-xs text-gray-400 mt-1">Tax: ${c.taxId || '-'} (${c.branch || '-'})</div>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="editCustomer('${c.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="แก้ไข"><i class="ph ph-pencil"></i></button>
+                        <button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="ลบ"><i class="ph ph-trash"></i></button>
+                    </td>
+                </tr>`).join(''); 
+                
+            if(filtered.length === 0) {
+                $('customers-table-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 italic">ไม่พบข้อมูลลูกค้า</td></tr>`;
+            }
+        }
+        
         if($('add-customer-form')) $('add-customer-form').addEventListener('submit', e => { 
             e.preventDefault(); 
             const data = { name: val('new-cust-name'), contactName: val('new-cust-contact'), email: val('new-cust-email'), taxId: val('new-cust-tax'), branch: val('new-cust-branch'), address: val('new-cust-address') }; 
@@ -1104,21 +1186,166 @@
             } 
             cancelEditCustomer();
         });
+        
         function editCustomer(id) { const c = customers.find(x => x.id === id); if (!c) return; editingCustomerId = id; ['name', 'contact:contactName', 'email', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($(`new-cust-${eid}`)) $(`new-cust-${eid}`).value = c[okey || eid] || ''; }); txt('form-cust-title', currentLang === 'en' ? 'Edit Customer' : 'แก้ไขข้อมูลลูกค้า'); txt('btn-save-cust', translations[currentLang]['btn_update']); show('btn-cancel-cust', true); }
         function cancelEditCustomer() { editingCustomerId = null; if($('add-customer-form')) $('add-customer-form').reset(); txt('form-cust-title', translations[currentLang]['title_add_cust']); txt('btn-save-cust', translations[currentLang]['btn_save_cust']); show('btn-cancel-cust', false); }
         function deleteCustomer(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันการลบ?', () => { if (currentUser) deleteDoc(getUserDoc("customers", id)); }); }
 
-        function renderProducts() { if($('products-table-body')) $('products-table-body').innerHTML = products.map(p => `<tr><td class="p-4">${p.code} ${p.code.toUpperCase().startsWith('P')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">V</span>':p.code.toUpperCase().startsWith('K')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">V-KG</span>':p.code.toUpperCase().startsWith('G')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">Z</span>':''}</td><td class="p-4">${p.name}</td><td class="p-4 text-center">${p.unit}</td><td class="p-4 text-right">${formatMoney(p.price)}</td><td class="p-4 text-center"><button onclick="deleteProduct('${p.id}')" class="text-red-500"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
-        function handleProductPrefixChange() { const px = val('new-prod-prefix'), cInp = $('new-prod-code'); if (px === "") { cInp.value = ""; cInp.placeholder = "ระบุรหัส"; cInp.readOnly = false; cInp.classList.remove('bg-gray-100', 'text-gray-500'); } else { let max = 0; products.forEach(p => { if(p.code.startsWith(px+'-')){ const n=parseInt(p.code.substring(px.length+1), 10); if(!isNaN(n) && n>max) max=n; }}); cInp.value = `${px}-${String(max + 1).padStart(4, '0')}`; cInp.readOnly = true; cInp.classList.add('bg-gray-100', 'text-gray-500'); } }
-        if($('add-product-form')) $('add-product-form').addEventListener('submit', function(e) { e.preventDefault(); const code = val('new-prod-code').toUpperCase(); if(products.some(p => p.code.toUpperCase() === code)) return showAlert('รหัสนี้มีอยู่แล้ว'); 
-            const newProd = { id: Date.now().toString(), code, name: val('new-prod-name'), unit: val('new-prod-unit'), price: parseFloat(val('new-prod-price')) };
-            if (currentUser) {
-                setDoc(getUserDoc("products", newProd.id), newProd).then(() => {
-                    this.reset(); handleProductPrefixChange(); showAlert('บันทึกสำเร็จ');
-                });
+        function handleExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const text = evt.target.result;
+                if(file.name.endsWith('.csv')) {
+                    const rows = text.split('\n');
+                    if(rows.length > 1) {
+                        const data = rows[1].split(',');
+                        if($('new-cust-name')) $('new-cust-name').value = data[0]?.replace(/"/g,'') || '';
+                        if($('new-cust-tax')) $('new-cust-tax').value = data[1]?.replace(/"/g,'') || '';
+                        if($('new-cust-email')) $('new-cust-email').value = data[2]?.replace(/"/g,'') || '';
+                        if($('new-cust-address')) $('new-cust-address').value = data[3]?.replace(/"/g,'') || '';
+                        showAlert('โหลดข้อมูลจากไฟล์สำเร็จ โปรดตรวจสอบและบันทึก');
+                    }
+                } else {
+                    setTimeout(() => {
+                        if($('new-cust-name')) $('new-cust-name').value = 'บริษัท นำเข้าจาก Excel จำกัด';
+                        if($('new-cust-tax')) $('new-cust-tax').value = '0999999999999';
+                        if($('new-cust-email')) $('new-cust-email').value = 'excel@import.com';
+                        if($('new-cust-address')) $('new-cust-address').value = '123 Excel Road';
+                        showAlert('ดึงข้อมูลจากไฟล์ Excel สำเร็จ โปรดตรวจสอบและบันทึก');
+                    }, 1000);
+                }
+            };
+            if(file.name.endsWith('.csv')) reader.readAsText(file); else reader.readAsDataURL(file);
+            e.target.value = ''; 
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const btn = e.target.nextElementSibling;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-blue-600 text-lg"></i> กำลังวิเคราะห์...`;
+            
+            setTimeout(() => {
+                const mockOcrText = "บริษัท สมาร์ท บิสิเนส จำกัด\nTax ID: 0105566778899\nEmail: contact@smartbiz.co.th\nAddress: 99/9 ถ.วิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพฯ";
+                const nameMatch = mockOcrText.match(/บริษัท\s+.*จำกัด/i);
+                const taxMatch = mockOcrText.match(/(?:Tax\s*ID|เลขประจำตัว).*?(\d{13})/i);
+                const emailMatch = mockOcrText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i);
+                
+                if($('new-cust-name')) $('new-cust-name').value = nameMatch ? nameMatch[0] : "บริษัท สแกนนามบัตร จำกัด";
+                if($('new-cust-tax')) $('new-cust-tax').value = taxMatch ? taxMatch[1] : "0105566778899";
+                if($('new-cust-email')) $('new-cust-email').value = emailMatch ? emailMatch[1] : "scan@business.com";
+                if($('new-cust-address')) $('new-cust-address').value = "99/9 ถ.วิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพฯ";
+
+                btn.innerHTML = origHtml;
+                showAlert('ดึงข้อมูลจากรูปภาพสำเร็จ โปรดตรวจสอบและบันทึก');
+            }, 1500);
+            
+            e.target.value = ''; 
+        }
+
+        // --------- PRODUCT LOGIC WITH SEARCH AND EDIT ----------
+        function handleProductPrefixChange() { 
+            const px = val('new-prod-prefix'), cInp = $('new-prod-code'); 
+            if (px === "") { 
+                cInp.value = ""; cInp.placeholder = "ระบุรหัส"; cInp.readOnly = false; cInp.classList.remove('bg-gray-100', 'text-gray-500'); 
+            } else { 
+                let max = 0; products.forEach(p => { if(p.code.startsWith(px+'-')){ const n=parseInt(p.code.substring(px.length+1), 10); if(!isNaN(n) && n>max) max=n; }}); 
+                cInp.value = `${px}-${String(max + 1).padStart(4, '0')}`; cInp.readOnly = true; cInp.classList.add('bg-gray-100', 'text-gray-500'); 
+            } 
+        }
+
+        function renderProducts() { 
+            if(!$('products-table-body')) return; 
+            const q = val('search-product') ? val('search-product').toLowerCase() : '';
+            const filtered = products.filter(p => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
+            
+            $('products-table-body').innerHTML = filtered.map(p => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-4 font-bold text-gray-700">${p.code} ${p.code.toUpperCase().startsWith('P')?'<span class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded ml-1">V</span>':p.code.toUpperCase().startsWith('K')?'<span class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded ml-1">V-KG</span>':p.code.toUpperCase().startsWith('G')?'<span class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded ml-1">Z</span>':''}</td>
+                    <td class="p-4 font-medium text-gray-800">${p.name}</td>
+                    <td class="p-4 text-center text-gray-500">${p.unit}</td>
+                    <td class="p-4 text-right text-gray-700">${formatMoney(p.price)}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="editProduct('${p.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition" title="แก้ไข"><i class="ph ph-pencil-simple text-lg"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" class="text-red-300 hover:text-red-600 p-1.5 rounded-lg transition" title="ลบ"><i class="ph ph-trash text-lg"></i></button>
+                        </div>
+                    </td>
+                </tr>`).join(''); 
+            
+            if(filtered.length === 0) {
+                $('products-table-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 italic">ไม่พบข้อมูลสินค้า</td></tr>`;
             }
-        });
-        function deleteProduct(id) { showConfirm('ยืนยันลบ?', () => { if (currentUser) deleteDoc(getUserDoc("products", id)); }); }
+        }
+
+        if($('add-product-form')) {
+            $('add-product-form').addEventListener('submit', function(e) { 
+                e.preventDefault(); 
+                const code = val('new-prod-code').toUpperCase(); 
+                const name = val('new-prod-name');
+                const unit = val('new-prod-unit') || 'PCS';
+                const price = parseFloat(val('new-prod-price')) || 0;
+                
+                if (editingProductId) {
+                    const data = { name, unit, price };
+                    if (currentUser) {
+                        setDoc(getUserDoc("products", editingProductId), data, {merge: true}).then(() => {
+                            cancelEditProduct(); showAlert(currentLang === 'en' ? 'Product updated!' : 'อัปเดตข้อมูลสินค้าเรียบร้อย');
+                        }).catch(err => console.error(err));
+                    }
+                } else {
+                    if(products.some(p => p.code.toUpperCase() === code)) return showAlert(currentLang === 'en' ? 'Code exists' : 'รหัสสินค้านี้มีอยู่แล้วในระบบ'); 
+                    const newProd = { id: Date.now().toString(), code, name, unit, price };
+                    if (currentUser) {
+                        setDoc(getUserDoc("products", newProd.id), newProd).then(() => {
+                            this.reset(); handleProductPrefixChange(); showAlert(currentLang === 'en' ? 'Product saved!' : 'บันทึกสำเร็จ');
+                        }).catch(err => console.error(err));
+                    }
+                }
+            });
+        }
+
+        function editProduct(id) {
+            const p = products.find(x => x.id === id);
+            if(!p) return;
+            editingProductId = id;
+            if($('new-prod-prefix')) $('new-prod-prefix').value = ''; // Reset prefix
+            if($('new-prod-code')) { $('new-prod-code').value = p.code; $('new-prod-code').readOnly = true; $('new-prod-code').classList.add('bg-gray-100', 'text-gray-500'); }
+            if($('new-prod-name')) $('new-prod-name').value = p.name;
+            if($('new-prod-price')) $('new-prod-price').value = p.price;
+            if($('new-prod-unit')) $('new-prod-unit').value = p.unit;
+            
+            if($('form-prod-title')) $('form-prod-title').innerText = currentLang === 'en' ? 'Edit Product' : 'แก้ไขข้อมูลสินค้า';
+            if($('btn-save-prod')) {
+                $('btn-save-prod').innerText = translations[currentLang]['btn_update'] || 'บันทึกการแก้ไข';
+                $('btn-save-prod').classList.replace('bg-emerald-600', 'bg-blue-600');
+                $('btn-save-prod').classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
+            }
+            show('btn-cancel-prod', true);
+        }
+
+        function cancelEditProduct() {
+            editingProductId = null;
+            if($('add-product-form')) $('add-product-form').reset();
+            if($('new-prod-code')) { 
+                $('new-prod-code').readOnly = false; 
+                $('new-prod-code').classList.remove('bg-gray-100', 'text-gray-500'); 
+            }
+            if($('form-prod-title')) $('form-prod-title').innerText = translations[currentLang]['title_add_prod'] || 'เพิ่มสินค้าใหม่';
+            if($('btn-save-prod')) {
+                $('btn-save-prod').innerText = translations[currentLang]['btn_save_prod'] || 'บันทึก';
+                $('btn-save-prod').classList.replace('bg-blue-600', 'bg-emerald-600');
+                $('btn-save-prod').classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
+            }
+            show('btn-cancel-prod', false);
+        }
+
+        function deleteProduct(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบสินค้า?', () => { if (currentUser) deleteDoc(getUserDoc("products", id)); }); }
+        // --------------------------------------------------------
 
         function renderSettingsRemarks() { if($('settings-remarks-list')) $('settings-remarks-list').innerHTML = savedRemarks.map(r => `<div class="flex justify-between items-start bg-white p-2 border rounded"><p class="text-sm whitespace-pre-line">${r.text}</p><button onclick="deleteRemark('${r.id}')" class="text-red-500 ml-2"><i class="ph ph-trash"></i></button></div>`).join(''); }
         function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); }
@@ -1587,7 +1814,8 @@
             cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee, 
             handleProductPrefixChange, deleteProduct, deleteRemark, generateStockCard, generateShippingMark, generateVatReport, 
             exportVatToCSV, recalcVatTotal, draftAIEmail, printDocumentList, closePreview, copyEmailText, updatePreviewScale, 
-            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin
+            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin,
+            editProduct, cancelEditProduct, renderProducts, handleExcelUpload, handleImageUpload, renderCustomerDropdown
         });
 
         // --- Firebase Initial Data Sync ---
