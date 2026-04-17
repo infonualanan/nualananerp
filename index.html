@@ -55,12 +55,14 @@
         .item-grid { display: grid; grid-template-columns: 2fr 3fr 1fr 1fr 1.5fr 1.5fr 1.5fr auto; gap: 0.5rem; align-items: center; }
         .vat-table th, .vat-table td { border: 1px solid #1f2937; }
         .double-underline { border-bottom: 3px double #047857; padding-bottom: 2px; }
+
         #vat-table-body td[contenteditable="true"]:hover { background-color: #fef08a; cursor: text; outline: 1px dashed #ca8a04; }
         #vat-table-body td[contenteditable="true"]:focus { background-color: #fff; outline: 2px solid #059669; }
     </style>
 </head>
 <body class="text-gray-800 h-screen bg-gray-50 overflow-hidden font-sans relative text-[12px]">
 
+    <!-- Alerts & Modals -->
     <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[14px]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all scale-100">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-4xl"></i></div>
@@ -82,6 +84,7 @@
         </div>
     </div>
 
+    <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 bg-[#042f24] flex items-center justify-center z-[200] transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-10 text-center transform scale-100 transition-transform relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
@@ -119,7 +122,9 @@
         </div>
     </div>
 
+    <!-- Main Application Container -->
     <div id="main-app" class="w-full h-full flex" style="display: none;">
+        <!-- Sidebar Navigation -->
         <nav class="w-[300px] bg-[#042f24] text-white flex flex-col shadow-2xl z-20 shrink-0 h-full text-[14px]">
             <div class="p-6 border-b border-white/5 shrink-0 relative">
                 <div class="flex justify-between items-start">
@@ -730,6 +735,7 @@
         </div>
     </div>
 
+    <!-- Preview Modal -->
     <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-center justify-center p-4 no-print">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col overflow-hidden">
             <div class="bg-gray-100 p-4 border-b flex justify-between items-center shrink-0">
@@ -800,6 +806,7 @@
         </div>
     </div>
 
+    <!-- Main Script (Firebase Integration Retained) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1097,17 +1104,17 @@
             if(!$('customers-table-body')) return; 
             const q = val('search-customer') ? val('search-customer').toLowerCase() : '';
             const filtered = customers.filter(c => 
-                c.code.toLowerCase().includes(q) || 
-                c.name.toLowerCase().includes(q) || 
+                (c.code && c.code.toLowerCase().includes(q)) || 
+                (c.name && c.name.toLowerCase().includes(q)) || 
                 (c.taxId && c.taxId.includes(q)) ||
                 (c.contactName && c.contactName.toLowerCase().includes(q))
             );
 
             $('customers-table-body').innerHTML = filtered.map(c => `
                 <tr class="hover:bg-gray-50 transition group">
-                    <td class="p-4 font-bold text-emerald-700">${c.code}</td>
+                    <td class="p-4 font-bold text-emerald-700">${c.code || '-'}</td>
                     <td class="p-4">
-                        <div class="font-bold text-gray-800">${c.name}</div>
+                        <div class="font-bold text-gray-800">${c.name || '-'}</div>
                         <div class="text-[10px] text-gray-400 uppercase">${c.address || '-'}</div>
                     </td>
                     <td class="p-4 text-gray-600 font-medium">${c.contactName || '-'}</td>
@@ -1135,7 +1142,7 @@
                 if (currentUser) setDoc(getUserDoc("customers", editingCustomerId), data, {merge: true});
                 showAlert(currentLang === 'en' ? 'Updated!' : 'อัปเดตสำเร็จ!'); 
             } else { 
-                let max = 0; customers.forEach(c => { let n = parseInt(c.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; });
+                let max = 0; customers.forEach(c => { if(c.code) { let n = parseInt(c.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; } });
                 const code = 'C-' + String(max + 1).padStart(4, '0');
                 const newCust = { id: Date.now().toString(), code, ...data };
                 if (currentUser) setDoc(getUserDoc("customers", newCust.id), newCust);
@@ -1207,7 +1214,7 @@
                     const newId = Date.now().toString() + '-' + importedCount;
                     
                     const customerData = {
-                        id: newId,
+                        id: newId, // Explicitly set ID for imported data
                         code: code, name: name, contactName: pic, address: address,
                         phone: tel, email: email, taxId: tax, branch: '00000'
                     };
@@ -1927,24 +1934,29 @@
             }, errHandler);
             
             onSnapshot(getUserCol("products"), (snap) => {
-                products = snap.docs.map(d => d.data()); renderProducts(); renderProductDropdowns();
+                products = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
+                renderProducts(); renderProductDropdowns();
             }, errHandler);
             
             onSnapshot(getUserCol("customers"), (snap) => {
-                customers = snap.docs.map(d => d.data()); renderCustomers();
+                customers = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
+                renderCustomers();
             }, errHandler);
             
             onSnapshot(getUserCol("employees"), (snap) => {
-                employees = snap.docs.map(d => d.data()); renderEmployees(); renderEmployeeDropdownForSeller();
+                employees = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
+                renderEmployees(); renderEmployeeDropdownForSeller();
             }, errHandler);
             
             onSnapshot(getUserCol("savedRemarks"), (snap) => {
-                savedRemarks = snap.docs.map(d => d.data()); renderSettingsRemarks(); renderRemarksCheckboxes();
+                savedRemarks = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
+                renderSettingsRemarks(); renderRemarksCheckboxes();
             }, errHandler);
             
             onSnapshot(getUserCol("documents"), (snap) => {
                 database = snap.docs.map(d => {
                     let data = d.data();
+                    data.id = d.id; // Bind Firebase ID to Document Object
                     if(data.rawDate && data.rawDate.toDate) data.rawDate = data.rawDate.toDate();
                     else if (data.rawDate && typeof data.rawDate === 'string') data.rawDate = new Date(data.rawDate);
                     return data;
