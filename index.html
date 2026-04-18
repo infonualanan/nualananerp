@@ -17,14 +17,17 @@
         .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         .sidebar-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
 
+        /* ปรับปรุง Scrollbar แนวนอนและแนวตั้งให้ "หนา สีเขียว และลากง่าย" ในทุกๆ หน้า */
         .table-scroll::-webkit-scrollbar, .preview-scroll::-webkit-scrollbar { height: 16px; width: 16px; }
         .table-scroll::-webkit-scrollbar-track, .preview-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 8px; border: 3px solid #f8fafc; }
         .table-scroll::-webkit-scrollbar-thumb, .preview-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 8px; border: 3px solid #e2e8f0; }
         .table-scroll:hover::-webkit-scrollbar-thumb, .preview-scroll:hover::-webkit-scrollbar-thumb { background: #059669; }
 
+        /* PRINT STYLES FIX */
         @media print {
             @page { size: A4; margin: 0 !important; }
             html, body { width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; background-color: white !important; overflow: hidden !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
             body.modal-open nav, body.modal-open header, body.modal-open > div.flex-1 > main > div.tab-content, body.modal-open #custom-alert-modal, body.modal-open #custom-confirm-modal { display: none !important; }
             body.modal-open > div.flex-1, body.modal-open main { display: block !important; position: static !important; width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
             body.modal-open #document-preview-modal { display: block !important; position: absolute !important; top: 0 !important; left: 0 !important; width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; background: white !important; z-index: 9999 !important; }
@@ -35,14 +38,17 @@
             body.modal-open #paper-preview { width: 210mm !important; height: 297mm !important; max-width: 210mm !important; max-height: 297mm !important; margin: 0 !important; padding: 10mm !important; border: none !important; box-shadow: none !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; page-break-after: avoid !important; page-break-before: avoid !important; page-break-inside: avoid !important; transform: scale(1) !important; transform-origin: top left !important; position: static !important; }
             body.modal-open #paper-preview .table-scroll { overflow: visible !important; margin-bottom: 0 !important; padding-bottom: 0 !important; }
             body.modal-open #paper-preview table { min-width: 100% !important; width: 100% !important; }
+
             body:not(.modal-open) nav, body:not(.modal-open) header, body:not(.modal-open) .no-print { display: none !important; }
             body:not(.modal-open) .tab-content:not(.active) { display: none !important; }
             body:not(.modal-open) .tab-content.active { display: block !important; }
             body:not(.modal-open) html, body:not(.modal-open) body { height: auto !important; width: 100% !important; overflow: visible !important; }
             body:not(.modal-open) .flex-1, body:not(.modal-open) main { display: block !important; height: auto !important; width: 100% !important; padding: 0 !important; overflow: visible !important; }
+
             body:not(.modal-open) .table-scroll { overflow: visible !important; }
             body:not(.modal-open) table.vat-table { min-width: 100% !important; width: 100% !important; font-size: 11px !important; }
             body:not(.modal-open) table.vat-table th, body:not(.modal-open) table.vat-table td { padding: 4px !important; white-space: normal !important; word-wrap: break-word; }
+
             table { page-break-inside: auto; width: 100% !important; }
             tr { page-break-inside: avoid; page-break-after: auto; }
             thead { display: table-header-group; }
@@ -98,15 +104,19 @@
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">อีเมล (Email)</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph ph-envelope text-gray-400 text-lg"></i></div>
-                        <input type="email" id="login-username" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition bg-gray-50" placeholder="user@example.com">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-envelope text-gray-400 text-lg"></i>
+                        </div>
+                        <input type="email" id="login-username" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-gray-50" placeholder="user@example.com" value="">
                     </div>
                 </div>
                 <div>
                     <label class="block font-bold text-gray-700 mb-1">รหัสผ่าน (Password)</label>
                     <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph ph-lock text-gray-400 text-lg"></i></div>
-                        <input type="password" id="login-password" required minlength="6" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition bg-gray-50" placeholder="••••••••">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-lock text-gray-400 text-lg"></i>
+                        </div>
+                        <input type="password" id="login-password" required minlength="6" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-gray-50" placeholder="••••••••" value="">
                     </div>
                 </div>
                 <div id="login-error" class="text-red-500 text-[13px] text-center hidden font-medium bg-red-50 py-2 rounded">
@@ -275,14 +285,10 @@
             </div>
         </nav>
 
+        <!-- Content Area -->
         <div class="flex-1 flex flex-col overflow-hidden relative z-10">
             <header class="bg-white h-16 shadow-sm border-b border-gray-100 flex justify-between items-center px-8 shrink-0 no-print text-[14px]">
                 <div class="flex items-center gap-4">
-                    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1 border border-gray-200 mr-2">
-                        <button id="btn-nav-back" onclick="goBack()" class="p-1.5 rounded-md hover:bg-white hover:shadow-sm transition text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed" title="ย้อนกลับ (Back)"><i class="ph ph-caret-left text-lg"></i></button>
-                        <button id="btn-nav-forward" onclick="goForward()" class="p-1.5 rounded-md hover:bg-white hover:shadow-sm transition text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed" title="ไปข้างหน้า (Forward)"><i class="ph ph-caret-right text-lg"></i></button>
-                    </div>
-
                     <div class="h-8 w-8 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center"><i class="ph ph-buildings text-lg"></i></div>
                     <div>
                         <h2 class="text-[14px] font-bold text-gray-800" id="header-company-name">บริษัท โค้ดดิ้ง สตูดิโอ จำกัด</h2>
@@ -291,6 +297,7 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <button class="text-gray-400 hover:text-emerald-600 transition relative"><i class="ph ph-bell text-xl"></i><span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span></button>
+                    <!-- ปุ่ม Logout -->
                     <button onclick="doLogout()" class="text-gray-400 hover:text-red-500 transition" title="ออกจากระบบ"><i class="ph ph-sign-out text-xl"></i></button>
                     <div class="h-8 w-8 bg-emerald-600 rounded-full flex items-center justify-center text-[14px] font-bold text-white border-2 border-white shadow-sm cursor-pointer hover:bg-emerald-700 transition">CS</div>
                 </div>
@@ -298,6 +305,7 @@
 
             <main class="flex-1 overflow-y-auto p-8 relative bg-gray-50/50">
 
+                <!-- 1. Dashboard Tab -->
                 <div id="tab-dashboard" class="tab-content text-[14px]">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-chart-bar"></i> <span data-i18n="title_dashboard">ภาพรวมธุรกิจ (Executive Dashboard)</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -312,6 +320,7 @@
                     </div>
                 </div>
 
+                <!-- 2. Company Profile Tab -->
                 <div id="tab-company-profile" class="tab-content text-[14px]">
                     <div class="max-w-4xl mx-auto">
                         <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-buildings"></i> <span data-i18n="menu_company">ข้อมูลพื้นฐานบริษัท</span></h2>
@@ -338,6 +347,7 @@
                     </div>
                 </div>
 
+                <!-- 3. Create Document Tab -->
                 <div id="tab-create-doc" class="tab-content text-[14px]">
                     <div class="max-w-6xl mx-auto">
                         <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-file-plus"></i> <span data-i18n="title_create_doc">สร้างเอกสารใหม่</span></h2>
@@ -410,6 +420,7 @@
                                 </div>
                             </div>
 
+                            <!-- Specific Document Detail Containers -->
                             <div id="qt-details-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
                                 <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-calendar-blank"></i> <span data-i18n="qt_details">เงื่อนไขใบเสนอราคา</span></h3>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4"><div><label class="block text-[12px] font-medium text-purple-700 mb-1" data-i18n="valid_until">กำหนดยืนราคา</label><input type="date" id="doc-expire-date" class="w-full border border-purple-300 rounded p-2 outline-none"></div></div>
@@ -431,6 +442,7 @@
                                 </div>
                             </div>
 
+                            <!-- Payslip Deductions (WHT & SSO) -->
                             <div id="payslip-deductions-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
                                 <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-minus-circle"></i> รายการหักเพิ่มเติม (Deductions) สำหรับสลิปเงินเดือน</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -446,6 +458,7 @@
                                 <p class="text-[10px] text-purple-600 mt-2">* ระบบจะคำนวณ % จากยอดเงินเดือนรวม (Gross Salary) เพื่อนำไปแสดงผลที่ส่วนท้ายสลิป</p>
                             </div>
 
+                            <!-- Line Items -->
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4 mt-4" data-i18n="title_items">รายละเอียดรายการ (Line Items)</h3>
                                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm overflow-x-auto table-scroll">
@@ -488,6 +501,7 @@
                                 </div>
                             </div>
 
+                            <!-- Remarks -->
                             <div>
                                 <h3 class="text-[14px] font-semibold text-gray-700 mb-2" data-i18n="label_select_remarks">เลือกข้อความหมายเหตุท้ายบิล</h3>
                                 <input type="text" id="search-remark" placeholder="🔍 ค้นหาหมายเหตุ..." class="w-full border border-gray-300 rounded-t-lg p-2 text-[13px] outline-none focus:ring-2 focus:ring-emerald-500 border-b-0" onkeyup="filterRemarks()">
@@ -501,6 +515,7 @@
                     </div>
                 </div>
 
+                <!-- 4. Documents List Tab -->
                 <div id="tab-document-list" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-files"></i> <span data-i18n="title_doc_list">คลังเอกสารทั้งหมด</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -520,11 +535,9 @@
                     </div>
                 </div>
 
+                <!-- 5. Customers Tab -->
                 <div id="tab-customers" class="tab-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2>
-                    </div>
-                    
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2></div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_cust" id="form-cust-title">เพิ่มลูกค้าใหม่</h3>
@@ -541,27 +554,8 @@
                                 </div>
                             </form>
                         </div>
-                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                            
-                            <div class="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
-                                <div class="relative w-full md:w-64">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph ph-magnifying-glass text-gray-400"></i></div>
-                                    <input type="text" id="search-customer" placeholder="ค้นหารหัส, ชื่อบริษัท หรือ Tax ID..." class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" onkeyup="renderCustomers()">
-                                </div>
-                                <div class="flex items-center gap-2 w-full md:w-auto">
-                                    <input type="file" id="upload-excel-cust" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" class="hidden" onchange="handleExcelUpload(event)">
-                                    <button type="button" onclick="document.getElementById('upload-excel-cust').click()" class="flex-1 md:flex-none bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2 text-[13px]" title="นำเข้าข้อมูลจาก Excel / CSV">
-                                        <i class="ph ph-file-xls text-green-600 text-lg"></i> นำเข้า Excel
-                                    </button>
-                                    
-                                    <input type="file" id="upload-image-cust" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                                    <button type="button" onclick="document.getElementById('upload-image-cust').click()" class="flex-1 md:flex-none bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-lg font-medium shadow-sm transition flex items-center justify-center gap-2 text-[13px]" title="สแกนนามบัตร (OCR)">
-                                        <i class="ph ph-bounding-box text-blue-600 text-lg"></i> สแกนนามบัตร
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="overflow-x-auto table-scroll flex-1">
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto table-scroll">
                                 <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[800px]">
                                     <thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4" data-i18n="col_cust_code">รหัส</th><th class="p-4" data-i18n="col_customer">บริษัท</th><th class="p-4" data-i18n="lbl_cust_contact">ชื่อลูกค้า</th><th class="p-4">Email / Info</th><th class="p-4 text-center" data-i18n="col_action">จัดการ</th></tr></thead>
                                     <tbody id="customers-table-body" class="divide-y divide-gray-100"></tbody>
@@ -571,6 +565,7 @@
                     </div>
                 </div>
                 
+                <!-- 6. Employees Tab -->
                 <div id="tab-employees" class="tab-content">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-identification-card"></i> <span data-i18n="title_employees">ฐานข้อมูลพนักงาน</span></h2></div>
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -608,6 +603,7 @@
                     </div>
                 </div>
 
+                <!-- 7. Products Tab -->
                 <div id="tab-products" class="tab-content">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-package"></i> <span data-i18n="title_products">รายการสินค้า</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -621,50 +617,27 @@
                             <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold transition flex items-center gap-2"><i class="ph ph-floppy-disk"></i> <span data-i18n="btn_save">บันทึก</span></button>
                         </form>
                     </div>
-                    
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod" id="form-prod-title">เพิ่มสินค้าใหม่</h3>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod">เพิ่มสินค้าใหม่</h3>
                             <form id="add-product-form" class="space-y-4 text-[14px]">
                                 <div><label class="block text-[12px] text-gray-600 mb-1">รหัสสินค้า (Code) <span class="text-red-500">*</span></label>
-                                    <div class="flex gap-2">
-                                        <select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none bg-gray-50">
-                                            <option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option>
-                                        </select>
-                                        <input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none focus:ring-1 focus:ring-emerald-500" placeholder="ระบุรหัส">
-                                    </div>
+                                    <div class="flex gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option></select><input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
                                 </div>
-                                <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded focus:ring-1 focus:ring-emerald-500 outline-none"></div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div><label class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit)</label><input type="text" id="new-prod-unit" placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded focus:ring-1 focus:ring-emerald-500 outline-none"></div>
-                                    <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required step="0.01" class="w-full border p-2 rounded text-right focus:ring-1 focus:ring-emerald-500 outline-none"></div>
-                                </div>
-                                <div class="flex gap-2 pt-2">
-                                    <button type="submit" id="btn-save-prod" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium p-2 rounded" data-i18n="btn_save_prod">บันทึก</button>
-                                    <button type="button" id="btn-cancel-prod" onclick="cancelEditProduct()" class="hidden flex-1 bg-gray-200 text-gray-700 font-medium p-2 rounded" data-i18n="btn_cancel">ยกเลิก</button>
-                                </div>
+                                <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
+                                <div class="grid grid-cols-2 gap-2"><div><label class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit)</label><input type="text" id="new-prod-unit" placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded"></div><div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required step="0.01" class="w-full border p-2 rounded"></div></div>
+                                <button type="submit" class="w-full bg-emerald-600 text-white p-2 rounded" data-i18n="btn_save_prod">บันทึก</button>
                             </form>
                         </div>
                         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="p-4 bg-gray-50 border-b flex flex-col md:flex-row justify-between items-center gap-4">
-                                <span class="font-bold text-gray-700">รายการสินค้าในระบบ</span>
-                                <div class="relative w-full md:w-64">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="ph ph-magnifying-glass text-gray-400"></i></div>
-                                    <input type="text" id="search-product" placeholder="ค้นหารหัส หรือ ชื่อสินค้า..." class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg text-[13px] outline-none focus:ring-1 focus:ring-emerald-500" onkeyup="renderProducts()">
-                                </div>
-                            </div>
                             <div class="overflow-x-auto table-scroll">
-                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[500px]">
-                                    <thead class="bg-gray-50 border-b text-[12px]">
-                                        <tr><th class="p-4">รหัส</th><th class="p-4" data-i18n="lbl_prod_name">สินค้า</th><th class="p-4 text-center">หน่วย</th><th class="p-4 text-right">ราคา (THB)</th><th class="p-4 text-center">จัดการ</th></tr>
-                                    </thead>
-                                    <tbody id="products-table-body" class="divide-y"></tbody>
-                                </table>
+                                <table class="w-full text-left text-[14px] whitespace-nowrap min-w-[500px]"><thead class="bg-gray-50 border-b text-[12px]"><tr><th class="p-4">รหัส</th><th class="p-4" data-i18n="lbl_prod_name">สินค้า</th><th class="p-4 text-center">หน่วย</th><th class="p-4 text-right">ราคา (THB)</th><th class="p-4 text-center">จัดการ</th></tr></thead><tbody id="products-table-body" class="divide-y"></tbody></table>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- 8. Settings Tab -->
                 <div id="tab-settings" class="tab-content">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-gear"></i> <span data-i18n="menu_settings">ตั้งค่าระบบ</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -682,6 +655,7 @@
                     </div>
                 </div>
 
+                <!-- 9. Stock Card Tab -->
                 <div id="tab-stock-card" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-chart-line"></i> รายงานสต๊อกคงเหลือ</h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex gap-4 items-end no-print text-[14px]">
@@ -696,11 +670,13 @@
                     </div>
                 </div>
 
+                <!-- 10. Reports Center Tab -->
                 <div id="tab-reports-center" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2" id="ur-header-title">ศูนย์รวมรายงาน</h2><button onclick="window.print()" class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2"><i class="ph ph-printer"></i> พิมพ์รายงานนี้</button></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area"><div class="overflow-x-auto table-scroll"><table class="w-full text-left border-collapse text-[12px] whitespace-nowrap min-w-[800px]"><thead class="bg-gray-100 border-b border-gray-300"><tr><th class="p-4 border-r w-12 text-center">No.</th><th class="p-4 border-r w-24">วันที่</th><th class="p-4 border-r w-32">เลขที่อ้างอิง</th><th class="p-4 border-r">รายละเอียด</th><th class="p-4 text-right w-40">มูลค่า (THB)</th></tr></thead><tbody id="ur-table-body" class="divide-y divide-gray-100"></tbody><tfoot class="bg-gray-50 font-bold border-t-2 border-gray-800"><tr><td colspan="4" class="p-4 text-right border-r">ยอดรวมในรายงาน:</td><td class="p-4 text-right text-blue-700" id="ur-total-amt">0.00</td></tr></tfoot></table></div></div>
                 </div>
 
+                <!-- 11. Shipping Mark Tab -->
                 <div id="tab-shipping-mark" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-box-arrow-up"></i> พิมพ์ฉลากกล่อง</h2></div>
                     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6 flex gap-4 items-end no-print text-[14px]">
@@ -709,6 +685,7 @@
                     <div id="shm-print-area" class="grid grid-cols-1 md:grid-cols-2 gap-8 print-area"><div class="p-8 text-center text-gray-400 border-2 border-dashed rounded-xl">เลือกเอกสารเพื่อสร้าง Shipping Mark</div></div>
                 </div>
 
+                <!-- 12. VAT Report Tab -->
                 <div id="tab-vat-report" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-receipt"></i> <span data-i18n="title_vat_report">รายงานภาษี</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-wrap gap-4 items-end no-print text-[14px]">
@@ -731,85 +708,130 @@
                     </div>
                 </div>
 
-            </main>
-        </div>
-    </div>
+                <!-- Preview Modal -->
+                <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[12px]">
+                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[95vh] relative flex flex-col overflow-hidden">
+                        <div class="shrink-0 bg-gray-100 p-4 border-b flex justify-between items-center z-10 no-print">
+                            <div class="flex items-center gap-4">
+                                <h3 class="font-bold text-gray-700 flex items-center gap-2 text-[14px]"><i class="ph ph-file-search text-xl"></i> <span data-i18n="title_preview">ตัวอย่างเอกสาร</span></h3>
+                                
+                                <!-- Scale Slider Area -->
+                                <div class="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-lg border border-gray-300 shadow-sm ml-2">
+                                    <i class="ph ph-magnifying-glass-plus text-gray-500"></i>
+                                    <input type="range" id="preview-scale-slider" min="0.4" max="1.2" step="0.05" value="0.8" class="w-24 accent-emerald-600 cursor-pointer" oninput="updatePreviewScale(this.value)">
+                                    <span id="scale-percent" class="text-[10px] font-bold text-gray-600 min-w-[30px]">80%</span>
+                                </div>
 
-    <!-- Preview Modal -->
-    <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-center justify-center p-4 no-print">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col overflow-hidden">
-            <div class="bg-gray-100 p-4 border-b flex justify-between items-center shrink-0">
-                <div class="flex items-center gap-4">
-                    <h3 class="font-bold">ตัวอย่างเอกสาร</h3>
-                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded border">
-                        <i class="ph ph-magnifying-glass-plus"></i>
-                        <input type="range" min="0.4" max="1.5" step="0.1" value="0.9" class="w-24 accent-emerald-600" oninput="updatePreviewScale(this.value)">
-                        <span id="scale-percent" class="text-xs font-bold w-10">90%</span>
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="draftAIEmail()" class="bg-purple-100 text-purple-700 px-4 py-2 rounded font-bold flex items-center gap-1"><i class="ph ph-magic-wand"></i> ร่างเมล์ (AI)</button>
-                    <button onclick="window.print()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold flex items-center gap-1"><i class="ph ph-printer"></i> พิมพ์</button>
-                    <button onclick="closePreview()" class="bg-red-500 text-white px-4 py-2 rounded font-bold">ปิด</button>
-                </div>
-            </div>
-            
-            <div id="ai-email-container" class="hidden bg-purple-50 p-4 border-b border-purple-200 relative">
-                <button onclick="document.getElementById('ai-email-container').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="ph ph-x"></i></button>
-                <h4 class="font-bold text-purple-800 mb-2">AI Email Draft</h4>
-                <textarea id="ai-email-body" rows="6" class="w-full border border-purple-200 rounded p-3 text-sm focus:outline-none"></textarea>
-                <div class="text-right mt-2"><button onclick="copyEmailText()" class="text-xs text-purple-700 font-bold underline">Copy to Clipboard</button></div>
-            </div>
-
-            <div class="flex-1 overflow-auto bg-gray-200 flex justify-center preview-scroll p-8">
-                <div id="paper-wrapper" class="bg-white shadow-2xl origin-top transition-transform duration-200" style="width: 210mm; height: 297mm; transform: scale(0.9);">
-                    <div id="paper-preview" class="p-[20mm] flex flex-col h-full">
-                        <div class="grid grid-cols-2 gap-4 mb-8">
-                            <div>
-                                <h1 id="preview-company-name" class="font-bold text-xl"></h1>
-                                <p id="preview-company-tax" class="text-sm"></p>
+                                <select id="doc-copy-type" class="border border-gray-300 rounded p-1.5 outline-none font-medium shadow-sm" onchange="document.getElementById('preview-copy-type').innerText = this.value">
+                                    <option value="ต้นฉบับ (Original)">ต้นฉบับ (Original)</option>
+                                    <option value="สำเนา (Copy)">สำเนา (Copy)</option>
+                                </select>
                             </div>
-                            <div class="text-right">
-                                <h2 id="preview-doc-name" class="text-2xl font-black text-gray-800 uppercase tracking-tighter"></h2>
-                                <p id="preview-doc-no" class="font-bold text-red-600 mt-2"></p>
-                                <p id="preview-date" class="text-sm"></p>
+                            <div class="flex gap-2">
+                                <button onclick="draftAIEmail()" class="bg-purple-100 text-purple-700 px-4 py-2 rounded shadow-sm font-bold flex items-center gap-2"><i class="ph ph-magic-wand text-lg"></i> <span data-i18n="btn_draft_email">ร่างอีเมล (AI)</span></button>
+                                <button onclick="printDocumentList(currentlyPreviewingDoc.docNo)" class="bg-emerald-600 text-white px-4 py-2 rounded shadow font-bold flex items-center gap-2"><i class="ph ph-printer text-lg"></i> <span data-i18n="btn_print">พิมพ์</span></button>
+                                <button onclick="closePreview()" class="bg-red-100 text-red-700 px-4 py-2 rounded"><i class="ph ph-x"></i></button>
                             </div>
                         </div>
-                        <div class="mb-8 border p-4 rounded bg-gray-50">
-                            <p class="text-xs font-bold text-gray-400 uppercase">Customer / ลูกค้า</p>
-                            <p id="preview-customer-name" class="font-bold text-lg"></p>
+                        
+                        <div id="ai-email-container" class="hidden bg-purple-50 p-4 border-b border-purple-200 absolute w-full z-20 no-print">
+                            <button onclick="document.getElementById('ai-email-container').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="ph ph-x"></i></button>
+                            <h4 class="font-bold text-purple-800 mb-2 flex items-center gap-2 text-[14px]"><i class="ph ph-robot"></i> AI Email Draft</h4>
+                            <div class="mb-2"><label class="text-xs text-purple-700 font-bold">To:</label><input type="text" id="ai-email-to" class="w-full border border-purple-200 rounded p-1 focus:outline-none" readonly></div>
+                            <textarea id="ai-email-body" rows="6" wrap="off" style="white-space: pre !important; overflow-x: scroll !important; overflow-y: scroll !important;" class="w-full border border-purple-300 rounded p-3 focus:outline-none preview-scroll resize-none" readonly></textarea>
+                            <div class="mt-2 text-right"><button onclick="copyEmailText()" class="text-purple-700 font-medium hover:underline"><i class="ph ph-copy"></i> Copy to Clipboard</button></div>
                         </div>
-                        <table class="w-full border-collapse border-y border-gray-800">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="p-2 text-center border-b">#</th>
-                                    <th class="p-2 text-left border-b">รายละเอียด</th>
-                                    <th class="p-2 text-center border-b">จำนวน</th>
-                                    <th class="p-2 text-right border-b">หน่วยละ</th>
-                                    <th class="p-2 text-right border-b">รวมเงิน</th>
-                                </tr>
-                            </thead>
-                            <tbody id="preview-items-body"></tbody>
-                        </table>
-                        <div class="mt-auto pt-8 border-t border-dashed">
-                            <div class="flex justify-end">
-                                <div class="w-64 space-y-1">
-                                    <div class="flex justify-between text-sm"><span>มูลค่าก่อนภาษี:</span><span id="preview-sub"></span></div>
-                                    <div class="flex justify-between text-sm"><span>ภาษีมูลค่าเพิ่ม (7%):</span><span id="preview-vat"></span></div>
-                                    <div class="flex justify-between text-lg font-bold border-t pt-1"><span>ยอดสุทธิรวม:</span><span id="preview-grand"></span></div>
+                        
+                        <div class="flex-1 overflow-auto bg-gray-300 preview-scroll" style="text-align: center; white-space: nowrap;">
+                            <div class="inline-block text-left align-top p-4 md:p-8 transition-all duration-200" style="white-space: normal;">
+                                <div id="paper-wrapper" class="transition-all duration-200 bg-white relative shadow-2xl" style="width: calc(210mm * 0.8); height: calc(297mm * 0.8);">
+                                    <div id="paper-preview" class="bg-white relative leading-tight flex flex-col overflow-hidden" style="width: 210mm; height: 297mm; padding: 10mm; box-sizing: border-box; transform: scale(0.8); transform-origin: top left; position: absolute; top: 0; left: 0;">
+                                        <div id="preview-copy-type" class="absolute top-6 right-8 font-bold text-gray-500 tracking-wide border-b border-gray-300 pb-1">ต้นฉบับ (Original)</div>
+                                        <div id="preview-stamp-container"></div>
+                                        
+                                        <div class="shrink-0 mb-2">
+                                            <div class="grid grid-cols-[120px_1fr_120px] items-center relative z-10 mb-2 gap-4 mt-2">
+                                                <div class="text-left flex items-center justify-start h-16"><img id="preview-company-logo" src="" class="hidden max-h-full max-w-full object-contain" alt="Logo"></div>
+                                                <div class="text-center">
+                                                    <h1 class="text-[14px] font-bold text-gray-900" id="preview-company-name"></h1>
+                                                    <p class="text-[12px] text-gray-700 mt-1" id="preview-company-addr"></p>
+                                                    <p class="text-[12px] text-gray-700 mt-0.5"><span id="preview-company-tax-label"></span> <span id="pv-comp-tax"></span> | <span id="preview-company-tel-label"></span> <span id="pv-comp-phone"></span></p>
+                                                </div>
+                                                <div></div>
+                                            </div>
+                                            <div class="border-b border-gray-800 mb-2"></div>
+                                            
+                                            <div class="text-center mb-3 relative z-10"><h2 id="preview-doc-name" class="inline-block bg-gray-50 border border-gray-200 rounded py-1 px-6 text-[14px] font-bold text-gray-900 uppercase tracking-wide shadow-sm"></h2></div>
+                                            
+                                            <div class="grid grid-cols-2 gap-3 relative z-10 text-[12px]">
+                                                <div class="border border-gray-200 rounded p-2 bg-white">
+                                                    <p class="font-bold text-gray-800 mb-1" id="preview-cust-label"></p>
+                                                    <p id="preview-customer" class="font-bold text-gray-900 mb-0.5"></p>
+                                                    <p id="preview-customer-tax" class="text-gray-700"></p>
+                                                    <p id="preview-customer-branch" class="text-gray-700"></p>
+                                                    <p id="preview-customer-addr" class="text-gray-700 mt-0.5"></p>
+                                                </div>
+                                                <div class="border border-gray-200 rounded p-2 bg-white space-y-1">
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-docno-label"></span> <span id="preview-doc-no" class="font-bold text-red-600"></span></div>
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-date-label"></span> <span id="preview-date" class="text-gray-800"></span></div>
+                                                    <div class="flex hidden" id="preview-expire-container"><span class="w-28 font-bold text-purple-700" id="preview-expire-label"></span> <span id="preview-expire-date" class="font-bold text-purple-700"></span></div>
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-credit-label"></span> <span id="preview-credit" class="text-gray-800"></span></div>
+                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-ref-label"></span> <span id="preview-ref-no" class="text-gray-800"></span></div>
+                                                </div>
+                                            </div>
+                                            <div id="preview-export-details" class="hidden mt-2 p-2 border border-gray-200 rounded grid grid-cols-2 gap-1 bg-gray-50 relative z-10 text-[12px]">
+                                                <div><span class="font-bold">Incoterms:</span> <span id="preview-incoterm"></span></div>
+                                                <div><span class="font-bold">Port of Loading:</span> <span id="preview-pol"></span></div>
+                                                <div><span class="font-bold">Port of Discharge:</span> <span id="preview-pod"></span></div>
+                                                <div><span class="font-bold">Currency:</span> <span id="preview-currency-label"></span></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="relative z-10 mt-1 flex-1 flex flex-col min-h-0 text-[12px]">
+                                            <div class="overflow-x-auto w-full mb-2 table-scroll pb-2">
+                                                <table class="w-full border border-gray-200 shrink-0 min-w-[700px]">
+                                                    <thead class="bg-gray-50 border-b border-gray-200 text-gray-800">
+                                                        <tr><th class="py-1 px-2 text-center border-r border-gray-200 w-10">No.</th><th class="py-1 px-2 text-center border-r border-gray-200 w-20">Code</th><th class="py-1 px-2 text-left border-r border-gray-200" id="preview-col-desc">Description</th><th class="py-1 px-2 text-center border-r border-gray-200 w-12" id="preview-col-qty">Qty</th><th class="py-1 px-2 text-center border-r border-gray-200 w-12" id="preview-col-unit">Unit</th><th class="py-1 px-2 text-right border-r border-gray-200 w-20" id="preview-col-price">Price</th><th class="py-1 px-2 text-right border-r border-gray-200 w-16 text-red-600" id="preview-col-disc">Disc</th><th class="py-1 px-2 text-right w-24" id="preview-col-amt">Amount</th></tr>
+                                                    </thead>
+                                                    <tbody id="preview-items-body" class="divide-y divide-gray-100 bg-white"></tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            <div class="flex items-stretch justify-between gap-4 mb-2 shrink-0">
+                                                <div class="flex-1 border border-sky-200 bg-sky-50 rounded flex items-center justify-center p-2"><span id="preview-amount-words" class="text-[12px] font-bold text-sky-800 text-center italic"></span></div>
+                                                <div class="w-[45%] border border-gray-200">
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-subtotal-row"><span class="font-bold text-gray-700" id="preview-lbl-sub"></span><span class="font-bold text-gray-900" id="preview-subtotal"></span></div>
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-vat-row"><span class="font-bold text-gray-700" id="preview-lbl-vat"></span><span class="font-bold text-gray-900" id="preview-vat"></span></div>
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50 text-red-600 hidden" id="preview-sso-row"><span class="font-bold">หักประกันสังคม (<span id="preview-sso-pct"></span>%)</span><span class="font-bold" id="preview-sso"></span></div>
+                                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50 text-red-600 hidden" id="preview-wht-row"><span class="font-bold">หัก ณ ที่จ่าย (<span id="preview-wht-pct"></span>%)</span><span class="font-bold" id="preview-wht"></span></div>
+                                                    <div class="flex justify-between py-1.5 px-2 bg-gray-100 text-[14px]"><span class="font-bold text-gray-900" id="preview-lbl-grand"></span><span class="font-bold text-emerald-700 double-underline" id="preview-grandtotal"></span></div>
+                                                </div>
+                                            </div>
+                                            <div class="border border-gray-200 p-2 rounded bg-white flex-1 relative overflow-hidden mb-2">
+                                                <p class="font-bold text-gray-900 text-[14px] shrink-0 mb-1" id="preview-lbl-remark"></p>
+                                                <div class="absolute top-[28px] bottom-2 left-2 right-2 overflow-hidden"><div id="preview-remark" class="text-gray-800 text-[14px]" style="column-count: 2; column-gap: 20px; column-fill: auto; height: 100%; word-break: break-word; line-height: 1.4;"></div></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-between mt-auto pt-2 pb-2 relative z-10 shrink-0 print-footer">
+                                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-maker"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-maker"></p></div>
+                                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-auth"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-auth"></p></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+            </main>
         </div>
     </div>
 
-    <!-- Main Script (Firebase Integration Retained) -->
+    <!-- Main Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
@@ -861,7 +883,7 @@
         const getUserCol = (colName) => collection(db, 'artifacts', appId, 'users', currentUser.uid, colName);
         const getUserDoc = (colName, docId) => doc(db, 'artifacts', appId, 'users', currentUser.uid, colName, docId);
 
-        // Login Feature
+        // Login Feature with Auto-Register
         async function handleLogin(e) {
             e.preventDefault();
             const email = val('login-username');
@@ -874,7 +896,15 @@
             try {
                 await signInWithEmailAndPassword(auth, email, password);
             } catch (error) {
-                showLoginError("อีเมลหรือรหัสผ่านไม่ถูกต้อง!");
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+                    try {
+                        await createUserWithEmailAndPassword(auth, email, password);
+                    } catch (regError) {
+                        showLoginError(regError.message);
+                    }
+                } else {
+                    showLoginError("อีเมลหรือรหัสผ่านไม่ถูกต้อง!");
+                }
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -898,59 +928,11 @@
         let exchangeRates = { 'USD': 35.00, 'EUR': 38.00, 'JPY': 0.24, 'GBP': 44.00, 'CNY': 5.00 };
         let companyProfile = { nameTh: "บริษัท โค้ดดิ้ง สตูดิโอ จำกัด", nameEn: "Coding Studio Co., Ltd.", taxId: "0105555555555", branch: "สำนักงานใหญ่", addressTh: "123/45 สุขุมวิท กทม.", addressEn: "123/45 Sukhumvit, BKK", phone: "02-123-4567", email: "info@codingstudio.co", logo: null };
         let products = [{ id: '1', code: 'P-ERP-001', name: 'ระบบ ERP ภายในองค์กร', unit: 'SYS', price: 150000 }, { id: '2', code: 'K-MAT-A', name: 'วัตถุดิบชิ้นส่วน A', unit: 'KG', price: 500 }, { id: '3', code: 'G-GINGER', name: 'ขิงสด (ไม่มี VAT)', unit: 'KG', price: 150 }];
-        let editingProductId = null; 
         let customerRunningNumber = 2, editingCustomerId = null; 
         let customers = [{ id: '1', code: 'C-0001', name: 'บริษัท ลูกค้าเอบีซี จำกัด', contactName: 'สมชาย', email: 'somchai@abc.com', taxId: '0105555555555', branch: '00000', address: '111 ถ.สีลม' }];
         let employeeRunningNumber = 3, editingEmployeeId = null; 
         let employees = [{ id: '1', code: 'E-0001', name: 'คุณสมรัก ยอดขาย', position: 'พนักงานขาย', email: 's@co.th', phone: '081', joinDate: '2023-01-15', status: 'active', resignDate: '', salary: 25000, basePct: '5', taxId: '1111111111111' }, { id: '2', code: 'E-0002', name: 'พนักงาน ใหม่', position: 'บัญชี', email: 'a@co.th', phone: '-', joinDate: '2024-03-01', status: 'active', resignDate: '', salary: 18000, basePct: '', taxId: '' }];
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
-        let editingRemarkId = null;
-
-        // --- NAVIGATION HISTORY (Back/Forward) ---
-        let navHistory = ['dashboard'];
-        let navIndex = 0;
-        let isHistoryNav = false;
-
-        function updateNavButtons() {
-            const btnBack = $('btn-nav-back');
-            const btnFwd = $('btn-nav-forward');
-            if(btnBack) {
-                btnBack.disabled = navIndex <= 0;
-                btnBack.style.opacity = navIndex <= 0 ? '0.3' : '1';
-                btnBack.style.cursor = navIndex <= 0 ? 'not-allowed' : 'pointer';
-            }
-            if(btnFwd) {
-                btnFwd.disabled = navIndex >= navHistory.length - 1;
-                btnFwd.style.opacity = navIndex >= navHistory.length - 1 ? '0.3' : '1';
-                btnFwd.style.cursor = navIndex >= navHistory.length - 1 ? 'not-allowed' : 'pointer';
-            }
-        }
-
-        function goBack() {
-            if (navIndex > 0) {
-                navIndex--;
-                isHistoryNav = true;
-                switchTab(navHistory[navIndex]);
-                isHistoryNav = false;
-            }
-        }
-
-        function goForward() {
-            if (navIndex < navHistory.length - 1) {
-                navIndex++;
-                isHistoryNav = true;
-                switchTab(navHistory[navIndex]);
-                isHistoryNav = false;
-            }
-        }
-        
-        window.addEventListener('popstate', (e) => {
-            if(e.state && e.state.tab) {
-                isHistoryNav = true;
-                switchTab(e.state.tab);
-                isHistoryNav = false;
-            }
-        });
 
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
@@ -966,6 +948,28 @@
         const formatDateThai = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${parseInt(d.split('-')[0]) + 543}` : '';
         const formatDateEng = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${d.split('-')[0]}` : '';
 
+        function ThaiBahtTextHelper(numStr) {
+            let t = ""; let l = numStr.length; const words = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"]; const positions = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+            for(let i=0; i<l; i++) { let v = parseInt(numStr.charAt(i)); let p = l - i - 1; if(v !== 0) { if(p === 1 && v === 1) t += "สิบ"; else if(p === 1 && v === 2) t += "ยี่สิบ"; else if(p === 0 && v === 1 && l > 1 && numStr.charAt(i-1) !== '0') t += "เอ็ด"; else t += words[v] + positions[p]; } }
+            return t;
+        }
+        function numToWordsEN(n) {
+            if (n === 0) return 'Zero';
+            const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']; const g = ['', 'Thousand', 'Million', 'Billion'];
+            let word = ''; const makeGroup = (num) => { let str = ''; if (num > 99) { str += a[Math.floor(num/100)] + ' Hundred '; num %= 100; } if (num > 19) { str += b[Math.floor(num/10)] + ' '; num %= 10; } if (num > 0) str += a[num] + ' '; return str.trim(); };
+            let groupIdx = 0; while(n > 0) { let group = n % 1000; if(group > 0) word = makeGroup(group) + ' ' + g[groupIdx] + ' ' + word; n = Math.floor(n / 1000); groupIdx++; }
+            return word.trim();
+        }
+        function getAmountText(amount, currency, lang) {
+            let n = parseFloat(amount); if (isNaN(n)) return ""; n = Math.abs(n).toFixed(2); let major = parseInt(n.split('.')[0]); let minorStr = n.split('.')[1]; let minor = parseInt(minorStr);
+            const thC = { 'THB': ['บาท', 'สตางค์'], 'USD': ['ดอลลาร์สหรัฐ', 'เซนต์'], 'EUR': ['ยูโร', 'เซนต์'], 'JPY': ['เยน', ''], 'GBP': ['ปอนด์', 'เพนนี'], 'CNY': ['หยวน', 'เฟิน'] };
+            const enC = { 'THB': ['Baht', 'Satang'], 'USD': ['Dollars', 'Cents'], 'EUR': ['Euros', 'Cents'], 'JPY': ['Yen', ''], 'GBP': ['Pounds', 'Pence'], 'CNY': ['Yuan', 'Fen'] };
+            if (lang === 'en') { let cN = enC[currency] || [currency, 'Cents']; let res = numToWordsEN(major) + ' ' + cN[0]; if (minor > 0 && cN[1]) res += ' and ' + numToWordsEN(minor) + ' ' + cN[1]; else res += ' Only'; return `(${res})`; }
+            else { let cN = thC[currency] || [currency, 'เซนต์']; let res = ""; let mStr = major.toString(); if(major > 0) { if(mStr.length > 6) res += ThaiBahtTextHelper(mStr.substring(0, mStr.length - 6)) + "ล้าน" + ThaiBahtTextHelper(mStr.substring(mStr.length - 6)) + cN[0]; else res += ThaiBahtTextHelper(mStr) + cN[0]; } else res += "ศูนย์" + cN[0]; if(minor > 0 && cN[1]) res += ThaiBahtTextHelper(minorStr) + cN[1]; else res += "ถ้วน"; return `(${res})`; }
+        }
+        function formatTaxIdBoxes(taxId) { return (taxId || '').replace(/\D/g, '').padEnd(13, ' ').split('').slice(0,13).map(c => `<span class="border border-black w-6 h-8 flex items-center justify-center text-sm font-bold text-black">${c.trim()}</span>`).join(''); }
+
         function toggleSubmenu(id) { const el = $(id), icon = $('icon-' + id); if(el && icon) { el.classList.toggle('hidden'); icon.classList.replace(el.classList.contains('hidden') ? 'ph-caret-up' : 'ph-caret-down', el.classList.contains('hidden') ? 'ph-caret-down' : 'ph-caret-up'); } }
         function handleMenuClick(moduleType, category) {
             if (category === 'create') { switchTab('create-doc'); if($('doc-type')) $('doc-type').value = moduleType; checkDocType(); }
@@ -978,25 +982,10 @@
             const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
-                if(!window.docDateInitialized) {
-                    if($('doc-date')) $('doc-date').value = todayStr;
-                    window.docDateInitialized = true;
-                }
+                if($('doc-date')) $('doc-date').value = todayStr;
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
-                if($('items-container') && $('items-container').children.length === 0) addLineItem(); 
-                if(document.querySelectorAll('.remark-checkbox').length === 0) renderRemarksCheckboxes();
+                if($('items-container') && $('items-container').children.length === 0) addLineItem(); renderRemarksCheckboxes();
             }
-
-            // Navigation History Tracking
-            if (!isHistoryNav) {
-                history.pushState({ tab: tabId }, "", "?tab=" + tabId);
-                navHistory = navHistory.slice(0, navIndex + 1);
-                if (navHistory[navHistory.length - 1] !== tabId) {
-                    navHistory.push(tabId);
-                    navIndex++;
-                }
-            }
-            updateNavButtons();
         }
 
         function toggleLanguage() {
@@ -1099,42 +1088,7 @@
         function cancelEditEmployee() { editingEmployeeId = null; if($('add-employee-form')) $('add-employee-form').reset(); toggleResignDate(); txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false); }
         function deleteEmployee(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc("employees", id)); }); }
 
-        // --------- CUSTOMER LOGIC WITH CSV UPLOAD ----------
-        function renderCustomers() { 
-            if(!$('customers-table-body')) return; 
-            const q = val('search-customer') ? val('search-customer').toLowerCase() : '';
-            const filtered = customers.filter(c => 
-                (c.code && c.code.toLowerCase().includes(q)) || 
-                (c.name && c.name.toLowerCase().includes(q)) || 
-                (c.taxId && c.taxId.includes(q)) ||
-                (c.contactName && c.contactName.toLowerCase().includes(q))
-            );
-
-            $('customers-table-body').innerHTML = filtered.map(c => `
-                <tr class="hover:bg-gray-50 transition group">
-                    <td class="p-4 font-bold text-emerald-700">${c.code || '-'}</td>
-                    <td class="p-4">
-                        <div class="font-bold text-gray-800">${c.name || '-'}</div>
-                        <div class="text-[10px] text-gray-400 uppercase">${c.address || '-'}</div>
-                    </td>
-                    <td class="p-4 text-gray-600 font-medium">${c.contactName || '-'}</td>
-                    <td class="p-4 text-gray-500">
-                        <div class="flex items-center gap-1"><i class="ph ph-fingerprint"></i> ${c.taxId || '-'}</div>
-                        <div class="flex items-center gap-1 text-blue-500"><i class="ph ph-envelope"></i> ${c.email || '-'}</div>
-                    </td>
-                    <td class="p-4 text-center">
-                        <div class="flex justify-center gap-1">
-                            <button onclick="editCustomer('${c.id}')" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition"><i class="ph ph-pencil-simple"></i></button>
-                            <button onclick="deleteCustomer('${c.id}')" class="p-2 text-red-300 hover:text-red-500 rounded-lg transition"><i class="ph ph-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`).join(''); 
-                
-            if(filtered.length === 0) {
-                $('customers-table-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 italic">ไม่พบข้อมูลลูกค้า</td></tr>`;
-            }
-        }
-        
+        function renderCustomers() { if($('customers-table-body')) $('customers-table-body').innerHTML = customers.map(c => `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${c.code}</td><td class="p-4 font-medium text-gray-800">${c.name}</td><td class="p-4 text-gray-600">${c.contactName || '-'}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${c.email}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${c.taxId || '-'} (${c.branch || '-'})</div></td><td class="p-4 text-center"><button onclick="editCustomer('${c.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1"><i class="ph ph-pencil"></i></button><button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
         if($('add-customer-form')) $('add-customer-form').addEventListener('submit', e => { 
             e.preventDefault(); 
             const data = { name: val('new-cust-name'), contactName: val('new-cust-contact'), email: val('new-cust-email'), taxId: val('new-cust-tax'), branch: val('new-cust-branch'), address: val('new-cust-address') }; 
@@ -1142,7 +1096,7 @@
                 if (currentUser) setDoc(getUserDoc("customers", editingCustomerId), data, {merge: true});
                 showAlert(currentLang === 'en' ? 'Updated!' : 'อัปเดตสำเร็จ!'); 
             } else { 
-                let max = 0; customers.forEach(c => { if(c.code) { let n = parseInt(c.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; } });
+                let max = 0; customers.forEach(c => { let n = parseInt(c.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; });
                 const code = 'C-' + String(max + 1).padStart(4, '0');
                 const newCust = { id: Date.now().toString(), code, ...data };
                 if (currentUser) setDoc(getUserDoc("customers", newCust.id), newCust);
@@ -1150,291 +1104,33 @@
             } 
             cancelEditCustomer();
         });
-        
         function editCustomer(id) { const c = customers.find(x => x.id === id); if (!c) return; editingCustomerId = id; ['name', 'contact:contactName', 'email', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($(`new-cust-${eid}`)) $(`new-cust-${eid}`).value = c[okey || eid] || ''; }); txt('form-cust-title', currentLang === 'en' ? 'Edit Customer' : 'แก้ไขข้อมูลลูกค้า'); txt('btn-save-cust', translations[currentLang]['btn_update']); show('btn-cancel-cust', true); }
         function cancelEditCustomer() { editingCustomerId = null; if($('add-customer-form')) $('add-customer-form').reset(); txt('form-cust-title', translations[currentLang]['title_add_cust']); txt('btn-save-cust', translations[currentLang]['btn_save_cust']); show('btn-cancel-cust', false); }
         function deleteCustomer(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันการลบ?', () => { if (currentUser) deleteDoc(getUserDoc("customers", id)); }); }
 
-        window.handleExcelUpload = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async (evt) => {
-                let text = evt.target.result;
-                if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // Remove BOM
-
-                function parseCSV(str) {
-                    const arr = [];
-                    let quote = false;
-                    let row = 0, col = 0;
-                    for (let c = 0; c < str.length; c++) {
-                        let cc = str[c], nc = str[c+1];
-                        arr[row] = arr[row] || [];
-                        arr[row][col] = arr[row][col] || '';
-                        if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
-                        if (cc == '"') { quote = !quote; continue; }
-                        if (cc == ',' && !quote) { ++col; continue; }
-                        if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
-                        if (cc == '\n' && !quote) { ++row; col = 0; continue; }
-                        if (cc == '\r' && !quote) { ++row; col = 0; continue; }
-                        arr[row][col] += cc;
-                    }
-                    return arr;
-                }
-
-                const rows = parseCSV(text);
-                let importedCount = 0;
-                
-                let maxCodeNum = 0;
-                customers.forEach(c => {
-                    if (c.code && c.code.startsWith('C-')) {
-                        const num = parseInt(c.code.replace('C-', ''), 10);
-                        if (!isNaN(num) && num > maxCodeNum) maxCodeNum = num;
-                    }
+        function renderProducts() { if($('products-table-body')) $('products-table-body').innerHTML = products.map(p => `<tr><td class="p-4">${p.code} ${p.code.toUpperCase().startsWith('P')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">V</span>':p.code.toUpperCase().startsWith('K')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">V-KG</span>':p.code.toUpperCase().startsWith('G')?'<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">Z</span>':''}</td><td class="p-4">${p.name}</td><td class="p-4 text-center">${p.unit}</td><td class="p-4 text-right">${formatMoney(p.price)}</td><td class="p-4 text-center"><button onclick="deleteProduct('${p.id}')" class="text-red-500"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
+        function handleProductPrefixChange() { const px = val('new-prod-prefix'), cInp = $('new-prod-code'); if (px === "") { cInp.value = ""; cInp.placeholder = "ระบุรหัส"; cInp.readOnly = false; cInp.classList.remove('bg-gray-100', 'text-gray-500'); } else { let max = 0; products.forEach(p => { if(p.code.startsWith(px+'-')){ const n=parseInt(p.code.substring(px.length+1), 10); if(!isNaN(n) && n>max) max=n; }}); cInp.value = `${px}-${String(max + 1).padStart(4, '0')}`; cInp.readOnly = true; cInp.classList.add('bg-gray-100', 'text-gray-500'); } }
+        if($('add-product-form')) $('add-product-form').addEventListener('submit', function(e) { e.preventDefault(); const code = val('new-prod-code').toUpperCase(); if(products.some(p => p.code.toUpperCase() === code)) return showAlert('รหัสนี้มีอยู่แล้ว'); 
+            const newProd = { id: Date.now().toString(), code, name: val('new-prod-name'), unit: val('new-prod-unit'), price: parseFloat(val('new-prod-price')) };
+            if (currentUser) {
+                setDoc(getUserDoc("products", newProd.id), newProd).then(() => {
+                    this.reset(); handleProductPrefixChange(); showAlert('บันทึกสำเร็จ');
                 });
-
-                for (let i = 1; i < rows.length; i++) {
-                    const row = rows[i];
-                    if (row.length < 2 || !row[1] || row[1].trim() === '') continue;
-
-                    const pic = (row[0] || '').trim();
-                    const name = (row[1] || '').trim();
-                    const addr1 = (row[2] || '').trim();
-                    const addr2 = (row[3] || '').trim();
-                    const address = [addr1, addr2].filter(Boolean).join(' ');
-                    const tel = (row[4] || '').trim();
-                    const email = (row[5] || '').trim();
-                    const tax = (row[6] || '').trim();
-
-                    if (customers.some(c => c.name && c.name.toLowerCase() === name.toLowerCase())) continue;
-
-                    maxCodeNum++;
-                    const code = 'C-' + String(maxCodeNum).padStart(4, '0');
-                    const newId = Date.now().toString() + '-' + importedCount;
-                    
-                    const customerData = {
-                        id: newId, // Explicitly set ID for imported data
-                        code: code, name: name, contactName: pic, address: address,
-                        phone: tel, email: email, taxId: tax, branch: '00000'
-                    };
-
-                    if (currentUser) {
-                        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'customers', newId);
-                        await setDoc(docRef, customerData);
-                        importedCount++;
-                    }
-                }
-                
-                showAlert(`นำเข้าข้อมูลลูกค้าสำเร็จ ${importedCount} รายการ`);
-            };
-            
-            // Read as windows-874 to correctly interpret Thai characters from CSV saved via Excel
-            reader.readAsText(file, 'windows-874');
-            e.target.value = '';
-        };
-
-        window.handleImageUpload = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const btn = e.target.nextElementSibling;
-            const origHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="ph ph-spinner animate-spin text-blue-600 text-lg"></i> กำลังวิเคราะห์...`;
-            
-            setTimeout(() => {
-                const mockOcrText = "บริษัท สมาร์ท บิสิเนส จำกัด\nTax ID: 0105566778899\nEmail: contact@smartbiz.co.th\nAddress: 99/9 ถ.วิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพฯ";
-                const nameMatch = mockOcrText.match(/บริษัท\s+.*จำกัด/i);
-                const taxMatch = mockOcrText.match(/(?:Tax\s*ID|เลขประจำตัว).*?(\d{13})/i);
-                const emailMatch = mockOcrText.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/i);
-                
-                if($('new-cust-name')) $('new-cust-name').value = nameMatch ? nameMatch[0] : "บริษัท สแกนนามบัตร จำกัด";
-                if($('new-cust-tax')) $('new-cust-tax').value = taxMatch ? taxMatch[1] : "0105566778899";
-                if($('new-cust-email')) $('new-cust-email').value = emailMatch ? emailMatch[1] : "scan@business.com";
-                if($('new-cust-address')) $('new-cust-address').value = "99/9 ถ.วิทยุ แขวงลุมพินี เขตปทุมวัน กรุงเทพฯ";
-
-                btn.innerHTML = origHtml;
-                showAlert('ดึงข้อมูลจากรูปภาพสำเร็จ โปรดตรวจสอบและบันทึก');
-            }, 1500);
-            e.target.value = ''; 
-        }
-
-        // --------- PRODUCT LOGIC WITH SEARCH AND EDIT ----------
-        function handleProductPrefixChange() { 
-            const px = val('new-prod-prefix'), cInp = $('new-prod-code'); 
-            if (px === "") { 
-                cInp.value = ""; cInp.placeholder = "ระบุรหัส"; cInp.readOnly = false; cInp.classList.remove('bg-gray-100', 'text-gray-500'); 
-            } else { 
-                let max = 0; products.forEach(p => { if(p.code.startsWith(px+'-')){ const n=parseInt(p.code.substring(px.length+1), 10); if(!isNaN(n) && n>max) max=n; }}); 
-                cInp.value = `${px}-${String(max + 1).padStart(4, '0')}`; cInp.readOnly = true; cInp.classList.add('bg-gray-100', 'text-gray-500'); 
-            } 
-        }
-
-        function renderProducts() { 
-            if(!$('products-table-body')) return; 
-            const q = val('search-product') ? val('search-product').toLowerCase() : '';
-            const filtered = products.filter(p => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q));
-            
-            $('products-table-body').innerHTML = filtered.map(p => `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="p-4 font-bold text-gray-700">${p.code} ${p.code.toUpperCase().startsWith('P')?'<span class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded ml-1">V</span>':p.code.toUpperCase().startsWith('K')?'<span class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded ml-1">V-KG</span>':p.code.toUpperCase().startsWith('G')?'<span class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded ml-1">Z</span>':''}</td>
-                    <td class="p-4 font-medium text-gray-800">${p.name}</td>
-                    <td class="p-4 text-center text-gray-500">${p.unit}</td>
-                    <td class="p-4 text-right text-gray-700">${formatMoney(p.price)}</td>
-                    <td class="p-4 text-center">
-                        <div class="flex justify-center gap-2">
-                            <button onclick="editProduct('${p.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition" title="แก้ไข"><i class="ph ph-pencil-simple text-lg"></i></button>
-                            <button onclick="deleteProduct('${p.id}')" class="text-red-300 hover:text-red-600 p-1.5 rounded-lg transition" title="ลบ"><i class="ph ph-trash text-lg"></i></button>
-                        </div>
-                    </td>
-                </tr>`).join(''); 
-            
-            if(filtered.length === 0) {
-                $('products-table-body').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 italic">ไม่พบข้อมูลสินค้า</td></tr>`;
             }
-        }
-
-        if($('add-product-form')) {
-            $('add-product-form').addEventListener('submit', function(e) { 
-                e.preventDefault(); 
-                const code = val('new-prod-code').toUpperCase(); 
-                const name = val('new-prod-name');
-                const unit = val('new-prod-unit') || 'PCS';
-                const price = parseFloat(val('new-prod-price')) || 0;
-                
-                if (editingProductId) {
-                    const data = { name, unit, price };
-                    if (currentUser) {
-                        setDoc(getUserDoc("products", editingProductId), data, {merge: true}).then(() => {
-                            cancelEditProduct(); showAlert(currentLang === 'en' ? 'Product updated!' : 'อัปเดตข้อมูลสินค้าเรียบร้อย');
-                        }).catch(err => console.error(err));
-                    }
-                } else {
-                    if(products.some(p => p.code.toUpperCase() === code)) return showAlert(currentLang === 'en' ? 'Code exists' : 'รหัสสินค้านี้มีอยู่แล้วในระบบ'); 
-                    const newProd = { id: Date.now().toString(), code, name, unit, price };
-                    if (currentUser) {
-                        setDoc(getUserDoc("products", newProd.id), newProd).then(() => {
-                            this.reset(); handleProductPrefixChange(); showAlert(currentLang === 'en' ? 'Product saved!' : 'บันทึกสำเร็จ');
-                        }).catch(err => console.error(err));
-                    }
-                }
-            });
-        }
-
-        function editProduct(id) {
-            const p = products.find(x => x.id === id);
-            if(!p) return;
-            editingProductId = id;
-            if($('new-prod-prefix')) $('new-prod-prefix').value = ''; 
-            if($('new-prod-code')) { $('new-prod-code').value = p.code; $('new-prod-code').readOnly = true; $('new-prod-code').classList.add('bg-gray-100', 'text-gray-500'); }
-            if($('new-prod-name')) $('new-prod-name').value = p.name;
-            if($('new-prod-price')) $('new-prod-price').value = p.price;
-            if($('new-prod-unit')) $('new-prod-unit').value = p.unit;
-            
-            if($('form-prod-title')) $('form-prod-title').innerText = currentLang === 'en' ? 'Edit Product' : 'แก้ไขข้อมูลสินค้า';
-            if($('btn-save-prod')) {
-                $('btn-save-prod').innerText = translations[currentLang]['btn_update'] || 'บันทึกการแก้ไข';
-                $('btn-save-prod').classList.replace('bg-emerald-600', 'bg-blue-600');
-                $('btn-save-prod').classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
-            }
-            show('btn-cancel-prod', true);
-        }
-
-        function cancelEditProduct() {
-            editingProductId = null;
-            if($('add-product-form')) $('add-product-form').reset();
-            if($('new-prod-code')) { 
-                $('new-prod-code').readOnly = false; 
-                $('new-prod-code').classList.remove('bg-gray-100', 'text-gray-500'); 
-            }
-            if($('form-prod-title')) $('form-prod-title').innerText = translations[currentLang]['title_add_prod'] || 'เพิ่มสินค้าใหม่';
-            if($('btn-save-prod')) {
-                $('btn-save-prod').innerText = translations[currentLang]['btn_save_prod'] || 'บันทึก';
-                $('btn-save-prod').classList.replace('bg-blue-600', 'bg-emerald-600');
-                $('btn-save-prod').classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
-            }
-            show('btn-cancel-prod', false);
-        }
-
-        function deleteProduct(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบสินค้า?', () => { if (currentUser) deleteDoc(getUserDoc("products", id)); }); }
-        
-        // --------- SETTINGS: REMARKS LOGIC (EDIT IMPLEMENTED) ---------
-        function renderSettingsRemarks() { 
-            if($('settings-remarks-list')) {
-                $('settings-remarks-list').innerHTML = savedRemarks.map(r => `
-                    <div class="flex justify-between items-start bg-white p-3 border border-gray-200 rounded-lg hover:border-emerald-300 transition-colors">
-                        <p class="text-[13px] whitespace-pre-line text-gray-700 flex-1">${r.text}</p>
-                        <div class="flex gap-1 ml-4 shrink-0">
-                            <button type="button" onclick="editRemark('${r.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded-md transition" title="แก้ไข"><i class="ph ph-pencil-simple text-lg"></i></button>
-                            <button type="button" onclick="deleteRemark('${r.id}')" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition" title="ลบ"><i class="ph ph-trash text-lg"></i></button>
-                        </div>
-                    </div>
-                `).join(''); 
-            }
-        }
-        
-        function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); }
-        
-        if($('add-remark-form')) $('add-remark-form').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            const t = val('new-remark-text').trim(); 
-            if(t) { 
-                if (editingRemarkId) {
-                    if (currentUser) {
-                        setDoc(getUserDoc("savedRemarks", editingRemarkId), { text: t }, {merge: true}).then(() => {
-                            cancelEditRemark();
-                            showAlert(currentLang === 'en' ? 'Remark updated!' : 'อัปเดตข้อความสำเร็จ!');
-                        }).catch(err => console.error(err));
-                    }
-                } else {
-                    const newRem = { id: Date.now().toString(), text: t };
-                    if (currentUser) {
-                        setDoc(getUserDoc("savedRemarks", newRem.id), newRem).then(() => {
-                            if($('new-remark-text')) $('new-remark-text').value = ''; if($('new-remark-text')) $('new-remark-text').focus();
-                        });
-                    }
-                }
-            } 
         });
-        
+        function deleteProduct(id) { showConfirm('ยืนยันลบ?', () => { if (currentUser) deleteDoc(getUserDoc("products", id)); }); }
+
+        function renderSettingsRemarks() { if($('settings-remarks-list')) $('settings-remarks-list').innerHTML = savedRemarks.map(r => `<div class="flex justify-between items-start bg-white p-2 border rounded"><p class="text-sm whitespace-pre-line">${r.text}</p><button onclick="deleteRemark('${r.id}')" class="text-red-500 ml-2"><i class="ph ph-trash"></i></button></div>`).join(''); }
+        function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); }
+        if($('add-remark-form')) $('add-remark-form').addEventListener('submit', e => { e.preventDefault(); const t = val('new-remark-text').trim(); if(t) { 
+            const newRem = { id: Date.now().toString(), text: t };
+            if (currentUser) {
+                setDoc(getUserDoc("savedRemarks", newRem.id), newRem).then(() => {
+                    if($('new-remark-text')) $('new-remark-text').value = ''; if($('new-remark-text')) $('new-remark-text').focus();
+                });
+            }
+        } });
         function deleteRemark(id) { showConfirm('ยืนยันลบ?', () => { if (currentUser) deleteDoc(getUserDoc("savedRemarks", id)); }); }
-        
-        function editRemark(id) {
-            const r = savedRemarks.find(x => x.id === id);
-            if(!r) return;
-            editingRemarkId = id;
-            if($('new-remark-text')) {
-                $('new-remark-text').value = r.text;
-                $('new-remark-text').focus();
-            }
-            if($('btn-add-remark')) {
-                $('btn-add-remark').innerText = currentLang === 'en' ? 'Update' : 'อัปเดต';
-                $('btn-add-remark').classList.replace('bg-emerald-600', 'bg-blue-600');
-                $('btn-add-remark').classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
-            }
-            if(!$('btn-cancel-remark')) {
-                const cancelBtn = document.createElement('button');
-                cancelBtn.id = 'btn-cancel-remark';
-                cancelBtn.type = 'button';
-                cancelBtn.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 rounded font-medium transition text-[14px] ml-2';
-                cancelBtn.innerText = currentLang === 'en' ? 'Cancel' : 'ยกเลิก';
-                cancelBtn.onclick = cancelEditRemark;
-                $('add-remark-form').appendChild(cancelBtn);
-            } else {
-                show('btn-cancel-remark', true);
-            }
-        }
-
-        function cancelEditRemark() {
-            editingRemarkId = null;
-            if($('new-remark-text')) $('new-remark-text').value = '';
-            if($('btn-add-remark')) {
-                $('btn-add-remark').innerText = 'Add';
-                $('btn-add-remark').classList.replace('bg-blue-600', 'bg-emerald-600');
-                $('btn-add-remark').classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
-            }
-            if($('btn-cancel-remark')) show('btn-cancel-remark', false);
-        }
-
         function filterRemarks() { const q = val('search-remark').toLowerCase(); document.querySelectorAll('#doc-remarks-selections label').forEach(l => l.style.display = l.textContent.toLowerCase().includes(q) ? 'flex' : 'none'); }
 
         function getProductListItems(rowId) {
@@ -1891,9 +1587,7 @@
             cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee, 
             handleProductPrefixChange, deleteProduct, deleteRemark, generateStockCard, generateShippingMark, generateVatReport, 
             exportVatToCSV, recalcVatTotal, draftAIEmail, printDocumentList, closePreview, copyEmailText, updatePreviewScale, 
-            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin,
-            editProduct, cancelEditProduct, renderProducts, handleExcelUpload, handleImageUpload, renderCustomerDropdown, editRemark, cancelEditRemark,
-            goBack, goForward
+            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin
         });
 
         // --- Firebase Initial Data Sync ---
@@ -1934,29 +1628,24 @@
             }, errHandler);
             
             onSnapshot(getUserCol("products"), (snap) => {
-                products = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
-                renderProducts(); renderProductDropdowns();
+                products = snap.docs.map(d => d.data()); renderProducts(); renderProductDropdowns();
             }, errHandler);
             
             onSnapshot(getUserCol("customers"), (snap) => {
-                customers = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
-                renderCustomers();
+                customers = snap.docs.map(d => d.data()); renderCustomers();
             }, errHandler);
             
             onSnapshot(getUserCol("employees"), (snap) => {
-                employees = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
-                renderEmployees(); renderEmployeeDropdownForSeller();
+                employees = snap.docs.map(d => d.data()); renderEmployees(); renderEmployeeDropdownForSeller();
             }, errHandler);
             
             onSnapshot(getUserCol("savedRemarks"), (snap) => {
-                savedRemarks = snap.docs.map(d => ({ ...d.data(), id: d.id })); 
-                renderSettingsRemarks(); renderRemarksCheckboxes();
+                savedRemarks = snap.docs.map(d => d.data()); renderSettingsRemarks(); renderRemarksCheckboxes();
             }, errHandler);
             
             onSnapshot(getUserCol("documents"), (snap) => {
                 database = snap.docs.map(d => {
                     let data = d.data();
-                    data.id = d.id; // Bind Firebase ID to Document Object
                     if(data.rawDate && data.rawDate.toDate) data.rawDate = data.rawDate.toDate();
                     else if (data.rawDate && typeof data.rawDate === 'string') data.rawDate = new Date(data.rawDate);
                     return data;
@@ -1974,7 +1663,6 @@
         // INIT UI ON LOAD
         window.addEventListener('DOMContentLoaded', () => {
             if($('login-form')) $('login-form').addEventListener('submit', handleLogin);
-            updateNavButtons();
         });
 
     </script>
