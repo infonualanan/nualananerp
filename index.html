@@ -278,7 +278,6 @@
         <div class="flex-1 flex flex-col overflow-hidden relative z-10">
             <header class="bg-white h-16 shadow-sm border-b border-gray-100 flex justify-between items-center px-8 shrink-0 no-print text-[14px]">
                 <div class="flex items-center gap-4">
-                    <!-- Back/Forward Navigation Buttons -->
                     <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1 border border-gray-200 mr-2">
                         <button id="btn-nav-back" onclick="goBack()" class="p-1.5 rounded-md hover:bg-white hover:shadow-sm transition text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed" title="ย้อนกลับ (Back)"><i class="ph ph-caret-left text-lg"></i></button>
                         <button id="btn-nav-forward" onclick="goForward()" class="p-1.5 rounded-md hover:bg-white hover:shadow-sm transition text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed" title="ไปข้างหน้า (Forward)"><i class="ph ph-caret-right text-lg"></i></button>
@@ -737,69 +736,109 @@
     </div>
 
     <!-- Preview Modal -->
-    <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-center justify-center p-4 no-print">
+    <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-[150] hidden flex items-center justify-center p-4 no-print text-[12px]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col overflow-hidden">
             <div class="bg-gray-100 p-4 border-b flex justify-between items-center shrink-0">
                 <div class="flex items-center gap-4">
-                    <h3 class="font-bold">ตัวอย่างเอกสาร</h3>
-                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded border">
-                        <i class="ph ph-magnifying-glass-plus"></i>
-                        <input type="range" min="0.4" max="1.5" step="0.1" value="0.9" class="w-24 accent-emerald-600" oninput="updatePreviewScale(this.value)">
-                        <span id="scale-percent" class="text-xs font-bold w-10">90%</span>
+                    <h3 class="font-bold text-[14px] flex items-center gap-2"><i class="ph ph-file-search text-xl"></i> ตัวอย่างเอกสาร</h3>
+                    <div class="flex items-center gap-2 bg-white px-2 py-1 rounded border shadow-sm">
+                        <i class="ph ph-magnifying-glass-plus text-gray-500"></i>
+                        <input type="range" id="preview-scale-slider" min="0.4" max="1.5" step="0.05" value="0.9" class="w-24 accent-emerald-600 cursor-pointer" oninput="updatePreviewScale(this.value)">
+                        <span id="scale-percent" class="text-[10px] font-bold w-10">90%</span>
                     </div>
+                    <select id="doc-copy-type" class="border border-gray-300 rounded p-1.5 outline-none font-medium shadow-sm" onchange="document.getElementById('preview-copy-type').innerText = this.value">
+                        <option value="ต้นฉบับ (Original)">ต้นฉบับ (Original)</option>
+                        <option value="สำเนา (Copy)">สำเนา (Copy)</option>
+                    </select>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="draftAIEmail()" class="bg-purple-100 text-purple-700 px-4 py-2 rounded font-bold flex items-center gap-1"><i class="ph ph-magic-wand"></i> ร่างเมล์ (AI)</button>
-                    <button onclick="window.print()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold flex items-center gap-1"><i class="ph ph-printer"></i> พิมพ์</button>
-                    <button onclick="closePreview()" class="bg-red-500 text-white px-4 py-2 rounded font-bold">ปิด</button>
+                    <button onclick="draftAIEmail()" class="bg-purple-100 text-purple-700 hover:bg-purple-200 px-4 py-2 rounded font-bold flex items-center gap-1 shadow-sm transition"><i class="ph ph-magic-wand text-lg"></i> <span data-i18n="btn_draft_email">ร่างเมล์ (AI)</span></button>
+                    <button onclick="printDocumentList(currentlyPreviewingDoc.docNo)" class="bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2 rounded font-bold flex items-center gap-1 shadow-sm transition"><i class="ph ph-printer text-lg"></i> <span data-i18n="btn_print">พิมพ์</span></button>
+                    <button onclick="closePreview()" class="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded font-bold transition">ปิด</button>
                 </div>
             </div>
             
             <div id="ai-email-container" class="hidden bg-purple-50 p-4 border-b border-purple-200 relative">
                 <button onclick="document.getElementById('ai-email-container').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-red-500"><i class="ph ph-x"></i></button>
-                <h4 class="font-bold text-purple-800 mb-2">AI Email Draft</h4>
-                <textarea id="ai-email-body" rows="6" class="w-full border border-purple-200 rounded p-3 text-sm focus:outline-none"></textarea>
-                <div class="text-right mt-2"><button onclick="copyEmailText()" class="text-xs text-purple-700 font-bold underline">Copy to Clipboard</button></div>
+                <h4 class="font-bold text-purple-800 mb-2 flex items-center gap-2 text-[14px]"><i class="ph ph-robot"></i> AI Email Draft</h4>
+                <div class="mb-2"><label class="text-xs text-purple-700 font-bold">To:</label><input type="text" id="ai-email-to" class="w-full border border-purple-200 rounded p-1 focus:outline-none bg-white" readonly></div>
+                <textarea id="ai-email-body" rows="6" class="w-full border border-purple-300 rounded p-3 text-sm focus:outline-none preview-scroll resize-none"></textarea>
+                <div class="text-right mt-2"><button onclick="copyEmailText()" class="text-xs text-purple-700 font-bold hover:underline flex items-center gap-1 ml-auto"><i class="ph ph-copy"></i> Copy to Clipboard</button></div>
             </div>
 
-            <div class="flex-1 overflow-auto bg-gray-200 flex justify-center preview-scroll p-8">
-                <div id="paper-wrapper" class="bg-white shadow-2xl origin-top transition-transform duration-200" style="width: 210mm; height: 297mm; transform: scale(0.9);">
-                    <div id="paper-preview" class="p-[20mm] flex flex-col h-full">
-                        <div class="grid grid-cols-2 gap-4 mb-8">
-                            <div>
-                                <h1 id="preview-company-name" class="font-bold text-xl"></h1>
-                                <p id="preview-company-tax" class="text-sm"></p>
+            <div class="flex-1 overflow-auto bg-gray-300 flex justify-center preview-scroll p-4 md:p-8">
+                <div id="paper-wrapper" class="bg-white shadow-2xl origin-top transition-transform duration-200 relative" style="width: 210mm; height: 297mm; transform: scale(0.9);">
+                    <div id="paper-preview" class="bg-white relative leading-tight flex flex-col h-full overflow-hidden" style="width: 210mm; height: 297mm; padding: 10mm; box-sizing: border-box; position: absolute; top: 0; left: 0;">
+                        <div id="preview-copy-type" class="absolute top-6 right-8 font-bold text-gray-500 tracking-wide border-b border-gray-300 pb-1">ต้นฉบับ (Original)</div>
+                        <div id="preview-stamp-container"></div>
+                        
+                        <div class="shrink-0 mb-2">
+                            <div class="grid grid-cols-[120px_1fr_120px] items-center relative z-10 mb-2 gap-4 mt-2">
+                                <div class="text-left flex items-center justify-start h-16"><img id="preview-company-logo" src="" class="hidden max-h-full max-w-full object-contain" alt="Logo"></div>
+                                <div class="text-center">
+                                    <h1 class="text-[14px] font-bold text-gray-900" id="preview-company-name"></h1>
+                                    <p class="text-[12px] text-gray-700 mt-1" id="preview-company-addr"></p>
+                                    <p class="text-[12px] text-gray-700 mt-0.5"><span id="preview-company-tax-label"></span> <span id="pv-comp-tax"></span> | <span id="preview-company-tel-label"></span> <span id="pv-comp-phone"></span></p>
+                                </div>
+                                <div></div>
                             </div>
-                            <div class="text-right">
-                                <h2 id="preview-doc-name" class="text-2xl font-black text-gray-800 uppercase tracking-tighter"></h2>
-                                <p id="preview-doc-no" class="font-bold text-red-600 mt-2"></p>
-                                <p id="preview-date" class="text-sm"></p>
-                            </div>
-                        </div>
-                        <div class="mb-8 border p-4 rounded bg-gray-50">
-                            <p class="text-xs font-bold text-gray-400 uppercase">Customer / ลูกค้า</p>
-                            <p id="preview-customer-name" class="font-bold text-lg"></p>
-                        </div>
-                        <table class="w-full border-collapse border-y border-gray-800">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="p-2 text-center border-b">#</th>
-                                    <th class="p-2 text-left border-b">รายละเอียด</th>
-                                    <th class="p-2 text-center border-b">จำนวน</th>
-                                    <th class="p-2 text-right border-b">หน่วยละ</th>
-                                    <th class="p-2 text-right border-b">รวมเงิน</th>
-                                </tr>
-                            </thead>
-                            <tbody id="preview-items-body"></tbody>
-                        </table>
-                        <div class="mt-auto pt-8 border-t border-dashed">
-                            <div class="flex justify-end">
-                                <div class="w-64 space-y-1">
-                                    <div class="flex justify-between text-sm"><span>มูลค่าก่อนภาษี:</span><span id="preview-sub"></span></div>
-                                    <div class="flex justify-between text-sm"><span>ภาษีมูลค่าเพิ่ม (7%):</span><span id="preview-vat"></span></div>
-                                    <div class="flex justify-between text-lg font-bold border-t pt-1"><span>ยอดสุทธิรวม:</span><span id="preview-grand"></span></div>
+                            <div class="border-b border-gray-800 mb-2"></div>
+                            
+                            <div class="text-center mb-3 relative z-10"><h2 id="preview-doc-name" class="inline-block bg-gray-50 border border-gray-200 rounded py-1 px-6 text-[14px] font-bold text-gray-900 uppercase tracking-wide shadow-sm"></h2></div>
+                            
+                            <div class="grid grid-cols-2 gap-3 relative z-10 text-[12px]">
+                                <div class="border border-gray-200 rounded p-2 bg-white">
+                                    <p class="font-bold text-gray-800 mb-1" id="preview-cust-label"></p>
+                                    <p id="preview-customer" class="font-bold text-gray-900 mb-0.5"></p>
+                                    <p id="preview-customer-tax" class="text-gray-700"></p>
+                                    <p id="preview-customer-branch" class="text-gray-700"></p>
+                                    <p id="preview-customer-addr" class="text-gray-700 mt-0.5"></p>
+                                </div>
+                                <div class="border border-gray-200 rounded p-2 bg-white space-y-1">
+                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-docno-label"></span> <span id="preview-doc-no" class="font-bold text-red-600"></span></div>
+                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-date-label"></span> <span id="preview-date" class="text-gray-800"></span></div>
+                                    <div class="flex hidden" id="preview-expire-container"><span class="w-28 font-bold text-purple-700" id="preview-expire-label"></span> <span id="preview-expire-date" class="font-bold text-purple-700"></span></div>
+                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-credit-label"></span> <span id="preview-credit" class="text-gray-800"></span></div>
+                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-ref-label"></span> <span id="preview-ref-no" class="text-gray-800"></span></div>
                                 </div>
                             </div>
+                            <div id="preview-export-details" class="hidden mt-2 p-2 border border-gray-200 rounded grid grid-cols-2 gap-1 bg-gray-50 relative z-10 text-[12px]">
+                                <div><span class="font-bold">Incoterms:</span> <span id="preview-incoterm"></span></div>
+                                <div><span class="font-bold">Port of Loading:</span> <span id="preview-pol"></span></div>
+                                <div><span class="font-bold">Port of Discharge:</span> <span id="preview-pod"></span></div>
+                                <div><span class="font-bold">Currency:</span> <span id="preview-currency-label"></span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="relative z-10 mt-1 flex-1 flex flex-col min-h-0 text-[12px]">
+                            <div class="overflow-x-auto w-full mb-2 table-scroll pb-2">
+                                <table class="w-full border border-gray-200 shrink-0 min-w-[700px]">
+                                    <thead class="bg-gray-50 border-b border-gray-200 text-gray-800">
+                                        <tr><th class="py-1 px-2 text-center border-r border-gray-200 w-10">No.</th><th class="py-1 px-2 text-center border-r border-gray-200 w-20">Code</th><th class="py-1 px-2 text-left border-r border-gray-200" id="preview-col-desc">Description</th><th class="py-1 px-2 text-center border-r border-gray-200 w-12" id="preview-col-qty">Qty</th><th class="py-1 px-2 text-center border-r border-gray-200 w-12" id="preview-col-unit">Unit</th><th class="py-1 px-2 text-right border-r border-gray-200 w-20" id="preview-col-price">Price</th><th class="py-1 px-2 text-right border-r border-gray-200 w-16 text-red-600" id="preview-col-disc">Disc</th><th class="py-1 px-2 text-right w-24" id="preview-col-amt">Amount</th></tr>
+                                    </thead>
+                                    <tbody id="preview-items-body" class="divide-y divide-gray-100 bg-white"></tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="flex items-stretch justify-between gap-4 mb-2 shrink-0">
+                                <div class="flex-1 border border-sky-200 bg-sky-50 rounded flex items-center justify-center p-2"><span id="preview-amount-words" class="text-[12px] font-bold text-sky-800 text-center italic"></span></div>
+                                <div class="w-[45%] border border-gray-200">
+                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-subtotal-row"><span class="font-bold text-gray-700" id="preview-lbl-sub"></span><span class="font-bold text-gray-900" id="preview-subtotal"></span></div>
+                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-vat-row"><span class="font-bold text-gray-700" id="preview-lbl-vat"></span><span class="font-bold text-gray-900" id="preview-vat"></span></div>
+                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50 text-red-600 hidden" id="preview-sso-row"><span class="font-bold">หักประกันสังคม (<span id="preview-sso-pct"></span>%)</span><span class="font-bold" id="preview-sso"></span></div>
+                                    <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50 text-red-600 hidden" id="preview-wht-row"><span class="font-bold">หัก ณ ที่จ่าย (<span id="preview-wht-pct"></span>%)</span><span class="font-bold" id="preview-wht"></span></div>
+                                    <div class="flex justify-between py-1.5 px-2 bg-gray-100 text-[14px]"><span class="font-bold text-gray-900" id="preview-lbl-grand"></span><span class="font-bold text-emerald-700 double-underline" id="preview-grandtotal"></span></div>
+                                </div>
+                            </div>
+                            <div class="border border-gray-200 p-2 rounded bg-white flex-1 relative overflow-hidden mb-2">
+                                <p class="font-bold text-gray-900 text-[14px] shrink-0 mb-1" id="preview-lbl-remark"></p>
+                                <div class="absolute top-[28px] bottom-2 left-2 right-2 overflow-hidden"><div id="preview-remark" class="text-gray-800 text-[14px]" style="column-count: 2; column-gap: 20px; column-fill: auto; height: 100%; word-break: break-word; line-height: 1.4;"></div></div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between mt-auto pt-2 pb-2 relative z-10 shrink-0 print-footer">
+                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-maker"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-maker"></p></div>
+                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-auth"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-auth"></p></div>
                         </div>
                     </div>
                 </div>
@@ -807,7 +846,6 @@
         </div>
     </div>
 
-    <!-- Main Script (Firebase Integration Retained) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -828,7 +866,7 @@
             newBtnCancel.addEventListener('click', () => { show('custom-confirm-modal', false); });
         }
 
-        // --- Firebase Configuration & Initialization ---
+        // --- Firebase Configuration ---
         const providedConfig = {
             apiKey: "AIzaSyCJKIN8gmZi-F8X4tZraWVOaM90H1e7k0E",
             authDomain: "nualananerp-1.firebaseapp.com",
@@ -862,7 +900,6 @@
         const getUserCol = (colName) => collection(db, 'artifacts', appId, 'users', currentUser.uid, colName);
         const getUserDoc = (colName, docId) => doc(db, 'artifacts', appId, 'users', currentUser.uid, colName, docId);
 
-        // Login Feature
         async function handleLogin(e) {
             e.preventDefault();
             const email = val('login-username');
@@ -907,7 +944,6 @@
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
         let editingRemarkId = null;
 
-        // --- NAVIGATION HISTORY (Back/Forward) ---
         let navHistory = ['dashboard'];
         let navIndex = 0;
         let isHistoryNav = false;
@@ -988,7 +1024,6 @@
                 if(document.querySelectorAll('.remark-checkbox').length === 0) renderRemarksCheckboxes();
             }
 
-            // Navigation History Tracking
             if (!isHistoryNav) {
                 history.pushState({ tab: tabId }, "", "?tab=" + tabId);
                 navHistory = navHistory.slice(0, navIndex + 1);
@@ -1100,7 +1135,6 @@
         function cancelEditEmployee() { editingEmployeeId = null; if($('add-employee-form')) $('add-employee-form').reset(); toggleResignDate(); txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false); }
         function deleteEmployee(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc("employees", id)); }); }
 
-        // --------- CUSTOMER LOGIC WITH CSV UPLOAD ----------
         function renderCustomers() { 
             if(!$('customers-table-body')) return; 
             const q = val('search-customer') ? val('search-customer').toLowerCase() : '';
@@ -1163,7 +1197,7 @@
             const reader = new FileReader();
             reader.onload = async (evt) => {
                 let text = evt.target.result;
-                if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // Remove BOM
+                if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); 
 
                 function parseCSV(str) {
                     const arr = [];
@@ -1215,7 +1249,7 @@
                     const newId = Date.now().toString() + '-' + importedCount;
                     
                     const customerData = {
-                        id: newId, // Explicitly set ID for imported data
+                        id: newId,
                         code: code, name: name, contactName: pic, address: address,
                         phone: tel, email: email, taxId: tax, branch: '00000'
                     };
@@ -1230,7 +1264,6 @@
                 showAlert(`นำเข้าข้อมูลลูกค้าสำเร็จ ${importedCount} รายการ`);
             };
             
-            // Read as windows-874 to correctly interpret Thai characters from CSV saved via Excel
             reader.readAsText(file, 'windows-874');
             e.target.value = '';
         };
@@ -1259,7 +1292,6 @@
             e.target.value = ''; 
         }
 
-        // --------- PRODUCT LOGIC WITH SEARCH AND EDIT ----------
         function handleProductPrefixChange() { 
             const px = val('new-prod-prefix'), cInp = $('new-prod-code'); 
             if (px === "") { 
@@ -1358,7 +1390,6 @@
 
         function deleteProduct(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบสินค้า?', () => { if (currentUser) deleteDoc(getUserDoc("products", id)); }); }
         
-        // --------- SETTINGS: REMARKS LOGIC (EDIT IMPLEMENTED) ---------
         function renderSettingsRemarks() { 
             if($('settings-remarks-list')) {
                 $('settings-remarks-list').innerHTML = savedRemarks.map(r => `
@@ -1717,8 +1748,8 @@
             const d = database.find(x => x.docNo === docNo); if (!d) return; currentlyPreviewingDoc = d;
             const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', cur = d.currency || 'THB';
             
-            // Reset Scale to Default (80%)
-            updatePreviewScale(0.8);
+            // Reset Scale to Default (90%)
+            updatePreviewScale(0.9);
 
             txt('preview-company-name', isEn ? companyProfile.nameEn : companyProfile.nameTh);
             txt('preview-company-addr', isEn ? companyProfile.addressEn : companyProfile.addressTh);
@@ -1748,7 +1779,7 @@
             txt('preview-lbl-stamp-auth', authStamp);
             txt('preview-lbl-stamp-maker', isPay ? "" : (isEn ? "Company Stamp (if any)" : "ตราประทับ (ถ้ามี)"));
             txt('pv-comp-tax', companyProfile.taxId); txt('pv-comp-phone', companyProfile.phone);
-            txt('preview-doc-name', isPay ? (isEn ? "PAYSLIP" : "สลิปเงินเดือน (PAYSLIP)") : (isEn ? (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName) : d.docName));
+            txt('preview-doc-name', isPay ? (isEn ? "PAYSLIP" : "สลิปเงินเดือน (PAYSLIP)") : (isEn ? ((d.docName||'').match(/\(([^)]+)\)/)?.[1] || d.docName) : d.docName));
             txt('preview-customer', d.customerName);
             txt('preview-customer-tax', isPay ? "" : (d.customerTaxId ? `Tax ID: ${d.customerTaxId}` : ''));
             txt('preview-customer-branch', isPay ? "" : (d.customerBranch ? `Branch: ${d.customerBranch}` : ''));
@@ -1762,7 +1793,7 @@
             const isExp = ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix), sExp = isExp && (d.incoterm || d.pol || d.pod);
             show('preview-export-details', sExp); if (sExp) { txt('preview-incoterm', d.incoterm || '-'); txt('preview-pol', d.pol || '-'); txt('preview-pod', d.pod || '-'); txt('preview-currency-label', cur); }
             
-            if($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${i.code||'-'}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${i.name}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.unit||'-'}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(i.total)}</td></tr>`).join('');
+            if($('preview-items-body')) $('preview-items-body').innerHTML = (d.items||[]).map((i, idx) => `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${i.code||'-'}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${i.name}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.unit||'-'}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(i.total)}</td></tr>`).join('');
             
             txt('preview-amount-words', getAmountText(d.grandTotal, cur, currentLang));
             const hv = noVatDocs.includes(d.prefix); 
@@ -1809,7 +1840,7 @@
         }
 
         function draftAIEmail() {
-            if(!currentlyPreviewingDoc) return; const d = currentlyPreviewingDoc, t = (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName);
+            if(!currentlyPreviewingDoc) return; const d = currentlyPreviewingDoc, t = ((d.docName||'').match(/\(([^)]+)\)/)?.[1] || d.docName);
             const m = currentLang === 'en' ? `Subject: ${t} No. ${d.docNo} from ${companyProfile.nameEn}\n\nDear ${d.customerName},\n\nPlease find attached the ${t} (Doc No: ${d.docNo}) dated ${d.dateStr} for your reference.\n\nThe total amount due is ${formatMoney(d.grandTotal)} THB. If you have any questions regarding this document, please feel free to contact us.\n\nBest regards,\n${companyProfile.nameEn}` : `หัวข้อ: นำส่งเอกสาร ${t} เลขที่ ${d.docNo} จาก ${companyProfile.nameTh}\n\nเรียน ทีมงาน ${d.customerName}\n\nทางบริษัทฯ ขอแนบเอกสาร ${t} (เลขที่: ${d.docNo}) ลงวันที่ ${d.dateStr} มาเพื่อโปรดพิจารณาและดำเนินการในส่วนที่เกี่ยวข้องครับ/ค่ะ\n\nโดยมียอดรวมสุทธิทั้งสิ้น ${formatMoney(d.grandTotal)} บาท หากมีข้อสงสัยประการใดสามารถติดต่อสอบถามได้ทันทีครับ\n\nขอแสดงความนับถือ\n${companyProfile.nameTh}`;
             if($('ai-email-to')) $('ai-email-to').value = d.customerEmail || ''; if($('ai-email-body')) $('ai-email-body').value = m; show('ai-email-container', true);
         }
@@ -1846,7 +1877,19 @@
 
         function generateVatReport() {
             const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
-            const fD = database.filter(d => ((rt==='output'&&d.isRevenue)||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
+            const fD = database.filter(d => {
+                const isRev = d.isRevenue || revenueDocs.includes(d.prefix);
+                const isInput = d.isInputTax || inputTaxDocs.includes(d.prefix);
+                let dDate = null;
+                if(d.rawDate) dDate = new Date(d.rawDate);
+                else if(d.inputDate) dDate = new Date(d.inputDate);
+                
+                if(!dDate) return false;
+
+                const matchType = (rt === 'output' && isRev) || (rt === 'input' && isInput);
+                const matchDate = (dDate.getMonth() + 1).toString().padStart(2, '0') === mo && dDate.getFullYear().toString() === y;
+                return matchType && matchDate;
+            });
             const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
             
             txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);
