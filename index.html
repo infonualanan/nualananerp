@@ -1646,7 +1646,8 @@
 
         function generateVatReport() {
             const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
-            const fD = database.filter(d => ((rt==='output'&&d.isRevenue)||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
+            // แก้ไข: กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น
+            const fD = database.filter(d => ((rt==='output'&&['RETAX', 'CI'].includes(d.prefix))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
             const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
             
             txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);
