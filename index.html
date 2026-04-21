@@ -941,6 +941,7 @@
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
         let editingProductId = null;
         let editingRemarkId = null;
+        let selectedRemarksSequence = []; // เพิ่มตัวแปรเก็บลำดับการคลิกหมายเหตุ
 
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
@@ -992,7 +993,8 @@
             if(tabId === 'create-doc') { 
                 if($('doc-date')) $('doc-date').value = todayStr;
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
-                if($('items-container') && $('items-container').children.length === 0) addLineItem(); renderRemarksCheckboxes();
+                if($('items-container') && $('items-container').children.length === 0) { addLineItem(); selectedRemarksSequence = []; }
+                renderRemarksCheckboxes();
             }
         }
 
@@ -1212,7 +1214,18 @@
             show('btn-cancel-remark', false);
         }
 
-        function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); }
+        // อัปเดตฟังก์ชันนี้เพื่อใส่ onchange
+        function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1" onchange="handleRemarkCheck(this)"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(c => { c.checked = selectedRemarksSequence.includes(c.value); }); }, 50); }
+        
+        // เพิ่มฟังก์ชันจัดการการคลิก Checkbox เพื่อจดจำลำดับ
+        function handleRemarkCheck(checkbox) {
+            const id = checkbox.value;
+            if (checkbox.checked) {
+                if (!selectedRemarksSequence.includes(id)) selectedRemarksSequence.push(id);
+            } else {
+                selectedRemarksSequence = selectedRemarksSequence.filter(itemId => itemId !== id);
+            }
+        }
         
         if($('add-remark-form')) $('add-remark-form').addEventListener('submit', e => { 
             e.preventDefault(); 
@@ -1312,7 +1325,8 @@
             if (qtDoc.customerName) document.querySelectorAll('#customer-options-list li').forEach(li => { if(li.textContent.includes(qtDoc.customerName)) li.click(); });
             if($('items-container')) { $('items-container').innerHTML = ''; qtDoc.items.forEach(it => addLineItem(it)); }
             if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(val('doc-type'))) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const [id, def] = k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = qtDoc[id] || def || ''; }); }
-            setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(chk => { chk.checked = qtDoc.remarkIds?.includes(chk.value) || (!qtDoc.remarkIds && qtDoc.remark?.includes(savedRemarks.find(r=>r.id===chk.value)?.text.trim())); }); }, 50);
+            selectedRemarksSequence = qtDoc.remarkIds ? [...qtDoc.remarkIds] : [];
+            setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(chk => { chk.checked = selectedRemarksSequence.includes(chk.value); }); }, 50);
             calculateLiveTotal();
         }
 
@@ -1413,7 +1427,16 @@
                 if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
                 gTotal += net; tVat += iv; sub += ib; items.push({ code: c, name: n, qty: q, unit: u, price: p, basePrice: bp, discVal: dv, discType: val('global-disc-type') || 'disc_%', rowDisc: (q*p)-net, total: net, itemBeforeVat: ib, itemVat: iv });
             });
-            let rIds = [], rems = []; document.querySelectorAll('.remark-checkbox:checked').forEach(c => { rIds.push(c.value); const r = savedRemarks.find(rm => rm.id === c.value); if(r) rems.push(r.text.trim().startsWith('-') ? r.text.trim() : "- " + r.text.trim()); });
+            
+            // ดึงข้อความตามลำดับการคลิก (เรียงเลขให้)
+            let rIds = [...selectedRemarksSequence], rems = [];
+            rIds.forEach((id, index) => {
+                const r = savedRemarks.find(rm => rm.id === id);
+                if (r) {
+                    let cleanText = r.text.trim().replace(/^[-0-9.)\s]+/, ''); // ลบขีด หรือตัวเลขเดิมที่อาจติดมา
+                    rems.push(`${index + 1}. ${cleanText}`);
+                }
+            });
             
             let ssoPct = 0, whtPct = 0, ssoAmt = 0, whtAmt = 0;
             if (noVatDocs.includes(pre)) { tVat = 0; sub = gTotal; }
@@ -1435,7 +1458,7 @@
             
             if (currentUser) {
                 setDoc(getUserDoc("documents", docNo), newDoc).then(() => {
-                    showAlert(`บันทึก ${docNo} สำเร็จ!`); this.reset(); if($('search-remark')) $('search-remark').value = ''; filterRemarks(); if($('doc-date')) $('doc-date').value = todayStr; checkDocType(); if($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); } switchTab('document-list');
+                    showAlert(`บันทึก ${docNo} สำเร็จ!`); this.reset(); selectedRemarksSequence = []; if($('search-remark')) $('search-remark').value = ''; filterRemarks(); if($('doc-date')) $('doc-date').value = todayStr; checkDocType(); if($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); } switchTab('document-list');
                 }).catch(err => {
                     console.error("Firestore Error:", err);
                     if (err.code === 'permission-denied') {
@@ -1492,7 +1515,10 @@
                 if($('payslip-sso-pct')) $('payslip-sso-pct').value = d.ssoPct || 0;
                 if($('payslip-wht-pct')) $('payslip-wht-pct').value = d.whtPct || 0;
                 if($('items-container')) { $('items-container').innerHTML = ''; d.items.forEach(it => addLineItem(it)); }
-                setTimeout(() => document.querySelectorAll('.remark-checkbox').forEach(c => c.checked = d.remarkIds?.includes(c.value) || (!d.remarkIds && d.remark?.includes(savedRemarks.find(r=>r.id===c.value)?.text.trim()))), 150);
+                
+                selectedRemarksSequence = d.remarkIds ? [...d.remarkIds] : [];
+                setTimeout(() => document.querySelectorAll('.remark-checkbox').forEach(c => { c.checked = selectedRemarksSequence.includes(c.value); }), 150);
+                
                 calculateLiveTotal(); showAlert(currentLang === 'en' ? 'Loaded as draft.' : 'โหลดข้อมูลสำเร็จ!');
             });
         }
@@ -1691,7 +1717,7 @@
             toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown, 
             selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
             cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee, 
-            handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, generateStockCard, generateShippingMark, generateVatReport, 
+            handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
             exportVatToCSV, recalcVatTotal, draftAIEmail, printDocumentList, closePreview, copyEmailText, updatePreviewScale, 
             selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin
         });
