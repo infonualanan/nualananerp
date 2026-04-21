@@ -954,7 +954,7 @@
         };
 
         const formatMoney = amt => parseFloat(amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const formatDateThai = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${parseInt(d.split('-')[0]) + 543}` : '';
+        const formatDateThai = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${parseInt(d.split('-')[0])}` : '';
         const formatDateEng = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${d.split('-')[0]}` : '';
 
         function ThaiBahtTextHelper(numStr) {
