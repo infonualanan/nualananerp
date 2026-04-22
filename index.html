@@ -68,7 +68,6 @@
 </head>
 <body class="text-gray-800 h-screen bg-gray-50 overflow-hidden font-sans relative text-[12px]">
 
-    <!-- Alerts & Modals -->
     <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[14px]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all scale-100">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-4xl"></i></div>
@@ -90,7 +89,6 @@
         </div>
     </div>
 
-    <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 bg-[#042f24] flex items-center justify-center z-[200] transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-10 text-center transform scale-100 transition-transform relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
@@ -132,9 +130,7 @@
         </div>
     </div>
 
-    <!-- Main Application Container -->
     <div id="main-app" class="w-full h-full flex" style="display: none;">
-        <!-- Sidebar Navigation -->
         <nav class="w-[300px] bg-[#042f24] text-white flex flex-col shadow-2xl z-20 shrink-0 h-full text-[14px]">
             <div class="p-6 border-b border-white/5 shrink-0 relative">
                 <div class="flex justify-between items-start">
@@ -285,7 +281,6 @@
             </div>
         </nav>
 
-        <!-- Content Area -->
         <div class="flex-1 flex flex-col overflow-hidden relative z-10">
             <header class="bg-white h-16 shadow-sm border-b border-gray-100 flex justify-between items-center px-8 shrink-0 no-print text-[14px]">
                 <div class="flex items-center gap-4">
@@ -297,7 +292,6 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <button class="text-gray-400 hover:text-emerald-600 transition relative"><i class="ph ph-bell text-xl"></i><span class="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span></button>
-                    <!-- ปุ่ม Logout -->
                     <button onclick="doLogout()" class="text-gray-400 hover:text-red-500 transition" title="ออกจากระบบ"><i class="ph ph-sign-out text-xl"></i></button>
                     <div class="h-8 w-8 bg-emerald-600 rounded-full flex items-center justify-center text-[14px] font-bold text-white border-2 border-white shadow-sm cursor-pointer hover:bg-emerald-700 transition">CS</div>
                 </div>
@@ -305,7 +299,6 @@
 
             <main class="flex-1 overflow-y-auto p-8 relative bg-gray-50/50">
 
-                <!-- 1. Dashboard Tab -->
                 <div id="tab-dashboard" class="tab-content text-[14px]">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-chart-bar"></i> <span data-i18n="title_dashboard">ภาพรวมธุรกิจ (Executive Dashboard)</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -320,7 +313,6 @@
                     </div>
                 </div>
 
-                <!-- 2. Company Profile Tab -->
                 <div id="tab-company-profile" class="tab-content text-[14px]">
                     <div class="max-w-4xl mx-auto">
                         <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-buildings"></i> <span data-i18n="menu_company">ข้อมูลพื้นฐานบริษัท</span></h2>
@@ -347,7 +339,6 @@
                     </div>
                 </div>
 
-                <!-- 3. Create Document Tab -->
                 <div id="tab-create-doc" class="tab-content text-[14px]">
                     <div class="max-w-6xl mx-auto">
                         <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-file-plus"></i> <span data-i18n="title_create_doc">สร้างเอกสารใหม่</span></h2>
@@ -420,7 +411,6 @@
                                 </div>
                             </div>
 
-                            <!-- Specific Document Detail Containers -->
                             <div id="qt-details-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
                                 <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-calendar-blank"></i> <span data-i18n="qt_details">เงื่อนไขใบเสนอราคา</span></h3>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4"><div><label class="block text-[12px] font-medium text-purple-700 mb-1" data-i18n="valid_until">กำหนดยืนราคา</label><input type="date" id="doc-expire-date" class="w-full border border-purple-300 rounded p-2 outline-none"></div></div>
@@ -442,7 +432,6 @@
                                 </div>
                             </div>
 
-                            <!-- Payslip Deductions (WHT & SSO) -->
                             <div id="payslip-deductions-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
                                 <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-minus-circle"></i> รายการหักเพิ่มเติม (Deductions) สำหรับสลิปเงินเดือน</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -458,7 +447,6 @@
                                 <p class="text-[10px] text-purple-600 mt-2">* ระบบจะคำนวณ % จากยอดเงินเดือนรวม (Gross Salary) เพื่อนำไปแสดงผลที่ส่วนท้ายสลิป</p>
                             </div>
 
-                            <!-- Line Items -->
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4 mt-4" data-i18n="title_items">รายละเอียดรายการ (Line Items)</h3>
                                 <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm overflow-x-auto table-scroll">
@@ -501,7 +489,6 @@
                                 </div>
                             </div>
 
-                            <!-- Remarks -->
                             <div>
                                 <h3 class="text-[14px] font-semibold text-gray-700 mb-2" data-i18n="label_select_remarks">เลือกข้อความหมายเหตุท้ายบิล</h3>
                                 <input type="text" id="search-remark" placeholder="🔍 ค้นหาหมายเหตุ..." class="w-full border border-gray-300 rounded-t-lg p-2 text-[13px] outline-none focus:ring-2 focus:ring-emerald-500 border-b-0" onkeyup="filterRemarks()">
@@ -515,7 +502,6 @@
                     </div>
                 </div>
 
-                <!-- 4. Documents List Tab -->
                 <div id="tab-document-list" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-files"></i> <span data-i18n="title_doc_list">คลังเอกสารทั้งหมด</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -535,7 +521,6 @@
                     </div>
                 </div>
 
-                <!-- 5. Customers Tab -->
                 <div id="tab-customers" class="tab-content">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2></div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -565,7 +550,6 @@
                     </div>
                 </div>
                 
-                <!-- 6. Employees Tab -->
                 <div id="tab-employees" class="tab-content">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-identification-card"></i> <span data-i18n="title_employees">ฐานข้อมูลพนักงาน</span></h2></div>
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -603,7 +587,6 @@
                     </div>
                 </div>
 
-                <!-- 7. Products Tab -->
                 <div id="tab-products" class="tab-content">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-package"></i> <span data-i18n="title_products">รายการสินค้า</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -640,7 +623,6 @@
                     </div>
                 </div>
 
-                <!-- 8. Settings Tab -->
                 <div id="tab-settings" class="tab-content">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-gear"></i> <span data-i18n="menu_settings">ตั้งค่าระบบ</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -661,7 +643,6 @@
                     </div>
                 </div>
 
-                <!-- 9. Stock Card Tab -->
                 <div id="tab-stock-card" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-chart-line"></i> รายงานสต๊อกคงเหลือ</h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex gap-4 items-end no-print text-[14px]">
@@ -676,13 +657,11 @@
                     </div>
                 </div>
 
-                <!-- 10. Reports Center Tab -->
                 <div id="tab-reports-center" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2" id="ur-header-title">ศูนย์รวมรายงาน</h2><button onclick="window.print()" class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2"><i class="ph ph-printer"></i> พิมพ์รายงานนี้</button></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area"><div class="overflow-x-auto table-scroll"><table class="w-full text-left border-collapse text-[12px] whitespace-nowrap min-w-[800px]"><thead class="bg-gray-100 border-b border-gray-300"><tr><th class="p-4 border-r w-12 text-center">No.</th><th class="p-4 border-r w-24">วันที่</th><th class="p-4 border-r w-32">เลขที่อ้างอิง</th><th class="p-4 border-r">รายละเอียด</th><th class="p-4 text-right w-40">มูลค่า (THB)</th></tr></thead><tbody id="ur-table-body" class="divide-y divide-gray-100"></tbody><tfoot class="bg-gray-50 font-bold border-t-2 border-gray-800"><tr><td colspan="4" class="p-4 text-right border-r">ยอดรวมในรายงาน:</td><td class="p-4 text-right text-blue-700" id="ur-total-amt">0.00</td></tr></tfoot></table></div></div>
                 </div>
 
-                <!-- 11. Shipping Mark Tab -->
                 <div id="tab-shipping-mark" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-box-arrow-up"></i> พิมพ์ฉลากกล่อง</h2></div>
                     <div class="bg-white p-6 rounded-xl shadow-sm border mb-6 flex gap-4 items-end no-print text-[14px]">
@@ -691,7 +670,6 @@
                     <div id="shm-print-area" class="grid grid-cols-1 md:grid-cols-2 gap-8 print-area"><div class="p-8 text-center text-gray-400 border-2 border-dashed rounded-xl">เลือกเอกสารเพื่อสร้าง Shipping Mark</div></div>
                 </div>
 
-                <!-- 12. VAT Report Tab -->
                 <div id="tab-vat-report" class="tab-content">
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-receipt"></i> <span data-i18n="title_vat_report">รายงานภาษี</span></h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-wrap gap-4 items-end no-print text-[14px]">
@@ -714,14 +692,12 @@
                     </div>
                 </div>
 
-                <!-- Preview Modal -->
                 <div id="document-preview-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[12px]">
                     <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[95vh] relative flex flex-col overflow-hidden">
                         <div class="shrink-0 bg-gray-100 p-4 border-b flex justify-between items-center z-10 no-print">
                             <div class="flex items-center gap-4">
                                 <h3 class="font-bold text-gray-700 flex items-center gap-2 text-[14px]"><i class="ph ph-file-search text-xl"></i> <span data-i18n="title_preview">ตัวอย่างเอกสาร</span></h3>
                                 
-                                <!-- Scale Slider Area -->
                                 <div class="flex items-center gap-2 bg-white/50 px-3 py-1 rounded-lg border border-gray-300 shadow-sm ml-2">
                                     <i class="ph ph-magnifying-glass-plus text-gray-500"></i>
                                     <input type="range" id="preview-scale-slider" min="0.4" max="1.2" step="0.05" value="0.8" class="w-24 accent-emerald-600 cursor-pointer" oninput="updatePreviewScale(this.value)">
@@ -813,9 +789,11 @@
                                                     <div class="flex justify-between py-1.5 px-2 bg-gray-100 text-[14px]"><span class="font-bold text-gray-900" id="preview-lbl-grand"></span><span class="font-bold text-emerald-700 double-underline" id="preview-grandtotal"></span></div>
                                                 </div>
                                             </div>
-                                            <div class="border border-gray-200 p-2 rounded bg-white flex-1 relative overflow-hidden mb-2">
+                                            <div class="border border-gray-200 p-2 rounded bg-white flex-1 relative overflow-hidden mb-2" id="preview-remark-wrapper">
                                                 <p class="font-bold text-gray-900 text-[14px] shrink-0 mb-1" id="preview-lbl-remark"></p>
-                                                <div class="absolute top-[28px] bottom-2 left-2 right-2 overflow-hidden"><div id="preview-remark" class="text-gray-800 text-[14px]" style="column-count: 2; column-gap: 20px; column-fill: auto; height: 100%; word-break: break-word; line-height: 1.4;"></div></div>
+                                                <div class="absolute top-[28px] bottom-2 left-2 right-2 overflow-hidden">
+                                                    <div id="preview-remark" class="text-gray-800" style="column-count: 2; column-gap: 20px; column-fill: auto; width: 100%; height: 100%; word-break: break-word; line-height: 1.4;"></div>
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -834,7 +812,6 @@
         </div>
     </div>
 
-    <!-- Main Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -941,7 +918,7 @@
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
         let editingProductId = null;
         let editingRemarkId = null;
-        let selectedRemarksSequence = []; // เพิ่มตัวแปรเก็บลำดับการคลิกหมายเหตุ
+        let selectedRemarksSequence = [];
 
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
@@ -1214,10 +1191,8 @@
             show('btn-cancel-remark', false);
         }
 
-        // อัปเดตฟังก์ชันนี้เพื่อใส่ onchange
         function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1" onchange="handleRemarkCheck(this)"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(c => { c.checked = selectedRemarksSequence.includes(c.value); }); }, 50); }
         
-        // เพิ่มฟังก์ชันจัดการการคลิก Checkbox เพื่อจดจำลำดับ
         function handleRemarkCheck(checkbox) {
             const id = checkbox.value;
             if (checkbox.checked) {
@@ -1609,10 +1584,27 @@
             }
 
             txt('preview-subtotal', `${formatMoney(d.subtotal)} ${cur}`); txt('preview-vat', `${formatMoney(d.vat)} ${cur}`); txt('preview-grandtotal', `${formatMoney(d.grandTotal)} ${cur}`);
+            
+            // Set remark text and auto-resize
             txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${l}</div>`).join('') : '-');
             
             if($('doc-copy-type')) txt('preview-copy-type', val('doc-copy-type')); show('ai-email-container', false);
             show('document-preview-modal', true); document.body.classList.add('modal-open');
+
+            // Auto Resize Remark Font
+            setTimeout(() => {
+                const remarkEl = document.getElementById('preview-remark');
+                if (remarkEl) {
+                    let size = 14;
+                    remarkEl.style.fontSize = size + 'px';
+                    // Check if scrollWidth > clientWidth (meaning it created a 3rd column and overflowed horizontally)
+                    // or if it overflowed vertically
+                    while ((remarkEl.scrollWidth > remarkEl.clientWidth + 2 || remarkEl.scrollHeight > remarkEl.clientHeight + 2) && size > 6) {
+                        size -= 0.5;
+                        remarkEl.style.fontSize = size + 'px';
+                    }
+                }
+            }, 150);
         }
 
         function closePreview() { show('document-preview-modal', false); document.body.classList.remove('modal-open'); currentlyPreviewingDoc = null; }
@@ -1672,7 +1664,8 @@
 
         function generateVatReport() {
             const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
-            // แก้ไข: กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น
+            
+            // กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น ตามที่เคยขอไว้
             const fD = database.filter(d => ((rt==='output'&&['RETAX', 'CI'].includes(d.prefix))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
             const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
             
