@@ -34,6 +34,8 @@ npm run check
 
 ระบบจะตรวจ ESLint, TypeScript, Domain Tests และ Production Build
 
+Beta นี้ export เป็น static site ที่โฟลเดอร์ `out` เพื่อให้ Preview บน Vercel ใช้ได้กับ Demo Store โดยไม่ต้องมี Next.js server เมื่อเชื่อม Authentication และฐานข้อมูลจริงแล้วจึงประเมินการเปลี่ยน deployment mode อีกครั้ง
+
 ## ก่อนเปิดใช้กับฐานข้อมูลบริษัท
 
 Beta นี้ยังใช้ `localStorage` และ **ยังไม่มี Firebase data adapter** การตั้ง Environment Variables อย่างเดียวจึงยังไม่เชื่อมข้อมูลจริง ไฟล์ `firestore.rules` และ `.env.example` เป็นฐานสำหรับงานระยะถัดไป ไม่ใช่สัญญาณว่าระบบพร้อม Production แล้ว
