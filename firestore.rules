@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function member(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
+    }
+
+    function isMember(orgId) {
+      return signedIn() && member(orgId).data.active == true;
+    }
+
+    function role(orgId) {
+      return member(orgId).data.role;
+    }
+
+    function isAdmin(orgId) {
+      return isMember(orgId) && role(orgId) in ['ceo', 'admin'];
+    }
+
+    function canWrite(orgId, collectionName) {
+      return isMember(orgId) && (
+        role(orgId) in ['ceo', 'admin'] ||
+        (collectionName in ['partners', 'salesDocuments'] && role(orgId) in ['sales', 'accounting']) ||
+        (collectionName in ['products', 'lots', 'stockMovements'] && role(orgId) in ['warehouse', 'production', 'qa']) ||
+        (collectionName == 'productionOrders' && role(orgId) in ['production', 'qa']) ||
+        (collectionName in ['journalEntries', 'payments', 'counters'] && role(orgId) == 'accounting')
+      );
+    }
+
+    match /users/{userId} {
+      allow create, read, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /organizations/{orgId} {
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow read: if isMember(orgId);
+      allow update: if isAdmin(orgId);
+      allow delete: if false;
+
+      match /members/{userId} {
+        allow read: if isMember(orgId);
+        allow create: if isAdmin(orgId) || (
+          signedIn() &&
+          request.auth.uid == userId &&
+          get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId == request.auth.uid &&
+          request.resource.data.role == 'ceo'
+        );
+        allow update: if isAdmin(orgId);
+        allow delete: if isAdmin(orgId) && userId != request.auth.uid;
+      }
+
+      match /auditEntries/{entryId} {
+        allow read: if isMember(orgId);
+        allow create: if isMember(orgId) && request.resource.data.actorId == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /{collectionName}/{documentId} {
+        allow read: if isMember(orgId) && collectionName in [
+          'partners', 'products', 'lots', 'stockMovements', 'salesDocuments',
+          'productionOrders', 'journalEntries', 'payments', 'counters'
+        ];
+        allow create, update: if canWrite(orgId, collectionName);
+        allow delete: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
