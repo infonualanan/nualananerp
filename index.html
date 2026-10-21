@@ -503,7 +503,15 @@
                 </div>
 
                 <div id="tab-document-list" class="tab-content">
-                    <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-files"></i> <span data-i18n="title_doc_list">คลังเอกสารทั้งหมด</span></h2></div>
+                    <div class="flex flex-wrap items-center gap-6 mb-6 no-print">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-files"></i> <span data-i18n="title_doc_list">คลังเอกสารทั้งหมด</span></h2>
+                        <div class="relative max-w-full">
+                            <i class="ph ph-funnel absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 pointer-events-none" aria-hidden="true"></i>
+                            <select id="document-type-filter" aria-label="คัดกรองประเภทเอกสาร" onchange="updateDocumentTable()" class="max-w-full bg-white border border-gray-300 rounded-lg pl-9 pr-8 py-2 text-[12px] focus:ring-2 focus:ring-emerald-500 outline-none">
+                                <option value="">ประเภทเอกสาร: ทั้งหมด</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="overflow-x-auto table-scroll">
                             <table class="w-full text-left border-collapse whitespace-nowrap min-w-[1000px] text-[14px]">
@@ -815,7 +823,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
         const val = id => $(id) ? $(id).value : '';
@@ -1429,7 +1437,7 @@
             let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
             if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
 
-            const newDoc = { docNo, refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: new Date(docDate).toISOString(), inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: rems.join('\n'), remarkIds: rIds, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+            const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: new Date(docDate).toISOString(), inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: rems.join('\n'), remarkIds: rIds, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
             if (currentUser) {
                 setDoc(getUserDoc("documents", docNo), newDoc).then(() => {
@@ -1468,9 +1476,50 @@
             for (const doc of database) { if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
         }
 
+        function documentTypeKey(d) { return d.prefix || '__untyped__'; }
+
+        function renderDocumentTypeFilter() {
+            const filter = $('document-type-filter'); if (!filter) return;
+            const selected = filter.value;
+            const types = new Map(Object.entries(docTypeNames));
+            database.forEach(d => {
+                const key = documentTypeKey(d);
+                if (!types.has(key)) types.set(key, d.docName || (currentLang === 'en' ? 'Unspecified type' : 'ไม่ระบุประเภท'));
+            });
+            filter.replaceChildren(new Option(currentLang === 'en' ? 'Document type: All' : 'ประเภทเอกสาร: ทั้งหมด', ''));
+            types.forEach((name, key) => {
+                const label = currentLang === 'en' ? (name.match(/\(([^)]+)\)/)?.[1] || name) : name;
+                filter.add(new Option(label, key));
+            });
+            filter.value = types.has(selected) ? selected : '';
+            filter.setAttribute('aria-label', currentLang === 'en' ? 'Filter document type' : 'คัดกรองประเภทเอกสาร');
+        }
+
+        function documentTimestamp(value) {
+            if (value == null || value === '') return 0;
+            const time = typeof value?.toMillis === 'function' ? value.toMillis()
+                : typeof value?.seconds === 'number' ? value.seconds * 1000 + (value.nanoseconds || 0) / 1e6
+                : typeof value === 'number' ? value : new Date(value).getTime();
+            return Number.isFinite(time) ? time : 0;
+        }
+
+        function getFilteredDocuments(type = '') {
+            return database.filter(d => !type || documentTypeKey(d) === type).sort((a, b) => {
+                const aCreated = documentTimestamp(a.createdAt), bCreated = documentTimestamp(b.createdAt);
+                // Older records have no creation time. Keep them below timestamped records,
+                // sorted by document date; do not invent or write historical creation times.
+                if (!!aCreated !== !!bCreated) return aCreated ? -1 : 1;
+                const aTime = aCreated || documentTimestamp(a.rawDate || a.inputDate);
+                const bTime = bCreated || documentTimestamp(b.rawDate || b.inputDate);
+                return bTime - aTime || String(b.docNo).localeCompare(String(a.docNo), 'en', { numeric: true });
+            });
+        }
+
         function updateDocumentTable() {
             updateAllStatuses(); if(!$('document-table-body')) return;
-            $('document-table-body').innerHTML = database.length ? [...database].reverse().map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||d.prefix.includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span></td><td class="p-4 text-center"><div class="flex justify-center gap-1"><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">ยังไม่มีเอกสารในระบบ</td></tr>`;
+            renderDocumentTypeFilter();
+            const documents = getFilteredDocuments(val('document-type-filter'));
+            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span></td><td class="p-4 text-center"><div class="flex justify-center gap-1"><button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
         }
 
         function deleteDocument(docNo) { 
@@ -1609,6 +1658,94 @@
 
         function closePreview() { show('document-preview-modal', false); document.body.classList.remove('modal-open'); currentlyPreviewingDoc = null; }
         
+        let pdfLibraryPromise = null, pdfExportInProgress = false;
+
+        function loadPdfLibrary() {
+            if (typeof window.html2pdf === 'function') return Promise.resolve();
+            if (!pdfLibraryPromise) {
+                pdfLibraryPromise = new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.14.0/dist/html2pdf.bundle.min.js';
+                    script.integrity = 'sha384-EaWTV/aVUkLz3tfwg3+5ycX7Q/d9ET9ruOKUgUuFIRUCfzHO1eo2J62a844iWPmY';
+                    script.crossOrigin = 'anonymous';
+                    script.referrerPolicy = 'no-referrer';
+                    const timer = setTimeout(() => { script.remove(); reject(new Error('PDF library timed out')); }, 20000);
+                    script.onload = () => {
+                        clearTimeout(timer);
+                        if (typeof window.html2pdf === 'function') resolve();
+                        else { script.remove(); reject(new Error('PDF library unavailable')); }
+                    };
+                    script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('PDF library failed to load')); };
+                    document.head.appendChild(script);
+                }).catch(error => { pdfLibraryPromise = null; throw error; });
+            }
+            return pdfLibraryPromise;
+        }
+
+        function createDocumentPdfSource(docNo) {
+            if (!database.some(d => d.docNo === docNo)) throw new Error('Document no longer available');
+            const previousDoc = currentlyPreviewingDoc;
+            const wasOpen = !$('document-preview-modal').classList.contains('hidden');
+            let source;
+            try {
+                previewDocument(docNo);
+                source = $('paper-preview').cloneNode(true);
+            } finally {
+                if (wasOpen && previousDoc) previewDocument(previousDoc.docNo);
+                else closePreview();
+            }
+            // Use the existing template, with full-size text and natural page flow only
+            // in the export copy. Keep the on-screen preview and print layout unchanged.
+            source.id = 'document-pdf-export';
+            Object.assign(source.style, { width: '190mm', height: 'auto', minHeight: '276mm', padding: '0', transform: 'none', position: 'relative', top: 'auto', left: 'auto', overflow: 'visible' });
+            source.querySelectorAll('.table-scroll').forEach(el => Object.assign(el.style, { overflow: 'visible', paddingBottom: '0' }));
+            source.querySelectorAll('table').forEach(el => Object.assign(el.style, { minWidth: '0', width: '100%' }));
+            source.querySelectorAll('tr, .print-footer').forEach(el => el.style.breakInside = 'avoid');
+            const items = source.querySelector('#preview-items-body');
+            if (items) Object.assign(items.closest('.relative').style, { flex: '1 0 auto', minHeight: 'auto' });
+            const totals = source.querySelector('#preview-grandtotal')?.parentElement?.parentElement?.parentElement;
+            if (totals) totals.classList.add('pdf-keep-together');
+            const remarkWrapper = source.querySelector('#preview-remark-wrapper');
+            const remark = source.querySelector('#preview-remark');
+            if (remarkWrapper && remark) {
+                Object.assign(remarkWrapper.style, { flex: 'none', overflow: 'visible', minHeight: '60px' });
+                Object.assign(remark.parentElement.style, { position: 'static', overflow: 'visible', height: 'auto' });
+                Object.assign(remark.style, { height: 'auto', fontSize: '14px', columnFill: 'balance' });
+            }
+            return source;
+        }
+
+        async function downloadDocumentPdf(docNo) {
+            if (pdfExportInProgress) return;
+            if (!database.some(d => d.docNo === docNo)) return showAlert(currentLang === 'en' ? 'Document not found.' : 'ไม่พบเอกสารนี้');
+            pdfExportInProgress = true;
+            document.querySelectorAll('.document-pdf-button').forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
+            try {
+                await loadPdfLibrary();
+                if (document.fonts?.ready) await document.fonts.ready;
+                const source = createDocumentPdfSource(docNo);
+                const filename = String(docNo).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_') + '.pdf';
+                await window.html2pdf().set({
+                    margin: [10, 10, 10, 10], filename, enableLinks: false,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, windowWidth: 1200 },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.print-footer', '.pdf-keep-together'] }
+                }).from(source).save();
+            } catch (error) {
+                console.error('PDF export failed:', error);
+                showAlert(currentLang === 'en' ? 'Could not download the PDF. Check your connection and try again.' : 'ดาวน์โหลด PDF ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+            } finally {
+                pdfExportInProgress = false;
+                document.querySelectorAll('.document-pdf-button').forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); });
+            }
+        }
+
+        $('document-table-body')?.addEventListener('click', event => {
+            const button = event.target.closest('button[data-download-pdf]');
+            if (button) downloadDocumentPdf(decodeURIComponent(button.dataset.downloadPdf));
+        });
+
         function printDocumentList(docNo) { 
             previewDocument(docNo); 
             setTimeout(() => { 
@@ -1712,7 +1849,7 @@
             cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee, 
             handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
             exportVatToCSV, recalcVatTotal, draftAIEmail, printDocumentList, closePreview, copyEmailText, updatePreviewScale, 
-            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin
+            selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin, updateDocumentTable
         });
 
         // --- Firebase Initial Data Sync ---
@@ -1770,7 +1907,7 @@
             
             onSnapshot(getUserCol("documents"), (snap) => {
                 database = snap.docs.map(d => {
-                    let data = d.data();
+                    let data = d.data({ serverTimestamps: 'estimate' });
                     if(data.rawDate && data.rawDate.toDate) data.rawDate = data.rawDate.toDate();
                     else if (data.rawDate && typeof data.rawDate === 'string') data.rawDate = new Date(data.rawDate);
                     return data;
