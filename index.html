@@ -23,7 +23,7 @@
         .table-scroll::-webkit-scrollbar-thumb, .preview-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 8px; border: 3px solid #e2e8f0; }
         .table-scroll:hover::-webkit-scrollbar-thumb, .preview-scroll:hover::-webkit-scrollbar-thumb { background: #059669; }
 
-        #customer-duplicate-dialog::backdrop { background: rgb(17 24 39 / 0.6); }
+        #customer-duplicate-dialog::backdrop, #employee-notice-dialog::backdrop { background: rgb(17 24 39 / 0.6); }
 
         /* PRINT STYLES FIX */
         @media print {
@@ -570,15 +570,31 @@
                 </div>
                 
                 <div id="tab-employees" class="tab-content">
-                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-identification-card"></i> <span data-i18n="title_employees">ฐานข้อมูลพนักงาน</span></h2></div>
+                    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-identification-card"></i> <span data-i18n="title_employees">ฐานข้อมูลพนักงาน</span></h2>
+                        <form id="employee-search-form" role="search" class="flex items-center w-full sm:w-[390px] bg-white border border-gray-300 rounded overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500">
+                            <i class="ph ph-magnifying-glass text-gray-400 ml-3" aria-hidden="true"></i>
+                            <input id="employee-search" type="text" class="flex-1 min-w-0 p-2 outline-none text-sm" placeholder="ค้นหาชื่อพนักงาน..." aria-label="ค้นหาชื่อพนักงาน" autocomplete="off">
+                            <button type="button" id="employee-search-clear" class="hidden px-2 text-gray-500" aria-label="ล้างคำค้นหา"><i class="ph ph-x" aria-hidden="true"></i></button>
+                            <button type="submit" id="employee-search-button" class="self-stretch px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm">ค้นหา</button>
+                        </form>
+                        <span id="employee-search-count" class="text-xs text-gray-500" role="status" aria-live="polite"></span>
+                    </div>
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div class="xl:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_emp" id="form-emp-title">เพิ่มพนักงานใหม่</h3>
                             <form id="add-employee-form" class="space-y-4 text-[14px]">
-                                <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_emp_name">ชื่อ-นามสกุล</span> <span class="text-red-500">*</span></label><input type="text" id="new-emp-name" required class="w-full border p-2 rounded outline-none"></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_emp_name">ชื่อ-นามสกุล</span> <span class="text-red-500">*</span></label><input type="text" id="new-emp-name" required autocomplete="off" aria-describedby="employee-name-error" class="w-full border p-2 rounded outline-none"><p id="employee-name-error" class="hidden text-xs text-red-600 mt-1" role="status"></p></div>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div><label class="block text-gray-600 mb-1 text-[12px]">วันที่เข้าทำงาน <span class="text-red-500">*</span></label><input type="date" id="new-emp-join-date" required class="w-full border p-2 rounded outline-none"></div>
-                                    <div><label class="block text-gray-600 mb-1 text-[12px]">สถานะ</label><select id="new-emp-status" class="w-full border p-2 rounded outline-none" onchange="toggleResignDate()"><option value="active">ทำงานอยู่</option><option value="resigned">ลาออก</option></select></div>
+                                    <div><label class="block text-gray-600 mb-1 text-[12px]">สถานะ</label><select id="new-emp-status" class="w-full border p-2 rounded outline-none" onchange="toggleResignDate()"><option id="emp-status-active" value="active">ทำงานอยู่</option><option id="emp-status-leave" value="leave">ลาพักผ่อน</option><option id="emp-status-resigned" value="resigned">ลาออก</option></select></div>
+                                </div>
+                                <div id="employee-leave-fields" class="hidden p-3 bg-amber-50 border border-amber-200 rounded">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div><label for="new-emp-leave-start" class="block text-gray-600 mb-1 text-[12px]"><span id="emp-leave-start-label">วันเริ่มลา</span> <span class="text-red-500">*</span></label><input type="date" id="new-emp-leave-start" class="w-full border p-2 rounded outline-none"></div>
+                                        <div><label for="new-emp-leave-end" class="block text-gray-600 mb-1 text-[12px]"><span id="emp-leave-end-label">วันสิ้นสุดลา</span> <span class="text-red-500">*</span></label><input type="date" id="new-emp-leave-end" class="w-full border p-2 rounded outline-none"></div>
+                                    </div>
+                                    <p id="employee-leave-hint" class="text-xs text-amber-800 mt-2">แจ้งเตือนก่อนวันเริ่มลา 1 วัน เมื่อเปิดหน้าโปรแกรม</p>
                                 </div>
                                 <div id="resign-date-container" class="hidden"><label class="block text-gray-600 mb-1 text-[12px]">วันที่ลาออก</label><input type="date" id="new-emp-resign-date" class="w-full border p-2 rounded outline-none"></div>
                                 <div class="grid grid-cols-2 gap-2">
@@ -842,6 +858,18 @@
         </div>
     </dialog>
 
+    <dialog id="employee-notice-dialog" aria-labelledby="employee-notice-title" aria-describedby="employee-notice-description" style="width:calc(100% - 2rem)" class="max-w-md rounded-2xl border-0 p-6 shadow-2xl text-gray-800 no-print">
+        <div id="employee-notice-icon" class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl mb-4" aria-hidden="true"><i class="ph ph-warning-circle"></i></div>
+        <h3 id="employee-notice-title" class="text-xl font-bold mb-2"></h3>
+        <p id="employee-notice-description" class="text-sm text-gray-500 mb-4"></p>
+        <div id="employee-duplicate-match" class="p-3 border rounded bg-gray-50 mb-5 break-words"><span id="employee-duplicate-code" class="text-emerald-700 font-bold text-sm"></span><p id="employee-duplicate-name" class="text-sm font-medium mt-1"></p><p id="employee-duplicate-info" class="text-xs text-gray-500 mt-1"></p></div>
+        <div id="employee-leave-reminder-list" class="hidden max-h-[45vh] overflow-y-auto space-y-2 mb-5"></div>
+        <div class="flex gap-2">
+            <button type="button" id="employee-notice-view" class="flex-1 p-2 rounded border bg-gray-50 text-sm">ดูข้อมูลเดิม</button>
+            <button type="button" id="employee-notice-close" class="flex-1 p-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm">กลับไปแก้ไขชื่อ</button>
+        </div>
+    </dialog>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -881,6 +909,7 @@
         let currentUser = null;
 
         onAuthStateChanged(auth, (user) => {
+            if (currentUser?.uid !== user?.uid) resetEmployeeSession();
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -945,7 +974,11 @@
         let customersLoaded = false, customerSaveInProgress = false, customerNameComposing = false;
         let customerNameTimer, customerWarnedName = '', customerDuplicateMatch = null, customerDialogFocus = null;
         let customers = [{ id: '1', code: 'C-0001', name: 'บริษัท ลูกค้าเอบีซี จำกัด', contactName: 'สมชาย', email: 'somchai@abc.com', taxId: '0105555555555', branch: '00000', address: '111 ถ.สีลม' }];
-        let employeeRunningNumber = 3, editingEmployeeId = null; 
+        let employeeRunningNumber = 3, editingEmployeeId = null;
+        let employeesLoaded = false, employeesDataUserId = null, employeeRemindersReady = false, employeeSaveInProgress = false, employeeNameComposing = false;
+        let employeeNameTimer, employeeWarnedName = '', employeeDuplicateMatch = null, employeeNoticeFocus = null;
+        let employeeNoticeMode = '', employeeReminderBatch = null;
+        const employeeReminderMemory = new Map();
         let employees = [{ id: '1', code: 'E-0001', name: 'คุณสมรัก ยอดขาย', position: 'พนักงานขาย', email: 's@co.th', phone: '081', joinDate: '2023-01-15', status: 'active', resignDate: '', salary: 25000, basePct: '5', taxId: '1111111111111' }];
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
         let editingProductId = null;
@@ -1012,7 +1045,7 @@
             document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(translations[currentLang][key]) el.innerHTML = translations[currentLang][key]; });
             renderProductDropdowns(); checkDocType(); renderEmployeeDropdownForSeller();
             const gDisc = $('global-disc-type'); if (gDisc) { const isGp = gDisc.value === 'gp_%'; gDisc.innerHTML = `<option value="disc_%" ${!isGp ? 'selected' : ''}>${currentLang === 'en' ? 'Discount (%)' : 'ส่วนลด (%)'}</option><option value="gp_%" ${isGp ? 'selected' : ''}>GP (%)</option>`; }
-            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDocumentTable(); renderCustomers();
+            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDocumentTable(); renderCustomers(); renderEmployees();
         }
 
         if ($('comp-logo-input')) { 
@@ -1080,32 +1113,264 @@
         function convertPriceFromTHB(thbPrice) { const pre = val('doc-type'); if(['EQT','PI','CI','PL','EVAT'].includes(pre) && val('doc-currency') !== 'THB' && exchangeRates[val('doc-currency')]) return thbPrice / exchangeRates[val('doc-currency')]; return thbPrice; }
         function handleCurrencyChange() { document.querySelectorAll('.item-row').forEach(row => { const bp = row.querySelector('.item-base-price'); if(bp && bp.value) row.querySelector('.item-price').value = convertPriceFromTHB(parseFloat(bp.value) || 0).toFixed(2); }); calculateLiveTotal(); }
 
-        function toggleResignDate() { show('resign-date-container', val('new-emp-status') === 'resigned'); if(val('new-emp-status') !== 'resigned') if($('new-emp-resign-date')) $('new-emp-resign-date').value = ''; }
-
-        function renderEmployees() { 
-            if(!$('employees-table-body')) return; 
-            $('employees-table-body').innerHTML = employees.map(e => `<tr class="hover:bg-gray-50 transition"><td class="p-4"><div class="font-bold text-emerald-700">${e.code}</div><span class="${e.status==='resigned'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'} px-2 py-0.5 rounded text-[10px] font-bold uppercase block mt-1 w-max">${e.status==='resigned'?`ลาออก${e.resignDate?' ('+e.resignDate+')':''}`:'ทำงานอยู่'}</span></td><td class="p-4"><div class="font-medium text-gray-800">${e.name}</div><div class="text-xs text-gray-500">${e.position || '-'}</div><div class="text-xs text-gray-500">Tax ID: ${e.taxId || '-'}</div></td><td class="p-4"><div class="font-bold text-gray-700">${formatMoney(e.salary || 0)}</div><div class="text-[10px] text-gray-400">ฐานคำนวณ: ${e.basePct !== '' ? e.basePct + '%' : '-'}</div></td><td class="p-4 text-gray-600">${e.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${e.email}</div>` : ''}<div class="text-xs text-gray-400 mt-1"><i class="ph ph-phone"></i> ${e.phone || '-'}</div></td><td class="p-4 text-center"><button onclick="editEmployee('${e.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="แก้ไข"><i class="ph ph-pencil"></i></button><button onclick="deleteEmployee('${e.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="ลบ"><i class="ph ph-trash"></i></button></td></tr>`).join(''); 
+        // Employee search, duplicate protection and calendar-day leave reminders.
+        function employeeText(id, text) { if ($(id)) $(id).textContent = text; }
+        function employeeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
         }
-
-        if($('add-employee-form')) $('add-employee-form').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            const data = { name: val('new-emp-name'), position: val('new-emp-pos'), email: val('new-emp-email'), phone: val('new-emp-phone'), joinDate: val('new-emp-join-date'), status: val('new-emp-status'), resignDate: val('new-emp-resign-date'), salary: parseFloat(val('new-emp-salary')) || 0, basePct: val('new-emp-base-pct') !== '' ? parseFloat(val('new-emp-base-pct')) : '', taxId: val('new-emp-taxid') };
-            if (editingEmployeeId) { 
-                if (currentUser) setDoc(getUserDoc("employees", editingEmployeeId), data, {merge: true});
-                showAlert(currentLang === 'en' ? 'Employee updated!' : 'อัปเดตสำเร็จ!'); 
-            } else { 
-                let max = 0; employees.forEach(emp => { let n = parseInt(emp.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; });
-                const code = 'E-' + String(max + 1).padStart(4, '0');
-                const newEmp = { id: Date.now().toString(), code, ...data };
-                if (currentUser) setDoc(getUserDoc("employees", newEmp.id), newEmp);
-                showAlert(currentLang === 'en' ? 'Employee added!' : 'เพิ่มพนักงานใหม่สำเร็จ!'); 
-            } 
-            cancelEditEmployee(); 
+        function normalizeEmployeeName(value) {
+            return String(value || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
+        }
+        function filterEmployees(list, query) {
+            const key = normalizeEmployeeName(query);
+            return list.filter(e => normalizeEmployeeName(e.name).includes(key));
+        }
+        function findDuplicateEmployee(name, excludedId = editingEmployeeId, list = employees) {
+            const key = normalizeEmployeeName(name);
+            return key ? list.find(e => e.id !== excludedId && normalizeEmployeeName(e.name) === key) : null;
+        }
+        function employeeISODate(value) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null;
+            const date = new Date(value + 'T00:00:00Z');
+            return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? date : null;
+        }
+        function employeeTodayISO(now = new Date()) {
+            const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+            const get = type => parts.find(p => p.type === type).value;
+            return get('year') + '-' + get('month') + '-' + get('day');
+        }
+        function shiftEmployeeDate(iso, days) {
+            const date = employeeISODate(iso);
+            if (!date) return '';
+            date.setUTCDate(date.getUTCDate() + days);
+            return date.toISOString().slice(0, 10);
+        }
+        function formatEmployeeDate(iso) {
+            const date = employeeISODate(iso);
+            return date ? new Intl.DateTimeFormat(currentLang === 'en' ? 'en-GB' : 'th-TH', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(date) : '-';
+        }
+        function employeeStatusLabel(status) {
+            return (currentLang === 'en' ? { active: 'Active', leave: 'Vacation leave', resigned: 'Resigned' } : { active: 'ทำงานอยู่', leave: 'ลาพักผ่อน', resigned: 'ลาออก' })[status] || (currentLang === 'en' ? 'Active' : 'ทำงานอยู่');
+        }
+        function validateEmployeeLeave() {
+            const onLeave = val('new-emp-status') === 'leave', start = val('new-emp-leave-start'), end = val('new-emp-leave-end');
+            if (!$('new-emp-leave-end')) return;
+            $('new-emp-leave-end').min = onLeave ? start : '';
+            $('new-emp-leave-end').setCustomValidity(onLeave && start && end && end < start ? (currentLang === 'en' ? 'Leave end must not be before leave start.' : 'วันสิ้นสุดลาต้องไม่ก่อนวันเริ่มลา') : '');
+        }
+        function toggleResignDate() {
+            const status = val('new-emp-status'), onLeave = status === 'leave';
+            show('resign-date-container', status === 'resigned');
+            if (status !== 'resigned' && $('new-emp-resign-date')) $('new-emp-resign-date').value = '';
+            show('employee-leave-fields', onLeave);
+            ['new-emp-leave-start', 'new-emp-leave-end'].forEach(id => {
+                if ($(id)) { $(id).required = onLeave; if (!onLeave) $(id).value = ''; }
+            });
+            validateEmployeeLeave();
+        }
+        function updateEmployeeNameError(match) {
+            if ($('new-emp-name')) $('new-emp-name').setAttribute('aria-invalid', match ? 'true' : 'false');
+            employeeText('employee-name-error', currentLang === 'en' ? 'This employee name already exists.' : 'พบชื่อ-นามสกุลนี้ในข้อมูลพนักงานแล้ว');
+            show('employee-name-error', !!match);
+        }
+        function renderEmployees() {
+            const isEn = currentLang === 'en', query = val('employee-search'), filtered = filterEmployees(employees, query);
+            if ($('employee-search')) {
+                $('employee-search').placeholder = isEn ? 'Search employee name...' : 'ค้นหาชื่อพนักงาน...';
+                $('employee-search').setAttribute('aria-label', $('employee-search').placeholder);
+                $('employee-search-clear').setAttribute('aria-label', isEn ? 'Clear search' : 'ล้างคำค้นหา');
+            }
+            employeeText('employee-search-button', isEn ? 'Search' : 'ค้นหา');
+            show('employee-search-clear', !!query);
+            employeeText('employee-search-count', normalizeEmployeeName(query) ? (isEn ? `${filtered.length} of ${employees.length} results` : `พบ ${filtered.length} จาก ${employees.length} รายการ`) : '');
+            ['active', 'leave', 'resigned'].forEach(status => employeeText('emp-status-' + status, employeeStatusLabel(status)));
+            employeeText('emp-leave-start-label', isEn ? 'Leave start' : 'วันเริ่มลา');
+            employeeText('emp-leave-end-label', isEn ? 'Leave end' : 'วันสิ้นสุดลา');
+            employeeText('employee-leave-hint', isEn ? 'Reminds you one day before leave starts while the app is open (Thailand time).' : 'แจ้งเตือนก่อนวันเริ่มลา 1 วัน เมื่อเปิดหน้าโปรแกรม (เวลาไทย)');
+            validateEmployeeLeave();
+            const body = $('employees-table-body'); if (!body) return;
+            body.innerHTML = filtered.length ? filtered.map(e => {
+                const id = employeeHtml(encodeURIComponent(e.id));
+                const badge = e.status === 'resigned' ? 'bg-red-100 text-red-700' : e.status === 'leave' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-700';
+                const dates = e.status === 'leave' ? `<div class="text-[10px] text-amber-800 mt-1">${employeeHtml(formatEmployeeDate(e.leaveStart))} – ${employeeHtml(formatEmployeeDate(e.leaveEnd))}</div>` : '';
+                const status = employeeStatusLabel(e.status) + (e.status === 'resigned' && e.resignDate ? ' (' + formatEmployeeDate(e.resignDate) + ')' : '');
+                const editLabel = isEn ? 'Edit' : 'แก้ไข', deleteLabel = isEn ? 'Delete' : 'ลบ';
+                return `<tr class="hover:bg-gray-50 transition"><td class="p-4"><div class="font-bold text-emerald-700">${employeeHtml(e.code)}</div><span class="${badge} px-2 py-0.5 rounded text-[10px] font-bold uppercase block mt-1 w-max">${employeeHtml(status)}</span>${dates}</td><td class="p-4"><div class="font-medium text-gray-800">${employeeHtml(e.name)}</div><div class="text-xs text-gray-500">${employeeHtml(e.position || '-')}</div><div class="text-xs text-gray-500">Tax ID: ${employeeHtml(e.taxId || '-')}</div></td><td class="p-4"><div class="font-bold text-gray-700">${formatMoney(e.salary || 0)}</div><div class="text-[10px] text-gray-400">${isEn ? 'Base' : 'ฐานคำนวณ'}: ${e.basePct !== '' && e.basePct != null ? employeeHtml(e.basePct) + '%' : '-'}</div></td><td class="p-4 text-gray-600">${e.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${employeeHtml(e.email)}</div>` : ''}<div class="text-xs text-gray-400 mt-1"><i class="ph ph-phone"></i> ${employeeHtml(e.phone || '-')}</div></td><td class="p-4 text-center"><button type="button" data-employee-edit="${id}" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="${editLabel}" aria-label="${editLabel} ${employeeHtml(e.name)}"><i class="ph ph-pencil"></i></button><button type="button" data-employee-delete="${id}" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="${deleteLabel}" aria-label="${deleteLabel} ${employeeHtml(e.name)}"><i class="ph ph-trash"></i></button></td></tr>`;
+            }).join('') : `<tr><td colspan="5" class="p-8 text-center text-gray-400">${isEn ? (normalizeEmployeeName(query) ? 'No matching employees. Try part of a name.' : 'No employees yet.') : (normalizeEmployeeName(query) ? 'ไม่พบพนักงานที่ตรงกับคำค้นหา ลองค้นด้วยชื่อบางส่วน' : 'ยังไม่มีข้อมูลพนักงาน')}</td></tr>`;
+            updateEmployeeNameError(employeesLoaded && employeesDataUserId === currentUser?.uid ? findDuplicateEmployee(val('new-emp-name')) : null);
+        }
+        function showEmployeeDuplicate(match) {
+            const dialog = $('employee-notice-dialog'), isEn = currentLang === 'en';
+            employeeNoticeMode = 'duplicate'; employeeReminderBatch = null; employeeDuplicateMatch = match;
+            employeeWarnedName = normalizeEmployeeName(val('new-emp-name')); employeeNoticeFocus = $('new-emp-name');
+            $('employee-notice-icon').className = 'w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl mb-4';
+            $('employee-notice-icon').innerHTML = '<i class="ph ph-warning-circle"></i>';
+            employeeText('employee-notice-title', isEn ? 'Duplicate employee name' : 'พบชื่อพนักงานซ้ำ');
+            employeeText('employee-notice-description', isEn ? 'This full name already exists. View the existing record or change the name before saving.' : 'มีชื่อ-นามสกุลนี้อยู่ในข้อมูลพนักงานแล้ว กรุณาตรวจสอบข้อมูลเดิมก่อนบันทึก เพื่อป้องกันการเพิ่มรายการซ้ำ');
+            employeeText('employee-duplicate-code', match.code || '');
+            employeeText('employee-duplicate-name', match.name);
+            employeeText('employee-duplicate-info', (match.position || '-') + ' · ' + employeeStatusLabel(match.status));
+            show('employee-duplicate-match', true); show('employee-leave-reminder-list', false); show('employee-notice-view', true);
+            employeeText('employee-notice-view', isEn ? 'View existing' : 'ดูข้อมูลเดิม');
+            employeeText('employee-notice-close', isEn ? 'Edit name' : 'กลับไปแก้ไขชื่อ');
+            if (!dialog.open) dialog.showModal();
+            $('employee-notice-close').focus();
+        }
+        function checkEmployeeDuplicate(force = false) {
+            clearTimeout(employeeNameTimer);
+            if (employeeNameComposing || !employeesLoaded || employeesDataUserId !== currentUser?.uid) return false;
+            const match = findDuplicateEmployee(val('new-emp-name')); updateEmployeeNameError(match);
+            if (!match) { employeeWarnedName = ''; return false; }
+            if (!$('employee-notice-dialog').open && (force || employeeWarnedName !== normalizeEmployeeName(val('new-emp-name')))) showEmployeeDuplicate(match);
+            return true;
+        }
+        function queueEmployeeNameCheck() {
+            clearTimeout(employeeNameTimer);
+            const match = employeesLoaded && employeesDataUserId === currentUser?.uid ? findDuplicateEmployee(val('new-emp-name')) : null;
+            updateEmployeeNameError(match); if (!match) employeeWarnedName = '';
+            if (!employeeNameComposing) employeeNameTimer = setTimeout(() => checkEmployeeDuplicate(), 350);
+        }
+        function upcomingEmployeeLeave(list, today) {
+            const tomorrow = shiftEmployeeDate(today, 1);
+            return tomorrow ? list.filter(e => e.status === 'leave' && e.leaveStart === tomorrow && employeeISODate(e.leaveEnd) && e.leaveEnd >= e.leaveStart) : [];
+        }
+        function employeeReminderKey(e) { return JSON.stringify([e.id, e.leaveStart, e.leaveEnd]); }
+        function employeeReminderStorageKey(uid) { return 'nualanan.erp.employee-leave.v1:' + appId + ':' + uid; }
+        function employeeReminderSeen(uid, day) {
+            const memoryKey = employeeReminderStorageKey(uid) + ':' + day;
+            if (!employeeReminderMemory.has(memoryKey)) employeeReminderMemory.set(memoryKey, new Set());
+            const seen = employeeReminderMemory.get(memoryKey);
+            try {
+                const saved = JSON.parse(localStorage.getItem(employeeReminderStorageKey(uid)) || 'null');
+                if (saved?.day === day && Array.isArray(saved.keys)) saved.keys.filter(k => typeof k === 'string').forEach(k => seen.add(k));
+            } catch (_) { /* In-memory acknowledgement still works if storage is unavailable. */ }
+            return seen;
+        }
+        function acknowledgeEmployeeLeave() {
+            const batch = employeeReminderBatch; employeeReminderBatch = null;
+            if (!batch || currentUser?.uid !== batch.uid) return;
+            const seen = employeeReminderSeen(batch.uid, batch.day);
+            batch.keys.forEach(key => seen.add(key));
+            try { localStorage.setItem(employeeReminderStorageKey(batch.uid), JSON.stringify({ day: batch.day, keys: Array.from(seen) })); } catch (_) {}
+        }
+        function checkUpcomingEmployeeLeave() {
+            if (!currentUser || !employeesLoaded || !employeeRemindersReady || employeesDataUserId !== currentUser.uid || employeeSaveInProgress || document.hidden) return;
+            if (document.querySelector('dialog[open]')) return;
+            if (['custom-alert-modal', 'custom-confirm-modal', 'document-preview-modal'].some(id => $(id) && !$(id).classList.contains('hidden'))) return;
+            const day = employeeTodayISO(), seen = employeeReminderSeen(currentUser.uid, day);
+            const upcoming = upcomingEmployeeLeave(employees, day).filter(e => !seen.has(employeeReminderKey(e)));
+            if (!upcoming.length) return;
+            const isEn = currentLang === 'en', dialog = $('employee-notice-dialog');
+            employeeNoticeMode = 'reminder'; employeeNoticeFocus = document.activeElement;
+            employeeReminderBatch = { uid: currentUser.uid, day, keys: upcoming.map(employeeReminderKey) };
+            $('employee-notice-icon').className = 'w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-2xl mb-4';
+            $('employee-notice-icon').innerHTML = '<i class="ph ph-calendar"></i>';
+            employeeText('employee-notice-title', isEn ? 'Vacation leave starts tomorrow' : 'พรุ่งนี้มีพนักงานลาพักผ่อน');
+            employeeText('employee-notice-description', isEn ? `One-day reminder · ${formatEmployeeDate(shiftEmployeeDate(day, 1))} · ${upcoming.length} employee(s)` : `แจ้งเตือนล่วงหน้า 1 วัน · เริ่มลา ${formatEmployeeDate(shiftEmployeeDate(day, 1))} จำนวน ${upcoming.length} คน`);
+            show('employee-duplicate-match', false); show('employee-leave-reminder-list', true); show('employee-notice-view', false);
+            $('employee-leave-reminder-list').innerHTML = upcoming.map(e => `<div class="p-3 bg-amber-50 border border-amber-200 rounded break-words"><span class="text-sm font-bold text-emerald-700">${employeeHtml(e.code)}</span><p class="font-semibold my-1">${employeeHtml(e.name)}</p><p class="text-xs text-gray-500 mb-2">${employeeHtml(e.position || '-')}</p><p class="text-sm text-amber-800">${isEn ? 'Start' : 'เริ่มลา'}: ${employeeHtml(formatEmployeeDate(e.leaveStart))}</p><p class="text-sm text-amber-800">${isEn ? 'End' : 'สิ้นสุดลา'}: ${employeeHtml(formatEmployeeDate(e.leaveEnd))}</p></div>`).join('');
+            employeeText('employee-notice-close', isEn ? 'Got it' : 'รับทราบ');
+            dialog.showModal(); $('employee-notice-close').focus();
+        }
+        function resetEmployeeSession() {
+            clearTimeout(employeeNameTimer); employeesLoaded = false; employeesDataUserId = null; employeeRemindersReady = false;
+            employeeReminderBatch = null; employeeNoticeFocus = null; employeeWarnedName = '';
+            if ($('employee-notice-dialog')?.open) $('employee-notice-dialog').close();
+        }
+        if ($('employee-search')) $('employee-search').addEventListener('input', renderEmployees);
+        if ($('employee-search-form')) $('employee-search-form').addEventListener('submit', e => { e.preventDefault(); renderEmployees(); });
+        if ($('employee-search-clear')) $('employee-search-clear').addEventListener('click', () => { $('employee-search').value = ''; renderEmployees(); $('employee-search').focus(); });
+        if ($('new-emp-name')) {
+            $('new-emp-name').addEventListener('input', queueEmployeeNameCheck);
+            $('new-emp-name').addEventListener('blur', () => { if (!employeeSaveInProgress) checkEmployeeDuplicate(); });
+            $('new-emp-name').addEventListener('compositionstart', () => { employeeNameComposing = true; clearTimeout(employeeNameTimer); });
+            $('new-emp-name').addEventListener('compositionend', () => { employeeNameComposing = false; queueEmployeeNameCheck(); });
+        }
+        ['new-emp-leave-start', 'new-emp-leave-end'].forEach(id => { if ($(id)) $(id).addEventListener('input', validateEmployeeLeave); });
+        if ($('employee-notice-dialog')) {
+            $('employee-notice-close').addEventListener('click', () => $('employee-notice-dialog').close());
+            $('employee-notice-view').addEventListener('click', () => {
+                $('employee-search').value = employeeDuplicateMatch.name; employeeNoticeFocus = $('employee-search');
+                renderEmployees(); $('employee-notice-dialog').close();
+            });
+            $('employee-notice-dialog').addEventListener('close', () => {
+                if (employeeNoticeMode === 'reminder') acknowledgeEmployeeLeave();
+                if (currentUser && employeeNoticeFocus?.isConnected) {
+                    employeeNoticeFocus.focus();
+                    if (employeeNoticeFocus === $('new-emp-name')) employeeNoticeFocus.select();
+                }
+                setTimeout(checkUpcomingEmployeeLeave, 100);
+            });
+        }
+        if ($('employees-table-body')) $('employees-table-body').addEventListener('click', e => {
+            const button = e.target.closest('button[data-employee-edit], button[data-employee-delete]');
+            if (!button || employeeSaveInProgress) return;
+            if (button.hasAttribute('data-employee-edit')) editEmployee(decodeURIComponent(button.dataset.employeeEdit));
+            else deleteEmployee(decodeURIComponent(button.dataset.employeeDelete));
         });
-
-        function editEmployee(id) { const emp = employees.find(x => x.id === id); if (!emp) return; editingEmployeeId = id; ['name', 'pos:position', 'email', 'phone', 'join-date:joinDate', 'status', 'resign-date:resignDate', 'salary', 'base-pct:basePct', 'taxid:taxId'].forEach(k => { const [eid, okey] = k.split(':'); if($(`new-emp-${eid}`)) $(`new-emp-${eid}`).value = emp[okey || eid] || ''; }); toggleResignDate(); txt('form-emp-title', currentLang === 'en' ? 'Edit Employee' : 'แก้ไขข้อมูลพนักงาน'); txt('btn-save-emp', translations[currentLang]['btn_update']); show('btn-cancel-emp', true); }
-        function cancelEditEmployee() { editingEmployeeId = null; if($('add-employee-form')) $('add-employee-form').reset(); toggleResignDate(); txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false); }
-        function deleteEmployee(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc("employees", id)); }); }
+        if ($('add-employee-form')) $('add-employee-form').addEventListener('submit', async e => {
+            e.preventDefault(); clearTimeout(employeeNameTimer);
+            if (employeeSaveInProgress || employeeNameComposing) return;
+            validateEmployeeLeave();
+            if (!normalizeEmployeeName(val('new-emp-name'))) { $('new-emp-name').value = ''; $('new-emp-name').reportValidity(); return; }
+            if (!$('add-employee-form').reportValidity() || checkEmployeeDuplicate(true)) return;
+            if (!currentUser) return showAlert(currentLang === 'en' ? 'Please sign in before saving.' : 'กรุณาเข้าสู่ระบบก่อนบันทึก');
+            const data = { name: val('new-emp-name').trim(), position: val('new-emp-pos').trim(), email: val('new-emp-email').trim(), phone: val('new-emp-phone').trim(), joinDate: val('new-emp-join-date'), status: val('new-emp-status'), resignDate: val('new-emp-status') === 'resigned' ? val('new-emp-resign-date') : '', leaveStart: val('new-emp-status') === 'leave' ? val('new-emp-leave-start') : '', leaveEnd: val('new-emp-status') === 'leave' ? val('new-emp-leave-end') : '', salary: parseFloat(val('new-emp-salary')) || 0, basePct: val('new-emp-base-pct') !== '' ? parseFloat(val('new-emp-base-pct')) : '', taxId: val('new-emp-taxid').trim() };
+            if (data.status === 'leave' && (!employeeISODate(data.leaveStart) || !employeeISODate(data.leaveEnd) || data.leaveEnd < data.leaveStart)) return showAlert(currentLang === 'en' ? 'Please select a valid leave date range.' : 'กรุณาระบุวันเริ่มลาและวันสิ้นสุดลาให้ถูกต้อง');
+            const savedId = editingEmployeeId, userId = currentUser.uid, controls = Array.from(e.currentTarget.elements).map(el => [el, el.disabled]);
+            employeeSaveInProgress = true; controls.forEach(([el]) => { el.disabled = true; });
+            employeeText('btn-save-emp', currentLang === 'en' ? 'Saving...' : 'กำลังบันทึก...');
+            let duplicateAfterRefresh = null;
+            try {
+                const snap = await getDocsFromServer(getUserCol('employees'));
+                if (currentUser?.uid !== userId) throw new Error('Employee session changed');
+                employees = snap.docs.map(d => ({ ...d.data(), id: d.id })); employeesLoaded = true; employeesDataUserId = userId; employeeRemindersReady = true;
+                renderEmployees();
+                duplicateAfterRefresh = findDuplicateEmployee(data.name, savedId);
+                if (duplicateAfterRefresh) { updateEmployeeNameError(duplicateAfterRefresh); return; }
+                if (savedId && !employees.some(emp => emp.id === savedId)) throw new Error('Employee was removed');
+                const max = employees.reduce((n, emp) => Math.max(n, Number(/^E-(\d+)$/.exec(emp.code || '')?.[1] || 0)), 0);
+                const id = savedId || Date.now().toString() + '-' + crypto.randomUUID();
+                const record = savedId ? data : { id, code: 'E-' + String(max + 1).padStart(4, '0'), ...data };
+                await setDoc(getUserDoc('employees', id), record, { merge: true });
+                if (currentUser?.uid !== userId) return;
+                if (savedId) employees = employees.map(emp => emp.id === savedId ? { ...emp, ...data } : emp);
+                else if (!employees.some(emp => emp.id === id)) employees.push(record);
+                resetEmployeeForm(); renderEmployees(); renderEmployeeDropdownForSeller();
+                showAlert(currentLang === 'en' ? (savedId ? 'Employee updated!' : 'Employee added!') : (savedId ? 'อัปเดตข้อมูลพนักงานสำเร็จ!' : 'เพิ่มพนักงานสำเร็จ!'));
+            } catch (err) {
+                console.error('Employee save failed:', err.code || err.message);
+                if (currentUser?.uid === userId) showAlert(currentLang === 'en' ? 'Could not save. Check your connection and access, then try again. Your entries have been kept.' : 'บันทึกไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์การเข้าถึงแล้วลองใหม่ ข้อมูลที่กรอกยังอยู่');
+            } finally {
+                employeeSaveInProgress = false; controls.forEach(([el, disabled]) => { el.disabled = disabled; });
+                employeeText('btn-save-emp', translations[currentLang][editingEmployeeId ? 'btn_update' : 'btn_save_cust']);
+                if (duplicateAfterRefresh && currentUser?.uid === userId) showEmployeeDuplicate(duplicateAfterRefresh);
+            }
+        });
+        function editEmployee(id) {
+            if (employeeSaveInProgress) return;
+            const emp = employees.find(x => x.id === id); if (!emp) return;
+            resetEmployeeForm(); editingEmployeeId = id;
+            ['name', 'pos:position', 'email', 'phone', 'join-date:joinDate', 'status', 'resign-date:resignDate', 'leave-start:leaveStart', 'leave-end:leaveEnd', 'salary', 'base-pct:basePct', 'taxid:taxId'].forEach(k => {
+                const [eid, okey] = k.split(':'); if ($('new-emp-' + eid)) $('new-emp-' + eid).value = emp[okey || eid] ?? (eid === 'status' ? 'active' : '');
+            });
+            toggleResignDate();
+            txt('form-emp-title', currentLang === 'en' ? 'Edit Employee' : 'แก้ไขข้อมูลพนักงาน');
+            txt('btn-save-emp', translations[currentLang]['btn_update']); show('btn-cancel-emp', true);
+        }
+        function resetEmployeeForm() {
+            clearTimeout(employeeNameTimer); employeeWarnedName = ''; editingEmployeeId = null;
+            if ($('add-employee-form')) $('add-employee-form').reset();
+            toggleResignDate(); updateEmployeeNameError(null);
+            txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false);
+        }
+        function cancelEditEmployee() { if (!employeeSaveInProgress) resetEmployeeForm(); }
+        function deleteEmployee(id) { if (!employeeSaveInProgress) showConfirm(currentLang === 'en' ? 'Delete this employee?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc('employees', id)); }); }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpcomingEmployeeLeave(); });
+        window.addEventListener('focus', checkUpcomingEmployeeLeave);
+        ['custom-alert-modal', 'custom-confirm-modal'].forEach(id => { if ($(id)) $(id).addEventListener('click', () => setTimeout(checkUpcomingEmployeeLeave, 100)); });
+        if ($('customer-duplicate-dialog')) $('customer-duplicate-dialog').addEventListener('close', () => setTimeout(checkUpcomingEmployeeLeave, 100));
+        setInterval(checkUpcomingEmployeeLeave, 60000);
 
         // Search uses company/contact names; duplicate checks use the full company name.
         function normalizeCustomerName(value) {
@@ -2006,7 +2271,7 @@
         Object.assign(window, {
             toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown, 
             selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
-            cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee, 
+            toggleResignDate, cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee,
             handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
             exportVatToCSV, recalcVatTotal, draftAIEmail, printDocumentList, closePreview, copyEmailText, updatePreviewScale, 
             selectProductItem, deleteDocument, editDocument, emailDocumentList, previewDocument, doLogout, resetSystem, pullDataFromQuotation, handleLogin, updateDocumentTable
@@ -2058,8 +2323,14 @@
                 if (!customerSaveInProgress && document.activeElement === $('new-cust-name')) queueCustomerNameCheck();
             }, errHandler);
             
-            onSnapshot(getUserCol("employees"), (snap) => {
-                employees = snap.docs.map(d => d.data()); renderEmployees(); renderEmployeeDropdownForSeller();
+            const employeeSyncUserId = currentUser.uid;
+            onSnapshot(getUserCol("employees"), { includeMetadataChanges: true }, (snap) => {
+                if (currentUser?.uid !== employeeSyncUserId) return;
+                employees = snap.docs.map(d => ({ ...d.data(), id: d.id })); employeesLoaded = true; employeesDataUserId = employeeSyncUserId;
+                employeeRemindersReady = !snap.metadata.fromCache && !snap.metadata.hasPendingWrites;
+                renderEmployees(); renderEmployeeDropdownForSeller();
+                if (!employeeSaveInProgress && document.activeElement === $('new-emp-name')) queueEmployeeNameCheck();
+                if (employeeRemindersReady) setTimeout(checkUpcomingEmployeeLeave, 100);
             }, errHandler);
             
             onSnapshot(getUserCol("savedRemarks"), (snap) => {
