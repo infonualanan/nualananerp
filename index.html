@@ -23,6 +23,8 @@
         .table-scroll::-webkit-scrollbar-thumb, .preview-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 8px; border: 3px solid #e2e8f0; }
         .table-scroll:hover::-webkit-scrollbar-thumb, .preview-scroll:hover::-webkit-scrollbar-thumb { background: #059669; }
 
+        #customer-duplicate-dialog::backdrop { background: rgb(17 24 39 / 0.6); }
+
         /* PRINT STYLES FIX */
         @media print {
             @page { size: A4; margin: 0 !important; }
@@ -530,12 +532,21 @@
                 </div>
 
                 <div id="tab-customers" class="tab-content">
-                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2></div>
+                    <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-users"></i> <span data-i18n="title_customers">ข้อมูลลูกค้า/คู่ค้า</span></h2>
+                        <form id="customer-search-form" role="search" class="flex items-center w-full sm:w-[390px] bg-white border border-gray-300 rounded overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500">
+                            <i class="ph ph-magnifying-glass text-gray-400 ml-3" aria-hidden="true"></i>
+                            <input id="customer-search" type="text" class="flex-1 min-w-0 p-2 outline-none text-sm" placeholder="ค้นหาชื่อบริษัท / ชื่อลูกค้า..." aria-label="ค้นหาชื่อบริษัทหรือชื่อลูกค้า" autocomplete="off">
+                            <button type="button" id="customer-search-clear" class="hidden px-2 text-gray-500" aria-label="ล้างคำค้นหา"><i class="ph ph-x" aria-hidden="true"></i></button>
+                            <button type="submit" id="customer-search-button" class="self-stretch px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm">ค้นหา</button>
+                        </form>
+                        <span id="customer-search-count" class="text-xs text-gray-500" role="status" aria-live="polite"></span>
+                    </div>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_cust" id="form-cust-title">เพิ่มลูกค้าใหม่</h3>
                             <form id="add-customer-form" class="space-y-4 text-[14px]">
-                                <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_cust_name">ชื่อบริษัท/องค์กร</span> <span class="text-red-500">*</span></label><input type="text" id="new-cust-name" required class="w-full border p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_cust_name">ชื่อบริษัท/องค์กร</span> <span class="text-red-500">*</span></label><input type="text" id="new-cust-name" required autocomplete="off" aria-describedby="customer-name-error" class="w-full border p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none"><p id="customer-name-error" class="hidden text-xs text-red-600 mt-1" role="status"></p></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_contact">ชื่อลูกค้า (เว้นได้)</label><input type="text" id="new-cust-contact" class="w-full border p-2 rounded outline-none"></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_email">อีเมล</label><input type="email" id="new-cust-email" class="w-full border p-2 rounded outline-none"></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_addr">ที่อยู่</label><textarea id="new-cust-address" rows="2" class="w-full border p-2 rounded outline-none"></textarea></div>
@@ -820,10 +831,21 @@
         </div>
     </div>
 
+    <dialog id="customer-duplicate-dialog" aria-labelledby="customer-duplicate-title" aria-describedby="customer-duplicate-description" style="width:calc(100% - 2rem)" class="max-w-md rounded-2xl border-0 p-6 shadow-2xl text-gray-800 no-print">
+        <div class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-2xl mb-4" aria-hidden="true"><i class="ph ph-warning-circle"></i></div>
+        <h3 id="customer-duplicate-title" class="text-xl font-bold mb-2">พบชื่อลูกค้าซ้ำ</h3>
+        <p id="customer-duplicate-description" class="text-sm text-gray-500 mb-4"></p>
+        <div class="p-3 border rounded bg-gray-50 mb-5 break-words"><span id="customer-duplicate-code" class="text-emerald-700 font-bold text-sm"></span><p id="customer-duplicate-name" class="text-sm font-medium mt-1"></p></div>
+        <div class="flex gap-2">
+            <button type="button" id="customer-duplicate-view" class="flex-1 p-2 rounded border bg-gray-50 text-sm">ดูข้อมูลเดิม</button>
+            <button type="button" id="customer-duplicate-close" class="flex-1 p-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm">กลับไปแก้ไขชื่อ</button>
+        </div>
+    </dialog>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
         const val = id => $(id) ? $(id).value : '';
@@ -919,7 +941,9 @@
         let exchangeRates = { 'USD': 35.00, 'EUR': 38.00, 'JPY': 0.24, 'GBP': 44.00, 'CNY': 5.00 };
         let companyProfile = { nameTh: "บริษัท โค้ดดิ้ง สตูดิโอ จำกัด", nameEn: "Coding Studio Co., Ltd.", taxId: "0105555555555", branch: "สำนักงานใหญ่", addressTh: "123/45 สุขุมวิท กทม.", addressEn: "123/45 Sukhumvit, BKK", phone: "02-123-4567", email: "info@codingstudio.co", logo: null };
         let products = [{ id: '1', code: 'P-ERP-001', name: 'ระบบ ERP ภายในองค์กร', unit: 'SYS', price: 150000 }];
-        let customerRunningNumber = 2, editingCustomerId = null; 
+        let customerRunningNumber = 2, editingCustomerId = null;
+        let customersLoaded = false, customerSaveInProgress = false, customerNameComposing = false;
+        let customerNameTimer, customerWarnedName = '', customerDuplicateMatch = null, customerDialogFocus = null;
         let customers = [{ id: '1', code: 'C-0001', name: 'บริษัท ลูกค้าเอบีซี จำกัด', contactName: 'สมชาย', email: 'somchai@abc.com', taxId: '0105555555555', branch: '00000', address: '111 ถ.สีลม' }];
         let employeeRunningNumber = 3, editingEmployeeId = null; 
         let employees = [{ id: '1', code: 'E-0001', name: 'คุณสมรัก ยอดขาย', position: 'พนักงานขาย', email: 's@co.th', phone: '081', joinDate: '2023-01-15', status: 'active', resignDate: '', salary: 25000, basePct: '5', taxId: '1111111111111' }];
@@ -988,7 +1012,7 @@
             document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(translations[currentLang][key]) el.innerHTML = translations[currentLang][key]; });
             renderProductDropdowns(); checkDocType(); renderEmployeeDropdownForSeller();
             const gDisc = $('global-disc-type'); if (gDisc) { const isGp = gDisc.value === 'gp_%'; gDisc.innerHTML = `<option value="disc_%" ${!isGp ? 'selected' : ''}>${currentLang === 'en' ? 'Discount (%)' : 'ส่วนลด (%)'}</option><option value="gp_%" ${isGp ? 'selected' : ''}>GP (%)</option>`; }
-            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDocumentTable(); 
+            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDocumentTable(); renderCustomers();
         }
 
         if ($('comp-logo-input')) { 
@@ -1083,25 +1107,161 @@
         function cancelEditEmployee() { editingEmployeeId = null; if($('add-employee-form')) $('add-employee-form').reset(); toggleResignDate(); txt('form-emp-title', translations[currentLang]['title_add_emp']); txt('btn-save-emp', translations[currentLang]['btn_save_cust']); show('btn-cancel-emp', false); }
         function deleteEmployee(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันลบพนักงาน?', () => { if (currentUser) deleteDoc(getUserDoc("employees", id)); }); }
 
-        function renderCustomers() { if($('customers-table-body')) $('customers-table-body').innerHTML = customers.map(c => `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${c.code}</td><td class="p-4 font-medium text-gray-800">${c.name}</td><td class="p-4 text-gray-600">${c.contactName || '-'}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${c.email}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${c.taxId || '-'} (${c.branch || '-'})</div></td><td class="p-4 text-center"><button onclick="editCustomer('${c.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="แก้ไข"><i class="ph ph-pencil"></i></button><button onclick="deleteCustomer('${c.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="ลบ"><i class="ph ph-trash"></i></button></td></tr>`).join(''); }
-        if($('add-customer-form')) $('add-customer-form').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            const data = { name: val('new-cust-name'), contactName: val('new-cust-contact'), email: val('new-cust-email'), taxId: val('new-cust-tax'), branch: val('new-cust-branch'), address: val('new-cust-address') }; 
-            if (editingCustomerId) { 
-                if (currentUser) setDoc(getUserDoc("customers", editingCustomerId), data, {merge: true});
-                showAlert(currentLang === 'en' ? 'Updated!' : 'อัปเดตสำเร็จ!'); 
-            } else { 
-                let max = 0; customers.forEach(c => { let n = parseInt(c.code.split('-')[1], 10); if(!isNaN(n) && n > max) max = n; });
-                const code = 'C-' + String(max + 1).padStart(4, '0');
-                const newCust = { id: Date.now().toString(), code, ...data };
-                if (currentUser) setDoc(getUserDoc("customers", newCust.id), newCust);
-                showAlert(currentLang === 'en' ? 'Added!' : 'เพิ่มลูกค้าสำเร็จ!'); 
-            } 
-            cancelEditCustomer();
+        // Search uses company/contact names; duplicate checks use the full company name.
+        function normalizeCustomerName(value) {
+            return String(value || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
+        }
+        function filterCustomers(list, query) {
+            const key = normalizeCustomerName(query);
+            return list.filter(c => normalizeCustomerName(c.name).includes(key) || normalizeCustomerName(c.contactName).includes(key));
+        }
+        function findDuplicateCustomer(name, excludedId = editingCustomerId, list = customers) {
+            const key = normalizeCustomerName(name);
+            return key ? list.find(c => c.id !== excludedId && normalizeCustomerName(c.name) === key) : null;
+        }
+        function customerHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+        }
+        function customerText(id, value) { if ($(id)) $(id).textContent = value; }
+        function updateCustomerNameError(match) {
+            if ($('new-cust-name')) $('new-cust-name').setAttribute('aria-invalid', match ? 'true' : 'false');
+            customerText('customer-name-error', currentLang === 'en' ? 'This company name already exists.' : 'ชื่อนี้มีอยู่แล้ว กรุณาตรวจสอบข้อมูลก่อนบันทึก');
+            show('customer-name-error', !!match);
+        }
+        function renderCustomers() {
+            const isEn = currentLang === 'en', search = $('customer-search'), query = val('customer-search');
+            if (search) {
+                search.placeholder = isEn ? 'Search company / customer name...' : 'ค้นหาชื่อบริษัท / ชื่อลูกค้า...';
+                search.setAttribute('aria-label', search.placeholder);
+                $('customer-search-clear').setAttribute('aria-label', isEn ? 'Clear search' : 'ล้างคำค้นหา');
+            }
+            customerText('customer-search-button', isEn ? 'Search' : 'ค้นหา');
+            show('customer-search-clear', !!query);
+            const filtered = filterCustomers(customers, query);
+            customerText('customer-search-count', normalizeCustomerName(query) ? (isEn ? `${filtered.length} of ${customers.length} results` : `พบ ${filtered.length} จาก ${customers.length} รายการ`) : '');
+            const body = $('customers-table-body');
+            if (!body) return;
+            body.innerHTML = filtered.length ? filtered.map(c => {
+                const id = customerHtml(encodeURIComponent(c.id)), editLabel = isEn ? 'Edit' : 'แก้ไข', deleteLabel = isEn ? 'Delete' : 'ลบ';
+                return `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${customerHtml(c.code)}</td><td class="p-4 font-medium text-gray-800">${customerHtml(c.name)}</td><td class="p-4 text-gray-600">${customerHtml(c.contactName || '-')}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${customerHtml(c.email)}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${customerHtml(c.taxId || '-')} (${customerHtml(c.branch || '-')})</div></td><td class="p-4 text-center"><button type="button" data-customer-edit="${id}" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="${editLabel}" aria-label="${editLabel} ${customerHtml(c.name)}"><i class="ph ph-pencil"></i></button><button type="button" data-customer-delete="${id}" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="${deleteLabel}" aria-label="${deleteLabel} ${customerHtml(c.name)}"><i class="ph ph-trash"></i></button></td></tr>`;
+            }).join('') : `<tr><td colspan="5" class="p-8 text-center text-gray-400">${isEn ? (normalizeCustomerName(query) ? 'No matching customers. Try part of a name.' : 'No customers yet.') : (normalizeCustomerName(query) ? 'ไม่พบลูกค้าที่ตรงกับคำค้นหา ลองค้นด้วยชื่อบางส่วน' : 'ยังไม่มีลูกค้าในระบบ')}</td></tr>`;
+            updateCustomerNameError(customersLoaded ? findDuplicateCustomer(val('new-cust-name')) : null);
+        }
+        function showCustomerDuplicate(match) {
+            const dialog = $('customer-duplicate-dialog'), isEn = currentLang === 'en';
+            customerDuplicateMatch = match;
+            customerWarnedName = normalizeCustomerName(val('new-cust-name'));
+            customerText('customer-duplicate-title', isEn ? 'Duplicate customer name' : 'พบชื่อลูกค้าซ้ำ');
+            customerText('customer-duplicate-description', isEn ? 'This company name already exists. View the existing record or change the name before saving.' : 'มีชื่อบริษัท/องค์กรนี้อยู่ในข้อมูลแล้ว กรุณาดูข้อมูลเดิมหรือแก้ไขชื่อก่อนบันทึก');
+            customerText('customer-duplicate-code', match.code || '');
+            customerText('customer-duplicate-name', match.name);
+            customerText('customer-duplicate-view', isEn ? 'View existing' : 'ดูข้อมูลเดิม');
+            customerText('customer-duplicate-close', isEn ? 'Edit name' : 'กลับไปแก้ไขชื่อ');
+            customerDialogFocus = $('new-cust-name');
+            if (!dialog.open) dialog.showModal();
+            $('customer-duplicate-close').focus();
+        }
+        function checkCustomerDuplicate(force = false) {
+            clearTimeout(customerNameTimer);
+            if (customerNameComposing || !customersLoaded) return false;
+            const match = findDuplicateCustomer(val('new-cust-name'));
+            updateCustomerNameError(match);
+            if (!match) { customerWarnedName = ''; return false; }
+            if (force || customerWarnedName !== normalizeCustomerName(val('new-cust-name'))) showCustomerDuplicate(match);
+            return true;
+        }
+        function queueCustomerNameCheck() {
+            clearTimeout(customerNameTimer);
+            const match = customersLoaded ? findDuplicateCustomer(val('new-cust-name')) : null;
+            updateCustomerNameError(match);
+            if (!match) customerWarnedName = '';
+            if (!customerNameComposing) customerNameTimer = setTimeout(() => checkCustomerDuplicate(), 350);
+        }
+        if ($('customer-search')) $('customer-search').addEventListener('input', renderCustomers);
+        if ($('customer-search-form')) $('customer-search-form').addEventListener('submit', e => { e.preventDefault(); renderCustomers(); });
+        if ($('customer-search-clear')) $('customer-search-clear').addEventListener('click', () => { $('customer-search').value = ''; renderCustomers(); $('customer-search').focus(); });
+        if ($('new-cust-name')) {
+            $('new-cust-name').addEventListener('input', queueCustomerNameCheck);
+            $('new-cust-name').addEventListener('blur', () => { if (!customerSaveInProgress) checkCustomerDuplicate(); });
+            $('new-cust-name').addEventListener('compositionstart', () => { customerNameComposing = true; clearTimeout(customerNameTimer); });
+            $('new-cust-name').addEventListener('compositionend', () => { customerNameComposing = false; queueCustomerNameCheck(); });
+        }
+        if ($('customer-duplicate-dialog')) {
+            $('customer-duplicate-close').addEventListener('click', () => $('customer-duplicate-dialog').close());
+            $('customer-duplicate-view').addEventListener('click', () => {
+                $('customer-search').value = customerDuplicateMatch.name;
+                customerDialogFocus = $('customer-search');
+                renderCustomers(); $('customer-duplicate-dialog').close();
+            });
+            $('customer-duplicate-dialog').addEventListener('close', () => {
+                customerDialogFocus?.focus();
+                if (customerDialogFocus === $('new-cust-name')) customerDialogFocus.select();
+            });
+        }
+        if ($('customers-table-body')) $('customers-table-body').addEventListener('click', e => {
+            const button = e.target.closest('button[data-customer-edit], button[data-customer-delete]');
+            if (!button || customerSaveInProgress) return;
+            if (button.hasAttribute('data-customer-edit')) editCustomer(decodeURIComponent(button.dataset.customerEdit));
+            else deleteCustomer(decodeURIComponent(button.dataset.customerDelete));
         });
-        function editCustomer(id) { const c = customers.find(x => x.id === id); if (!c) return; editingCustomerId = id; ['name', 'contact:contactName', 'email', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($(`new-cust-${eid}`)) $(`new-cust-${eid}`).value = c[okey || eid] || ''; }); txt('form-cust-title', currentLang === 'en' ? 'Edit Customer' : 'แก้ไขข้อมูลลูกค้า'); txt('btn-save-cust', translations[currentLang]['btn_update']); show('btn-cancel-cust', true); }
-        function cancelEditCustomer() { editingCustomerId = null; if($('add-customer-form')) $('add-customer-form').reset(); txt('form-cust-title', translations[currentLang]['title_add_cust']); txt('btn-save-cust', translations[currentLang]['btn_save_cust']); show('btn-cancel-cust', false); }
-        function deleteCustomer(id) { showConfirm(currentLang === 'en' ? 'Delete?' : 'ยืนยันการลบ?', () => { if (currentUser) deleteDoc(getUserDoc("customers", id)); }); }
+        if ($('add-customer-form')) $('add-customer-form').addEventListener('submit', async e => {
+            e.preventDefault(); clearTimeout(customerNameTimer);
+            if (customerSaveInProgress || customerNameComposing) return;
+            const data = { name: val('new-cust-name').trim(), contactName: val('new-cust-contact').trim(), email: val('new-cust-email').trim(), taxId: val('new-cust-tax').trim(), branch: val('new-cust-branch').trim(), address: val('new-cust-address').trim() };
+            if (!normalizeCustomerName(data.name)) { $('new-cust-name').value = ''; $('new-cust-name').reportValidity(); return; }
+            if (checkCustomerDuplicate(true)) return;
+            if (!currentUser) return showAlert(currentLang === 'en' ? 'Please sign in before saving.' : 'กรุณาเข้าสู่ระบบก่อนบันทึก');
+            const savedId = editingCustomerId, userId = currentUser.uid, form = e.currentTarget;
+            const controls = Array.from(form.elements).map(el => [el, el.disabled]);
+            customerSaveInProgress = true;
+            controls.forEach(([el]) => { el.disabled = true; });
+            customerText('btn-save-cust', currentLang === 'en' ? 'Saving...' : 'กำลังบันทึก...');
+            let duplicateAfterRefresh = null;
+            try {
+                // Recheck the server immediately before writing, including records added in other tabs.
+                const snap = await getDocsFromServer(getUserCol('customers'));
+                if (currentUser?.uid !== userId) throw new Error('Customer session changed');
+                customers = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+                customersLoaded = true;
+                renderCustomers();
+                duplicateAfterRefresh = findDuplicateCustomer(data.name, savedId);
+                if (duplicateAfterRefresh) { updateCustomerNameError(duplicateAfterRefresh); return; }
+                if (savedId && !customers.some(c => c.id === savedId)) throw new Error('Customer was removed');
+                const max = customers.reduce((n, c) => Math.max(n, Number(/^C-(\d+)$/.exec(c.code || '')?.[1] || 0)), 0);
+                const id = savedId || crypto.randomUUID();
+                const record = savedId ? data : { id, code: 'C-' + String(max + 1).padStart(4, '0'), ...data };
+                await setDoc(getUserDoc('customers', id), record, { merge: true });
+                if (savedId) customers = customers.map(c => c.id === savedId ? { ...c, ...data } : c);
+                else if (!customers.some(c => c.id === id)) customers.push(record);
+                resetCustomerForm(); renderCustomers();
+                showAlert(currentLang === 'en' ? (savedId ? 'Customer updated!' : 'Customer added!') : (savedId ? 'อัปเดตข้อมูลลูกค้าสำเร็จ!' : 'เพิ่มลูกค้าสำเร็จ!'));
+            } catch (err) {
+                console.error('Customer save failed:', err.code || err.message);
+                showAlert(currentLang === 'en' ? 'Could not save. Check your connection and access, then try again. Your entries have been kept.' : 'บันทึกไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์การเข้าถึงแล้วลองใหม่ ข้อมูลที่กรอกยังอยู่');
+            } finally {
+                customerSaveInProgress = false;
+                controls.forEach(([el, disabled]) => { el.disabled = disabled; });
+                customerText('btn-save-cust', translations[currentLang][editingCustomerId ? 'btn_update' : 'btn_save_cust']);
+                if (duplicateAfterRefresh) showCustomerDuplicate(duplicateAfterRefresh);
+            }
+        });
+        function editCustomer(id) {
+            if (customerSaveInProgress) return;
+            const c = customers.find(x => x.id === id); if (!c) return;
+            resetCustomerForm(); editingCustomerId = id;
+            ['name', 'contact:contactName', 'email', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($('new-cust-' + eid)) $('new-cust-' + eid).value = c[okey || eid] || ''; });
+            txt('form-cust-title', currentLang === 'en' ? 'Edit Customer' : 'แก้ไขข้อมูลลูกค้า');
+            txt('btn-save-cust', translations[currentLang]['btn_update']); show('btn-cancel-cust', true);
+        }
+        function resetCustomerForm() {
+            clearTimeout(customerNameTimer); customerWarnedName = ''; editingCustomerId = null;
+            if ($('add-customer-form')) $('add-customer-form').reset();
+            updateCustomerNameError(null);
+            txt('form-cust-title', translations[currentLang]['title_add_cust']);
+            txt('btn-save-cust', translations[currentLang]['btn_save_cust']); show('btn-cancel-cust', false);
+        }
+        function cancelEditCustomer() { if (!customerSaveInProgress) resetCustomerForm(); }
+        function deleteCustomer(id) { if (!customerSaveInProgress) showConfirm(currentLang === 'en' ? 'Delete this customer?' : 'ยืนยันการลบ?', () => { if (currentUser) deleteDoc(getUserDoc("customers", id)); }); }
 
         function renderProducts() { 
             if($('products-table-body')) {
@@ -1894,7 +2054,8 @@
             }, errHandler);
             
             onSnapshot(getUserCol("customers"), (snap) => {
-                customers = snap.docs.map(d => d.data()); renderCustomers();
+                customers = snap.docs.map(d => ({ ...d.data(), id: d.id })); customersLoaded = true; renderCustomers();
+                if (!customerSaveInProgress && document.activeElement === $('new-cust-name')) queueCustomerNameCheck();
             }, errHandler);
             
             onSnapshot(getUserCol("employees"), (snap) => {
