@@ -376,10 +376,13 @@
                                         </optgroup>
                                     </select>
                                 </div>
-                                <div class="md:col-span-1"><label class="block text-[12px] font-medium text-gray-700 mb-2">วันที่เอกสาร <span class="text-red-500">*</span></label><input type="date" id="doc-date" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"></div>
+                                <div class="md:col-span-1">
+                                    <div class="flex items-center justify-between gap-2 mb-2"><label for="doc-date" class="block text-[12px] font-medium text-gray-700" data-i18n="label_doc_date">วันที่เอกสาร</label><button type="button" id="doc-date-clear" class="text-[12px] text-emerald-700 hover:underline" data-i18n="btn_blank_date">เว้นว่าง</button></div>
+                                    <input type="date" id="doc-date" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+                                </div>
                                 <div class="md:col-span-1">
                                     <label class="block text-[12px] font-medium text-gray-700 mb-2" data-i18n="label_credit">เครดิต (Credit Term)</label>
-                                    <select id="doc-credit" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><option value="เงินสด (Cash)">เงินสด (Cash)</option><option value="15 วัน (Days)">15 วัน (Days)</option><option value="30 วัน (Days)">30 วัน (Days)</option><option value="45 วัน (Days)">45 วัน (Days)</option><option value="60 วัน (Days)">60 วัน (Days)</option><option value="90 วัน (Days)">90 วัน (Days)</option></select>
+                                    <select id="doc-credit" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><option value="" data-i18n="opt_blank_credit">-- เว้นว่าง --</option><option value="เงินสด (Cash)" selected>เงินสด (Cash)</option><option value="15 วัน (Days)">15 วัน (Days)</option><option value="30 วัน (Days)">30 วัน (Days)</option><option value="45 วัน (Days)">45 วัน (Days)</option><option value="60 วัน (Days)">60 วัน (Days)</option><option value="90 วัน (Days)">90 วัน (Days)</option></select>
                                 </div>
                                 <div class="md:col-span-1"><label class="block text-[12px] font-medium text-gray-700 mb-2">อ้างอิง (Ref No.)</label><input type="text" id="doc-ref-manual" list="all-docs-list" placeholder="ระบุเลขอ้างอิง" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><datalist id="all-docs-list"></datalist></div>
 
@@ -1020,6 +1023,12 @@
             en: { menu_dashboard: "Dashboard", menu_create: "Create Doc", menu_docs: "All Docs", menu_customers: "Customers", menu_employees: "Employees", menu_products: "Products", menu_vat: "VAT Reports", menu_settings: "Settings", menu_company: "Company Profile", title_dashboard: "Executive Dashboard", dash_revenue: "Net Sales", dash_docs: "Total Docs", dash_invs: "Tax Invoices", dash_doc_type_title: "Docs by Type", dash_sales_by_product: "Sales by Product", dash_sales_by_customer: "Sales by Customer", currency: "THB", unit_doc: "Docs", title_create_doc: "Create New Document", label_doc_type: "Document Type", opt_select_type: "-- Select Type --", label_customer: "Customer / Vendor", opt_select_cust: "-- Select Customer --", label_credit: "Credit Term", label_seller: "Salesperson", label_vendor_inv: "Vendor Tax Inv No.", label_vendor_inv_desc: "Required for Input VAT", export_details: "Export Details", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "Quotation Details", valid_until: "Valid Until", title_items: "Line Items", btn_add_item: "Add Item", label_select_remarks: "Select Remarks", btn_save_doc: "Save Document", title_doc_list: "Document Library", col_doc_no: "Doc No.", col_type: "Type", col_customer: "Customer", col_email: "Email", col_date: "Date", col_status: "Status", col_total: "Net Total", col_action: "Action", col_ref_no: "Ref No.", title_customers: "Customers & Vendors", title_add_cust: "Add New", lbl_cust_name: "Company Name", lbl_cust_contact: "Contact Name", lbl_cust_email: "Email", col_cust_code: "Code", lbl_cust_tax: "Tax ID", lbl_cust_branch: "Branch", lbl_cust_addr: "Address", btn_save_cust: "Save", btn_update: "Update", btn_cancel: "Cancel", title_employees: "Employees", title_add_emp: "Add New Employee", lbl_emp_name: "Full Name", lbl_emp_pos: "Position", title_products: "Products", title_add_prod: "Add New", lbl_prod_name: "Product Name", lbl_prod_price: "Price", btn_save_prod: "Save", title_exchange_rate: "Exchange Rates", desc_exchange_rate: "* 1 FCY = ? THB", btn_save: "Save", menu_settings: "Settings", title_vat_report: "VAT Reports", lbl_report_type: "Type", lbl_report_month: "Month/Year", btn_view_report: "View Report", btn_print_report: "Print", title_preview: "Preview", btn_draft_email: "Draft Email", btn_print: "Print", btn_save_company: "Save Profile", tax_id_label: "Tax ID:", phone_label: "Tel:", menu_payslip: "Payslip" }
         };
 
+        Object.assign(translations.th, { label_doc_date: 'วันที่เอกสาร', btn_blank_date: 'เว้นว่าง', opt_blank_credit: '-- เว้นว่าง --' });
+        Object.assign(translations.en, { label_doc_date: 'Document date', btn_blank_date: 'Clear', opt_blank_credit: '-- Leave blank --' });
+        // Set the initial date once; revisiting the form must preserve an intentional blank.
+        if ($('doc-date')) { $('doc-date').defaultValue = todayStr; $('doc-date').value = todayStr; }
+        if ($('doc-date-clear')) $('doc-date-clear').addEventListener('click', () => { $('doc-date').value = ''; $('doc-date').focus(); });
+
         const formatMoney = amt => parseFloat(amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const formatDateThai = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${parseInt(d.split('-')[0])}` : '';
         const formatDateEng = d => d ? `${d.split('-')[2]}/${d.split('-')[1]}/${d.split('-')[0]}` : '';
@@ -1058,7 +1067,6 @@
             const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
-                if($('doc-date')) $('doc-date').value = todayStr;
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
                 if($('items-container') && $('items-container').children.length === 0) { addLineItem(); selectedRemarksSequence = []; }
                 renderRemarksCheckboxes();
@@ -1950,15 +1958,18 @@
         }
 
         function generateDocNo(prefix, docDateStr) {
-            const docYear = new Date(docDateStr).getFullYear().toString(); 
+            // Undated documents still use the current year's sequence, without filling the visible date.
+            const docYear = docDateStr ? docDateStr.slice(0, 4) : String(new Date().getFullYear());
+            const series = `${prefix}-${docYear}-`;
             let maxNum = 0;
-            database.forEach(d => { 
-                if (d.prefix === prefix && (d.rawDate instanceof Date ? d.rawDate : new Date(d.rawDate)).getFullYear().toString() === docYear) { 
-                    const parts = d.docNo.split('-'); 
-                    if (parts.length >= 3) { const num = parseInt(parts[parts.length - 1], 10); if (!isNaN(num) && num > maxNum) maxNum = num; } 
-                } 
+            database.forEach(d => {
+                const number = String(d.docNo || '');
+                if (number.startsWith(series)) {
+                    const suffix = number.slice(series.length);
+                    if (/^\d+$/.test(suffix)) maxNum = Math.max(maxNum, Number(suffix));
+                }
             });
-            return `${prefix}-${docYear}-${String(maxNum + 1).padStart(3, '0')}`;
+            return `${series}${String(maxNum + 1).padStart(3, '0')}`;
         }
 
         if($('create-doc-form')) $('create-doc-form').addEventListener('submit', function(e) {
@@ -1999,7 +2010,7 @@
             let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
             if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
 
-            const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: new Date(docDate).toISOString(), inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: rems.join('\n'), remarkIds: rIds, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+            const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: rems.join('\n'), remarkIds: rIds, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
             if (currentUser) {
                 setDoc(getUserDoc("documents", docNo), newDoc).then(() => {
@@ -2095,7 +2106,9 @@
                 switchTab('create-doc'); if($('doc-type')) $('doc-type').value = d.prefix; checkDocType(); 
                 if (d.customerName) document.querySelectorAll('#customer-options-list li').forEach(l => { if(l.textContent.includes(d.customerName)) l.click(); });
                 if (d.sellerName) document.querySelectorAll('#seller-options-list li').forEach(l => { if(l.textContent.includes(d.sellerName)) l.click(); });
-                ['date:inputDate', 'credit:creditTerm', 'ref-manual:docNo'].forEach(k => { const[id,v]=k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = d[v==='docNo'?docNo:v] || (id==='date'?todayStr:id==='credit'?'เงินสด (Cash)':''); });
+                if ($('doc-date')) $('doc-date').value = d.inputDate ?? '';
+                if ($('doc-credit')) $('doc-credit').value = d.creditTerm ?? '';
+                if ($('doc-ref-manual')) $('doc-ref-manual').value = d.docNo;
                 if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix)) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const[id,def]=k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = d[id] || def || ''; }); }
                 if($('global-disc-type')) $('global-disc-type').value = d.items[0]?.discType || 'disc_%';
                 if($('payslip-sso-pct')) $('payslip-sso-pct').value = d.ssoPct || 0;
@@ -2165,7 +2178,7 @@
             txt('preview-customer-tax', isPay ? "" : (d.customerTaxId ? `Tax ID: ${d.customerTaxId}` : ''));
             txt('preview-customer-branch', isPay ? "" : (d.customerBranch ? `Branch: ${d.customerBranch}` : ''));
             txt('preview-customer-addr', isPay ? (d.customerAddr ? `ตำแหน่ง: ${d.customerAddr}` : '') : (d.customerAddr || ''));
-            txt('preview-doc-no', d.docNo); txt('preview-date', d.dateStr); txt('preview-credit', d.creditTerm || '-'); txt('preview-ref-no', d.refDocManual || '-');
+            txt('preview-doc-no', d.docNo); txt('preview-date', d.dateStr ?? ''); txt('preview-credit', d.creditTerm ?? ''); txt('preview-ref-no', d.refDocManual || '-');
             
             if($('preview-company-logo')) { $('preview-company-logo').src = companyProfile.logo || ''; show('preview-company-logo', !!companyProfile.logo); }
             show('preview-expire-container', ['QT', 'EQT', 'PI'].includes(d.prefix) && d.expireDateStr); txt('preview-expire-date', d.expireDateStr);
@@ -2327,7 +2340,7 @@
 
         function draftAIEmail() {
             if(!currentlyPreviewingDoc) return; const d = currentlyPreviewingDoc, t = (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName);
-            const m = currentLang === 'en' ? `Subject: ${t} No. ${d.docNo} from ${companyProfile.nameEn}\n\nDear ${d.customerName},\n\nPlease find attached the ${t} (Doc No: ${d.docNo}) dated ${d.dateStr} for your reference.\n\nThe total amount due is ${formatMoney(d.grandTotal)} THB. If you have any questions regarding this document, please feel free to contact us.\n\nBest regards,\n${companyProfile.nameEn}` : `หัวข้อ: นำส่งเอกสาร ${t} เลขที่ ${d.docNo} จาก ${companyProfile.nameTh}\n\nเรียน ทีมงาน ${d.customerName}\n\nทางบริษัทฯ ขอแนบเอกสาร ${t} (เลขที่: ${d.docNo}) ลงวันที่ ${d.dateStr} มาเพื่อโปรดพิจารณาและดำเนินการในส่วนที่เกี่ยวข้องครับ/ค่ะ\n\nโดยมียอดรวมสุทธิทั้งสิ้น ${formatMoney(d.grandTotal)} บาท หากมีข้อสงสัยประการใดสามารถติดต่อสอบถามได้ทันทีครับ\n\nขอแสดงความนับถือ\n${companyProfile.nameTh}`;
+            const m = currentLang === 'en' ? `Subject: ${t} No. ${d.docNo} from ${companyProfile.nameEn}\n\nDear ${d.customerName},\n\nPlease find attached the ${t} (Doc No: ${d.docNo}) ${d.dateStr ? `dated ${d.dateStr} ` : ''}for your reference.\n\nThe total amount due is ${formatMoney(d.grandTotal)} THB. If you have any questions regarding this document, please feel free to contact us.\n\nBest regards,\n${companyProfile.nameEn}` : `หัวข้อ: นำส่งเอกสาร ${t} เลขที่ ${d.docNo} จาก ${companyProfile.nameTh}\n\nเรียน ทีมงาน ${d.customerName}\n\nทางบริษัทฯ ขอแนบเอกสาร ${t} (เลขที่: ${d.docNo})${d.dateStr ? ` ลงวันที่ ${d.dateStr}` : ''} มาเพื่อโปรดพิจารณาและดำเนินการในส่วนที่เกี่ยวข้องครับ/ค่ะ\n\nโดยมียอดรวมสุทธิทั้งสิ้น ${formatMoney(d.grandTotal)} บาท หากมีข้อสงสัยประการใดสามารถติดต่อสอบถามได้ทันทีครับ\n\nขอแสดงความนับถือ\n${companyProfile.nameTh}`;
             if($('ai-email-to')) $('ai-email-to').value = d.customerEmail || ''; if($('ai-email-body')) $('ai-email-body').value = m; show('ai-email-container', true);
         }
         
@@ -2343,7 +2356,7 @@
         function generateStockCard() {
             const pc = val('stc-product-select'); if(!pc || !$('stc-table-body')) return; const pObj = products.find(p => p.code === pc); txt('stc-title-item', pObj ? pObj.name : pc);
             let h = [], bal = 0, i = 1; const iT = ['STI','GRN','FGR','MR'], oT = ['STO','DO','ABB','MI','PL'];
-            database.forEach(d => d.items.forEach(it => { if(it.code === pc || it.name === pObj?.name) h.push({ d: d.rawDate, ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
+            database.forEach(d => d.items.forEach(it => { if(it.code === pc || it.name === pObj?.name) h.push({ d: documentTimestamp(d.rawDate) || documentTimestamp(d.createdAt), ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
             h.sort((a,b) => a.d - b.d);
             $('stc-table-body').innerHTML = h.length ? h.map(r => { let iq = 0, oq = 0; if(iT.includes(r.t)){ iq=r.q; bal+=r.q; }else if(oT.includes(r.t)){ oq=r.q; bal-=r.q; }else return ''; return `<tr class="border-b"><td class="p-3 text-center border-r">${i++}</td><td class="p-3 border-r">${r.ds}</td><td class="p-3 border-r font-bold text-blue-600">${r.no}</td><td class="p-3 border-r">${docTypeNames[r.t] || r.t}</td><td class="p-3 text-center bg-green-50 text-green-700 font-bold border-r">${iq||'-'}</td><td class="p-3 text-center bg-red-50 text-red-700 font-bold border-r">${oq||'-'}</td><td class="p-3 text-center font-bold bg-gray-50 text-lg">${bal}</td></tr>`; }).join('') : '<tr><td colspan="7" class="p-8 text-center text-gray-500">ไม่มีการเคลื่อนไหว</td></tr>';
         }
@@ -2365,7 +2378,7 @@
             const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
             
             // กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น ตามที่เคยขอไว้
-            const fD = database.filter(d => ((rt==='output'&&['RETAX', 'CI'].includes(d.prefix))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
+            const fD = database.filter(d => !!d.rawDate && ((rt==='output'&&['RETAX', 'CI'].includes(d.prefix))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
             const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
             
             txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);
