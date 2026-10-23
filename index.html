@@ -2233,8 +2233,8 @@
             txt('preview-lbl-vat', isEn ? "VAT" : "ภาษีมูลค่าเพิ่ม (VAT 7%)");
             txt('preview-lbl-grand', isEn ? "Grand Total" : "ยอดรวมสุทธิ (Grand Total)");
             txt('preview-lbl-remark', isEn ? "Conditions/Remarks:" : "เงื่อนไข/หมายเหตุ (Conditions/Remarks):");
-            txt('preview-lbl-maker', isPay ? (isEn ? "Employee Signature" : "ผู้รับเงิน (พนักงาน)") : (isEn ? "Buyer" : "ผู้สั่งซื้อ (Buyer)"));
-            txt('preview-lbl-auth', isPay ? (isEn ? "Authorized Signature" : "ผู้จ่ายเงิน / ผู้อนุมัติ") : (isEn ? "Seller" : "ผู้ขาย (Seller)"));
+            txt('preview-lbl-maker', d.prefix === 'DO' ? (isEn ? "Received by" : "ผู้รับของ") : isPay ? (isEn ? "Employee Signature" : "ผู้รับเงิน (พนักงาน)") : (isEn ? "Buyer" : "ผู้สั่งซื้อ (Buyer)"));
+            txt('preview-lbl-auth', d.prefix === 'DO' ? (isEn ? "Delivered by" : "ผู้ส่งของ") : isPay ? (isEn ? "Authorized Signature" : "ผู้จ่ายเงิน / ผู้อนุมัติ") : (isEn ? "Seller" : "ผู้ขาย (Seller)"));
             
             let authStamp = isPay ? "" : (isEn ? "Company Stamp (if any)" : "ตราประทับ (ถ้ามี)");
             if (d.sellerName && !['PAYSLIP', 'PR', 'PO', 'GRN', 'VB', 'PINV'].includes(d.prefix)) authStamp = `( ${d.sellerName} )<br>${authStamp}`;
