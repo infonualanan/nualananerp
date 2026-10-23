@@ -496,8 +496,21 @@
 
                             <div>
                                 <h3 class="text-[14px] font-semibold text-gray-700 mb-2" data-i18n="label_select_remarks">เลือกข้อความหมายเหตุท้ายบิล</h3>
+                                <div id="doc-remark-editor" class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-3">
+                                    <label id="doc-remark-title" for="doc-remark-text" class="block text-sm font-semibold mb-2">พิมพ์หมายเหตุใหม่</label>
+                                    <textarea id="doc-remark-text" rows="3" maxlength="5000" class="w-full border rounded p-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500" placeholder="พิมพ์หมายเหตุได้เลย หรือกดแก้ไขจากข้อความด้านล่าง"></textarea>
+                                    <div class="flex flex-wrap justify-between items-center gap-2 mt-2">
+                                        <p class="text-xs text-gray-500">บันทึกทั้งในเอกสารนี้และคลังข้อความ · ไม่เปลี่ยนเอกสารที่บันทึกแล้ว</p>
+                                        <div class="flex gap-2">
+                                            <button type="button" id="doc-remark-cancel" class="hidden px-3 py-2 border rounded text-sm bg-white">ยกเลิกแก้ไข</button>
+                                            <button type="button" id="doc-remark-save" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50">เพิ่มลงเอกสารและคลัง</button>
+                                        </div>
+                                    </div>
+                                    <p id="remark-save-status" role="status" class="text-xs text-emerald-800 mt-2"></p>
+                                </div>
                                 <input type="text" id="search-remark" placeholder="🔍 ค้นหาหมายเหตุ..." class="w-full border border-gray-300 rounded-t-lg p-2 text-[13px] outline-none focus:ring-2 focus:ring-emerald-500 border-b-0" onkeyup="filterRemarks()">
                                 <div id="doc-remarks-selections" class="bg-gray-50 p-4 rounded-b-lg border border-gray-200 space-y-2 max-h-40 overflow-y-auto text-[14px] table-scroll"></div>
+                                <div id="doc-remarks-selected" class="mt-3 text-sm space-y-2"></div>
                             </div>
 
                             <div class="flex justify-end pt-4 border-t border-gray-100">
@@ -680,7 +693,7 @@
                             <h3 class="text-lg font-semibold mb-2"><i class="ph ph-list-checks"></i> คลังข้อความหมายเหตุ</h3>
                             <div id="settings-remarks-list" class="space-y-2 mb-4 flex-1 overflow-y-auto border rounded-lg p-2 bg-gray-50 table-scroll text-[14px]"></div>
                             <form id="add-remark-form" class="mt-auto border-t pt-4 flex gap-2">
-                                <textarea id="new-remark-text" rows="2" class="flex-1 border p-2 text-[14px] rounded outline-none focus:ring-2 focus:ring-emerald-500" placeholder="พิมพ์ข้อความ แล้วกด Enter เพื่อบันทึก" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); document.getElementById('btn-add-remark').click(); }"></textarea>
+                                <textarea id="new-remark-text" rows="2" maxlength="5000" class="flex-1 border p-2 text-[14px] rounded outline-none focus:ring-2 focus:ring-emerald-500" placeholder="พิมพ์ข้อความ แล้วกด Enter เพื่อบันทึก" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); document.getElementById('btn-add-remark').click(); }"></textarea>
                                 <div class="flex flex-col gap-1 w-24">
                                     <button type="submit" id="btn-add-remark" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded font-medium transition text-[14px] flex-1">Add</button>
                                     <button type="button" id="btn-cancel-remark" onclick="cancelEditRemark()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-1 rounded font-medium transition text-[12px]">Cancel</button>
@@ -901,6 +914,19 @@
         </div>
     </dialog>
 
+    <dialog id="remark-duplicate-dialog" aria-labelledby="remark-duplicate-title" aria-describedby="remark-duplicate-description" style="width:calc(100% - 2rem);max-height:90vh" class="max-w-xl rounded-2xl border-0 p-6 shadow-2xl text-gray-800 no-print">
+        <h3 id="remark-duplicate-title" class="text-xl font-bold mb-2">พบข้อความใกล้เคียงในคลัง</h3>
+        <p id="remark-duplicate-description" class="text-sm text-gray-500 mb-3">ตรวจข้อความก่อนเลือกใช้รายการเดิม หรือเก็บข้อความใหม่แยกไว้</p>
+        <p class="text-xs font-semibold">ข้อความที่กำลังบันทึก</p>
+        <p id="remark-proposed-text" class="whitespace-pre-wrap break-words bg-gray-50 border rounded p-3 my-2 max-h-32 overflow-auto text-sm"></p>
+        <div id="remark-duplicate-matches" class="space-y-2 my-3"></div>
+        <p class="text-xs text-gray-500">ตรวจจากตัวอักษรที่คล้ายกัน โปรดตรวจจำนวนเงิน เปอร์เซ็นต์ และเงื่อนไข เพราะความหมายอาจต่างกัน</p>
+        <div class="flex flex-wrap justify-end gap-2 mt-4">
+            <button type="button" id="remark-duplicate-back" class="border rounded px-3 py-2 text-sm" autofocus>กลับไปแก้ไข</button>
+            <button type="button" id="remark-duplicate-copy" class="bg-emerald-600 text-white rounded px-3 py-2 text-sm">เก็บข้อความใหม่แยกไว้</button>
+        </div>
+    </dialog>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -940,7 +966,7 @@
         let currentUser = null;
 
         onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) resetEmployeeSession();
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); }
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -1013,7 +1039,11 @@
         let employees = [{ id: '1', code: 'E-0001', name: 'คุณสมรัก ยอดขาย', position: 'พนักงานขาย', email: 's@co.th', phone: '081', joinDate: '2023-01-15', status: 'active', resignDate: '', salary: 25000, basePct: '5', taxId: '1111111111111' }];
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
         let editingProductId = null, productSaveInProgress = false, pendingProductConfirmation = null;
-        let editingRemarkId = null;
+        let editingRemarkId = null, editingDocRemarkId = null;
+        let remarkSaveInProgress = false, documentSaveInProgress = false, remarksLoaded = false, remarksDataUserId = null;
+        const remarkEditorBaseline = { document: '', settings: '' };
+        const selectedRemarkTexts = new Map();
+        let remarkChoiceResolver = null;
         let selectedRemarksSequence = [];
 
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
@@ -1060,18 +1090,20 @@
 
         function toggleSubmenu(id) { const el = $(id), icon = $('icon-' + id); if(el && icon) { el.classList.toggle('hidden'); icon.classList.replace(el.classList.contains('hidden') ? 'ph-caret-up' : 'ph-caret-down', el.classList.contains('hidden') ? 'ph-caret-down' : 'ph-caret-up'); } }
         function handleMenuClick(moduleType, category) {
+            if (documentSaveInProgress || remarkSaveInProgress) return;
             if (category === 'create') { switchTab('create-doc'); if($('doc-type')) $('doc-type').value = moduleType; checkDocType(); }
             else if (category === 'report') { if(moduleType === 'VATOUT' || moduleType === 'VATIN') { switchTab('vat-report'); if($('vat-type-filter')) $('vat-type-filter').value = moduleType === 'VATOUT' ? 'output' : 'input'; generateVatReport(); } else if(moduleType === 'STC') { switchTab('stock-card'); renderStockCardDropdown(); } else { switchTab('reports-center'); generateUnifiedReport(moduleType); } }
             else if (category === 'label') { switchTab('shipping-mark'); renderShippingMarkDropdown(); } 
         }
 
         function switchTab(tabId) {
+            if (documentSaveInProgress || remarkSaveInProgress) return;
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
             const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
-                if($('items-container') && $('items-container').children.length === 0) { addLineItem(); selectedRemarksSequence = []; }
+                if($('items-container') && $('items-container').children.length === 0) { addLineItem(); selectedRemarksSequence = []; selectedRemarkTexts.clear(); }
                 renderRemarksCheckboxes();
             }
         }
@@ -1765,68 +1797,244 @@
         }
         function deleteProduct(id) { if (!productSaveInProgress) showConfirm(currentLang === 'en' ? 'Delete this product?' : 'ยืนยันลบ?', () => { if (currentUser && !productSaveInProgress) deleteDoc(getUserDoc('products', id)); }); }
 
-        function renderSettingsRemarks() { 
-            if($('settings-remarks-list')) {
-                $('settings-remarks-list').innerHTML = savedRemarks.map(r => `
-                    <div class="flex justify-between items-start bg-white p-2 border rounded mb-2">
-                        <p class="text-sm whitespace-pre-line flex-1">${r.text}</p>
-                        <div class="flex ml-2 shrink-0">
-                            <button onclick="editRemark('${r.id}')" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="แก้ไข"><i class="ph ph-pencil"></i></button>
-                            <button onclick="deleteRemark('${r.id}')" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="ลบ"><i class="ph ph-trash"></i></button>
-                        </div>
-                    </div>`).join(''); 
+        // Remark editing and duplicate checks (shared by documents and the library).
+        function normalizeRemark(text) {
+            // Keep punctuation and symbols: 1.5, 15, -5 and 5 must not count as identical.
+            return String(text || '').normalize('NFKC').toLowerCase().replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim();
+        }
+        function remarkSimilarity(left, right) {
+            const a = normalizeRemark(left), b = normalizeRemark(right);
+            if (a === b) return 1;
+            if (Math.min(a.length, b.length) < 8) return 0;
+            const counts = new Map();
+            for (let i = 0; i < a.length - 1; i++) {
+                const pair = a.slice(i, i + 2); counts.set(pair, (counts.get(pair) || 0) + 1);
             }
+            let overlap = 0;
+            for (let i = 0; i < b.length - 1; i++) {
+                const pair = b.slice(i, i + 2), count = counts.get(pair) || 0;
+                if (count) { overlap++; counts.set(pair, count - 1); }
+            }
+            const contained = (a.includes(b) || b.includes(a)) && Math.min(a.length, b.length) / Math.max(a.length, b.length) > .65;
+            return Math.max(2 * overlap / (a.length + b.length - 2), contained ? .85 : 0);
         }
-
-        function editRemark(id) {
-            const r = savedRemarks.find(x => x.id === id); if (!r) return;
-            editingRemarkId = id;
-            if($('new-remark-text')) { $('new-remark-text').value = r.text; $('new-remark-text').focus(); }
-            txt('btn-add-remark', 'Update');
-            show('btn-cancel-remark', true);
+        function findSimilarRemarks(text, excludeId = null) {
+            return savedRemarks.filter(r => r.id !== excludeId).map(note => ({ note, score: remarkSimilarity(text, note.text), exact: normalizeRemark(text) === normalizeRemark(note.text) }))
+                .filter(match => match.exact || match.score >= .74).sort((a, b) => b.score - a.score).slice(0, 3);
         }
-
+        function remarkElement(tag, text, className = '') {
+            const el = document.createElement(tag); if (text !== undefined) el.textContent = text; el.className = className; return el;
+        }
+        function remarkButton(text, action, className = 'text-emerald-700 px-2 py-1 rounded border bg-white text-xs shrink-0') {
+            const btn = remarkElement('button', text, className); btn.type = 'button'; btn.onclick = action;
+            btn.disabled = remarkSaveInProgress || documentSaveInProgress; return btn;
+        }
+        function remarkInput(source) { return $(source === 'document' ? 'doc-remark-text' : 'new-remark-text'); }
+        function remarkEditId(source) { return source === 'document' ? editingDocRemarkId : editingRemarkId; }
+        function resetRemarkEditor(source) {
+            if (source === 'document') {
+                editingDocRemarkId = null;
+                $('doc-remark-title').textContent = 'พิมพ์หมายเหตุใหม่';
+                $('doc-remark-save').textContent = 'เพิ่มลงเอกสารและคลัง'; show('doc-remark-cancel', false);
+            } else { editingRemarkId = null; txt('btn-add-remark', 'Add'); show('btn-cancel-remark', false); }
+            remarkInput(source).value = ''; remarkEditorBaseline[source] = '';
+        }
         function cancelEditRemark() {
-            editingRemarkId = null;
-            if($('new-remark-text')) $('new-remark-text').value = '';
-            txt('btn-add-remark', 'Add');
-            show('btn-cancel-remark', false);
+            if (remarkSaveInProgress || documentSaveInProgress) return;
+            if (remarkInput('settings').value !== remarkEditorBaseline.settings) showConfirm('ยกเลิกข้อความที่ยังไม่บันทึก?', () => resetRemarkEditor('settings'));
+            else resetRemarkEditor('settings');
         }
-
-        function renderRemarksCheckboxes() { if($('doc-remarks-selections')) $('doc-remarks-selections').innerHTML = savedRemarks.map(r => `<label class="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"><input type="checkbox" value="${r.id}" class="remark-checkbox mt-1" onchange="handleRemarkCheck(this)"><span class="whitespace-pre-line flex-1">${r.text}</span></label>`).join(''); setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(c => { c.checked = selectedRemarksSequence.includes(c.value); }); }, 50); }
-        
+        function editRemark(id, source = 'settings') {
+            if (remarkSaveInProgress || documentSaveInProgress) return;
+            const note = savedRemarks.find(r => r.id === id), snapshot = selectedRemarkTexts.get(id);
+            const text = source === 'document' && snapshot ? snapshot.text : note?.text;
+            if (text === undefined) return;
+            const load = () => {
+                if (source === 'document') {
+                    editingDocRemarkId = id; $('doc-remark-title').textContent = note ? 'แก้ไขหมายเหตุเดิม' : 'แก้ไขหมายเหตุจากเอกสารเดิม';
+                    $('doc-remark-save').textContent = note ? 'บันทึกการแก้ไข' : 'บันทึกเป็นข้อความใหม่ในคลัง'; show('doc-remark-cancel', true);
+                } else { editingRemarkId = id; txt('btn-add-remark', 'Update'); show('btn-cancel-remark', true); }
+                remarkInput(source).value = text; remarkEditorBaseline[source] = text;
+                remarkInput(source).dataset.libraryBaseline = note?.text ?? '';
+                remarkInput(source).focus(); remarkInput(source).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            };
+            if (remarkInput(source).value !== remarkEditorBaseline[source]) showConfirm('มีข้อความที่ยังไม่บันทึก ต้องการละทิ้งเพื่อแก้ข้อความที่เลือก?', load);
+            else load();
+        }
+        function renderSettingsRemarks() {
+            const list = $('settings-remarks-list'); if (!list) return; list.replaceChildren();
+            savedRemarks.forEach(note => {
+                const row = remarkElement('div', undefined, 'flex gap-2 items-start bg-white p-2 border rounded mb-2');
+                row.append(remarkElement('p', note.text, 'text-sm whitespace-pre-wrap break-words flex-1 min-w-0'), remarkButton('แก้ไข', () => editRemark(note.id)), remarkButton('ลบ', () => deleteRemark(note.id)));
+                list.append(row);
+            });
+            if (!savedRemarks.length) list.append(remarkElement('p', remarksLoaded ? 'ยังไม่มีข้อความหมายเหตุ' : 'กำลังโหลดคลังข้อความ…', 'text-sm text-gray-400 p-2'));
+        }
+        function getSelectedRemarkEntries() {
+            return selectedRemarksSequence.map(id => {
+                const snapshot = selectedRemarkTexts.get(id), libraryNote = savedRemarks.find(r => r.id === id);
+                return snapshot ? { id, ...snapshot } : libraryNote ? { id, text: libraryNote.text } : null;
+            }).filter(Boolean);
+        }
+        function renderRemarksCheckboxes() {
+            const list = $('doc-remarks-selections'); if (!list) return; list.replaceChildren();
+            const options = [...savedRemarks];
+            getSelectedRemarkEntries().forEach(entry => { if (!options.some(n => n.id === entry.id)) options.unshift(entry); });
+            options.forEach(note => {
+                const checked = selectedRemarksSequence.includes(note.id), snapshot = selectedRemarkTexts.get(note.id);
+                const row = remarkElement('div', undefined, 'remark-option flex items-start gap-2 p-2 rounded border border-transparent hover:border-gray-200 hover:bg-white');
+                const label = remarkElement('label', undefined, 'flex items-start gap-2 flex-1 min-w-0 cursor-pointer');
+                const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = note.id; checkbox.checked = checked;
+                checkbox.className = 'remark-checkbox mt-1'; checkbox.disabled = remarkSaveInProgress || documentSaveInProgress;
+                checkbox.onchange = () => handleRemarkCheck(checkbox);
+                label.append(checkbox, remarkElement('span', checked && snapshot ? snapshot.text : note.text, 'whitespace-pre-wrap break-words flex-1 min-w-0'));
+                row.append(label, remarkButton('แก้ไข', () => editRemark(note.id, 'document'))); list.append(row);
+            });
+            if (!options.length) list.append(remarkElement('p', remarksLoaded ? 'ยังไม่มีหมายเหตุ พิมพ์เพิ่มได้ด้านบน' : 'กำลังโหลดคลังข้อความ…', 'text-gray-400 text-sm'));
+            filterRemarks();
+            const summary = $('doc-remarks-selected'); summary.replaceChildren();
+            const entries = getSelectedRemarkEntries();
+            if (entries.length) summary.append(remarkElement('p', 'หมายเหตุในเอกสารนี้ (' + entries.length + ')', 'font-semibold text-gray-700'));
+            entries.forEach(entry => {
+                const row = remarkElement('div', undefined, 'flex items-start gap-2 bg-emerald-50 border-l-2 border-emerald-400 p-2');
+                row.append(remarkElement('span', entry.text, 'whitespace-pre-wrap break-words flex-1 min-w-0'), remarkButton('แก้ไข', () => editRemark(entry.id, 'document')), remarkButton('นำออก', () => {
+                    if (remarkSaveInProgress || documentSaveInProgress) return;
+                    selectedRemarksSequence = selectedRemarksSequence.filter(id => id !== entry.id); selectedRemarkTexts.delete(entry.id); renderRemarksCheckboxes();
+                })); summary.append(row);
+            });
+        }
         function handleRemarkCheck(checkbox) {
+            if (remarkSaveInProgress || documentSaveInProgress) return;
             const id = checkbox.value;
             if (checkbox.checked) {
                 if (!selectedRemarksSequence.includes(id)) selectedRemarksSequence.push(id);
-            } else {
-                selectedRemarksSequence = selectedRemarksSequence.filter(itemId => itemId !== id);
+                const note = savedRemarks.find(r => r.id === id);
+                if (note && !selectedRemarkTexts.has(id)) selectedRemarkTexts.set(id, { text: note.text });
+            } else { selectedRemarksSequence = selectedRemarksSequence.filter(value => value !== id); selectedRemarkTexts.delete(id); }
+            renderRemarksCheckboxes();
+        }
+        function filterRemarks() {
+            const query = normalizeRemark(val('search-remark'));
+            document.querySelectorAll('#doc-remarks-selections .remark-option').forEach(row => { row.style.display = normalizeRemark(row.querySelector('span').textContent).includes(query) ? 'flex' : 'none'; });
+        }
+        function restoreDocumentRemarks(docData) {
+            selectedRemarksSequence = []; selectedRemarkTexts.clear(); resetRemarkEditor('document');
+            if (Array.isArray(docData.remarkEntries)) {
+                docData.remarkEntries.forEach(entry => {
+                    if (typeof entry.id === 'string' && typeof entry.text === 'string' && !selectedRemarksSequence.includes(entry.id)) {
+                        selectedRemarksSequence.push(entry.id); selectedRemarkTexts.set(entry.id, { text: entry.text, ...(entry.preserveFormat ? { preserveFormat: true } : {}) });
+                    }
+                });
+            } else if (docData.remark) {
+                // Older documents have a final text snapshot but no per-note snapshots. Keep it verbatim.
+                const id = 'document-snapshot:' + docData.docNo;
+                selectedRemarksSequence.push(id); selectedRemarkTexts.set(id, { text: String(docData.remark), preserveFormat: true });
+            }
+            renderRemarksCheckboxes();
+        }
+        function formatRemarkEntries(entries) {
+            return entries.map((entry, index) => entry.preserveFormat ? entry.text : `${index + 1}. ${entry.text.trim()}`).join('\n');
+        }
+        function resolveRemarkChoice(choice) {
+            const resolve = remarkChoiceResolver; remarkChoiceResolver = null;
+            $('remark-duplicate-dialog').close(); if (resolve) resolve(choice);
+        }
+        function chooseSimilarRemark(text, matches) {
+            const dialog = $('remark-duplicate-dialog');
+            $('remark-duplicate-title').textContent = matches.some(m => m.exact) ? 'พบข้อความซ้ำในคลัง' : 'พบข้อความใกล้เคียงในคลัง';
+            $('remark-proposed-text').textContent = text;
+            const list = $('remark-duplicate-matches'); list.replaceChildren();
+            matches.forEach(match => {
+                const card = remarkElement('div', undefined, 'border rounded p-3 text-sm');
+                card.append(remarkElement('p', match.exact ? 'ข้อความซ้ำ' : 'ตัวอักษรคล้ายประมาณ ' + Math.round(match.score * 100) + '%', 'text-xs text-amber-700 font-semibold'), remarkElement('p', match.note.text, 'whitespace-pre-wrap break-words my-2'));
+                const btn = remarkButton('ใช้ข้อความนี้จากคลัง', () => resolveRemarkChoice({ type: 'existing', note: match.note })); btn.disabled = false; card.append(btn); list.append(card);
+            });
+            $('remark-duplicate-copy').hidden = matches.some(m => m.exact);
+            return new Promise(resolve => { remarkChoiceResolver = resolve; dialog.showModal(); $('remark-duplicate-back').focus(); });
+        }
+        function lockRemarkControls() {
+            const controls = [...document.querySelectorAll('#doc-remark-editor textarea, #doc-remark-editor button, #add-remark-form textarea, #add-remark-form button')].map(el => [el, el.disabled]);
+            controls.forEach(([el]) => { el.disabled = true; });
+            return () => controls.forEach(([el, disabled]) => { el.disabled = disabled; });
+        }
+        async function saveRemark(source, forDocumentSave = false) {
+            if (remarkSaveInProgress || (documentSaveInProgress && !forDocumentSave)) return false;
+            const input = remarkInput(source), text = input.value.trim(), originalId = remarkEditId(source);
+            if (!text || text.length > 5000) { showAlert('กรุณาพิมพ์หมายเหตุ 1–5,000 ตัวอักษร'); input.focus(); return false; }
+            if (!currentUser || !remarksLoaded || remarksDataUserId !== currentUser.uid) { showAlert('กรุณารอให้คลังข้อความโหลดเสร็จก่อนบันทึก'); return false; }
+            const uid = currentUser.uid, previousLibraryText = input.dataset.libraryBaseline;
+            remarkSaveInProgress = true; const unlock = lockRemarkControls();
+            $('remark-save-status').textContent = 'กำลังตรวจและบันทึกหมายเหตุ…'; renderSettingsRemarks(); renderRemarksCheckboxes();
+            try {
+                const snap = await getDocsFromServer(getUserCol('savedRemarks'));
+                if (currentUser?.uid !== uid) return false;
+                savedRemarks = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+                const original = savedRemarks.find(r => r.id === originalId);
+                const fromOldDocument = originalId?.startsWith('document-snapshot:');
+                if (originalId && !original && !fromOldDocument) throw new Error('หมายเหตุเดิมถูกลบจากคลัง กรุณายกเลิกการแก้ไขแล้วเพิ่มเป็นข้อความใหม่');
+                if (original && original.text !== previousLibraryText) throw new Error('ข้อความในคลังถูกแก้ไขระหว่างทำงาน กรุณาคัดลอกข้อความที่พิมพ์ไว้ แล้วเปิดรายการเดิมเพื่อตรวจสอบอีกครั้ง');
+                const matches = findSimilarRemarks(text, originalId);
+                let choice = matches.length ? await chooseSimilarRemark(text, matches) : { type: 'save' };
+                if (!choice || currentUser?.uid !== uid) return false;
+                let note;
+                if (choice.type === 'existing') {
+                    note = choice.note;
+                    const latest = await getDoc(getUserDoc('savedRemarks', note.id));
+                    if (!latest.exists() || latest.data().text !== note.text) throw new Error('ข้อความที่เลือกมีการเปลี่ยนแปลง กรุณาลองบันทึกใหม่');
+                } else {
+                    note = { id: original && choice.type !== 'copy' ? original.id : crypto.randomUUID(), text };
+                    await setDoc(getUserDoc('savedRemarks', note.id), note, { merge: true });
+                }
+                if (currentUser?.uid !== uid) return false;
+                savedRemarks = savedRemarks.filter(r => r.id !== note.id); savedRemarks.push(note);
+                if (source === 'document') {
+                    if (originalId && originalId !== note.id) { selectedRemarksSequence = selectedRemarksSequence.filter(id => id !== originalId); selectedRemarkTexts.delete(originalId); }
+                    if (!selectedRemarksSequence.includes(note.id)) selectedRemarksSequence.push(note.id);
+                    selectedRemarkTexts.set(note.id, { text: note.text });
+                } else if (choice.type !== 'existing' && selectedRemarksSequence.includes(note.id)) selectedRemarkTexts.set(note.id, { text: note.text });
+                resetRemarkEditor(source); $('remark-save-status').textContent = choice.type === 'existing' ? 'ใช้ข้อความเดิมจากคลังแล้ว ไม่มีการเพิ่มรายการซ้ำ' : 'บันทึกหมายเหตุในคลังแล้ว';
+                return true;
+            } catch (error) {
+                console.error('Remark save failed', error);
+                if (currentUser?.uid === uid) {
+                    // Use textContent: arbitrary note text must never become HTML.
+                    $('custom-alert-msg').textContent = error.message?.startsWith('ข้อความ') || error.message?.startsWith('หมายเหตุเดิม') ? error.message : 'บันทึกหมายเหตุไม่สำเร็จ ข้อความที่พิมพ์ยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง';
+                    show('custom-alert-modal', true);
+                }
+                return false;
+            } finally {
+                remarkSaveInProgress = false; unlock();
+                if ($('remark-save-status').textContent === 'กำลังตรวจและบันทึกหมายเหตุ…') $('remark-save-status').textContent = 'ยังไม่ได้บันทึก ข้อความที่พิมพ์ยังอยู่';
+                renderSettingsRemarks(); renderRemarksCheckboxes();
             }
         }
-        
-        if($('add-remark-form')) $('add-remark-form').addEventListener('submit', e => { 
-            e.preventDefault(); 
-            const t = val('new-remark-text').trim(); 
-            if(t) { 
-                if (editingRemarkId) {
-                    if (currentUser) {
-                        setDoc(getUserDoc("savedRemarks", editingRemarkId), { text: t }, {merge: true}).then(() => {
-                            cancelEditRemark();
-                        });
-                    }
-                } else {
-                    const newRem = { id: Date.now().toString(), text: t };
-                    if (currentUser) {
-                        setDoc(getUserDoc("savedRemarks", newRem.id), newRem).then(() => {
-                            if($('new-remark-text')) $('new-remark-text').value = ''; if($('new-remark-text')) $('new-remark-text').focus();
-                        });
-                    }
-                }
-            } 
+        function deleteRemark(id) {
+            if (remarkSaveInProgress || documentSaveInProgress) return;
+            const uid = currentUser?.uid;
+            showConfirm('ลบข้อความนี้จากคลัง? เอกสารที่บันทึกแล้วจะคงข้อความเดิม', async () => {
+                if (!uid || currentUser?.uid !== uid || remarkSaveInProgress || documentSaveInProgress) return;
+                try { await deleteDoc(getUserDoc('savedRemarks', id)); }
+                catch (error) { showAlert('ลบไม่สำเร็จ กรุณาลองอีกครั้ง'); }
+            });
+        }
+        function resetRemarkSession() {
+            remarksLoaded = false; remarksDataUserId = null; savedRemarks = [];
+            selectedRemarksSequence = []; selectedRemarkTexts.clear();
+            if (remarkChoiceResolver) resolveRemarkChoice(null);
+            resetRemarkEditor('document'); resetRemarkEditor('settings');
+        }
+        $('add-remark-form').addEventListener('submit', e => { e.preventDefault(); saveRemark('settings'); });
+        $('doc-remark-save').addEventListener('click', () => saveRemark('document'));
+        $('doc-remark-cancel').addEventListener('click', () => {
+            if (remarkSaveInProgress || documentSaveInProgress) return;
+            if (remarkInput('document').value !== remarkEditorBaseline.document) showConfirm('ยกเลิกข้อความที่ยังไม่บันทึก?', () => resetRemarkEditor('document'));
+            else resetRemarkEditor('document');
         });
-
-        function deleteRemark(id) { showConfirm('ยืนยันลบ?', () => { if (currentUser) deleteDoc(getUserDoc("savedRemarks", id)); }); }
-        function filterRemarks() { const q = val('search-remark').toLowerCase(); document.querySelectorAll('#doc-remarks-selections label').forEach(l => l.style.display = l.textContent.toLowerCase().includes(q) ? 'flex' : 'none'); }
+        $('remark-duplicate-back').addEventListener('click', () => resolveRemarkChoice(null));
+        $('remark-duplicate-copy').addEventListener('click', () => resolveRemarkChoice({ type: 'copy' }));
+        $('remark-duplicate-dialog').addEventListener('cancel', e => { e.preventDefault(); resolveRemarkChoice(null); });
+        $('remark-duplicate-dialog').addEventListener('close', () => { if (remarkChoiceResolver) resolveRemarkChoice(null); setTimeout(checkUpcomingEmployeeLeave, 100); });
+        // End shared remark editing.
 
         function getProductListItems(rowId) {
             const isEn = currentLang === 'en', defText = isEn ? '-- Select --' : '-- เลือก --';
@@ -1940,14 +2148,14 @@
         }
 
         function pullDataFromQuotation() {
+            if (documentSaveInProgress || remarkSaveInProgress) return;
             const qtNo = val('ref-qt-select'); if(!qtNo) return;
             if ($('doc-ref-manual')) $('doc-ref-manual').value = qtNo;
             const qtDoc = database.find(d => d.docNo === qtNo); if(!qtDoc) return;
             if (qtDoc.customerName) document.querySelectorAll('#customer-options-list li').forEach(li => { if(li.textContent.includes(qtDoc.customerName)) li.click(); });
             if($('items-container')) { $('items-container').innerHTML = ''; qtDoc.items.forEach(it => addLineItem(it)); }
             if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(val('doc-type'))) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const [id, def] = k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = qtDoc[id] || def || ''; }); }
-            selectedRemarksSequence = qtDoc.remarkIds ? [...qtDoc.remarkIds] : [];
-            setTimeout(() => { document.querySelectorAll('.remark-checkbox').forEach(chk => { chk.checked = selectedRemarksSequence.includes(chk.value); }); }, 50);
+            restoreDocumentRemarks(qtDoc);
             calculateLiveTotal();
         }
 
@@ -2040,56 +2248,67 @@
             return `${series}${String(maxNum + 1).padStart(3, '0')}`;
         }
 
-        if($('create-doc-form')) $('create-doc-form').addEventListener('submit', function(e) {
-            e.preventDefault(); const pre = val('doc-type'), custId = val('customer-select');
+        if($('create-doc-form')) $('create-doc-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (documentSaveInProgress || remarkSaveInProgress) return;
+            const pre = val('doc-type'), custId = val('customer-select');
             if (!custId) return showAlert(currentLang === 'en' ? 'Select Customer/Employee.' : 'เลือกลูกค้าหรือพนักงาน');
-            const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId), docDate = val('doc-date');
-            let gTotal = 0, tVat = 0, sub = 0; const items = [];
-            document.querySelectorAll('.item-row').forEach(row => {
-                const c = row.querySelector('.item-code')?.value.toUpperCase()||'', n = row.querySelector('.item-name').value, q = parseFloat(row.querySelector('.item-qty').value)||0, u = row.querySelector('.item-unit').value, p = parseFloat(row.querySelector('.item-price').value)||0, bp = parseFloat(row.querySelector('.item-base-price')?.value)||p, dv = parseFloat(row.querySelector('.item-disc-val').value)||0;
-                let net = (q * p) * (1 - dv/100), iv = 0, ib = net;
-                if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
-                gTotal += net; tVat += iv; sub += ib; items.push({ code: c, name: n, qty: q, unit: u, price: p, basePrice: bp, discVal: dv, discType: val('global-disc-type') || 'disc_%', rowDisc: (q*p)-net, total: net, itemBeforeVat: ib, itemVat: iv });
-            });
-            
-            // ดึงข้อความตามลำดับการคลิก (เรียงเลขให้)
-            let rIds = [...selectedRemarksSequence], rems = [];
-            rIds.forEach((id, index) => {
-                const r = savedRemarks.find(rm => rm.id === id);
-                if (r) {
-                    let cleanText = r.text.trim().replace(/^[-0-9.)\s]+/, ''); // ลบขีด หรือตัวเลขเดิมที่อาจติดมา
-                    rems.push(`${index + 1}. ${cleanText}`);
-                }
-            });
-            
-            let ssoPct = 0, whtPct = 0, ssoAmt = 0, whtAmt = 0;
-            if (noVatDocs.includes(pre)) { tVat = 0; sub = gTotal; }
-            if (isPay) {
-                ssoPct = parseFloat(val('payslip-sso-pct')) || 0;
-                whtPct = parseFloat(val('payslip-wht-pct')) || 0;
-                ssoAmt = sub * (ssoPct / 100);
-                whtAmt = sub * (whtPct / 100);
-                gTotal = sub - ssoAmt - whtAmt;
-            }
-            
-            const docNo = generateDocNo(pre, docDate);
-            
-            let cur = 'THB', exRate = 1; if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(pre)) { cur = val('doc-currency'); exRate = cur !== 'THB' ? (exchangeRates[cur]||1) : 1; }
-            let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
-            if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
-
-            const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: rems.join('\n'), remarkIds: rIds, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
-            
-            if (currentUser) {
-                setDoc(getUserDoc("documents", docNo), newDoc).then(() => {
-                    showAlert(`บันทึก ${docNo} สำเร็จ!`); this.reset(); selectedRemarksSequence = []; if($('search-remark')) $('search-remark').value = ''; filterRemarks(); if($('doc-date')) $('doc-date').value = todayStr; checkDocType(); if($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); } switchTab('document-list');
-                }).catch(err => {
-                    console.error("Firestore Error:", err);
-                    if (err.code === 'permission-denied') {
-                        showAlert('ไม่สามารถบันทึกข้อมูลได้ เนื่องจากติดสิทธิ์การเข้าถึง (Permission Denied)!');
-                    }
+            if (!currentUser) return showAlert('กรุณาเข้าสู่ระบบก่อนบันทึก');
+            const savingUserId = currentUser.uid;
+            documentSaveInProgress = true;
+            const formControls = [...this.querySelectorAll('input, select, textarea, button')].map(el => [el, el.disabled]);
+            formControls.forEach(([el]) => { el.disabled = true; });
+            let saved = false;
+            try {
+                if ((val('doc-remark-text').trim() || editingDocRemarkId) && !await saveRemark('document', true)) return;
+                if (currentUser?.uid !== savingUserId) return;
+                const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId), docDate = val('doc-date');
+                let gTotal = 0, tVat = 0, sub = 0; const items = [];
+                document.querySelectorAll('.item-row').forEach(row => {
+                    const c = row.querySelector('.item-code')?.value.toUpperCase()||'', n = row.querySelector('.item-name').value, q = parseFloat(row.querySelector('.item-qty').value)||0, u = row.querySelector('.item-unit').value, p = parseFloat(row.querySelector('.item-price').value)||0, bp = parseFloat(row.querySelector('.item-base-price')?.value)||p, dv = parseFloat(row.querySelector('.item-disc-val').value)||0;
+                    let net = (q * p) * (1 - dv/100), iv = 0, ib = net;
+                    if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
+                    gTotal += net; tVat += iv; sub += ib; items.push({ code: c, name: n, qty: q, unit: u, price: p, basePrice: bp, discVal: dv, discType: val('global-disc-type') || 'disc_%', rowDisc: (q*p)-net, total: net, itemBeforeVat: ib, itemVat: iv });
                 });
+            
+                const remarkEntries = getSelectedRemarkEntries();
+                const rIds = remarkEntries.map(entry => entry.id);
+                const finalRemarkText = formatRemarkEntries(remarkEntries);
+
+                let ssoPct = 0, whtPct = 0, ssoAmt = 0, whtAmt = 0;
+                if (noVatDocs.includes(pre)) { tVat = 0; sub = gTotal; }
+                if (isPay) {
+                    ssoPct = parseFloat(val('payslip-sso-pct')) || 0;
+                    whtPct = parseFloat(val('payslip-wht-pct')) || 0;
+                    ssoAmt = sub * (ssoPct / 100);
+                    whtAmt = sub * (whtPct / 100);
+                    gTotal = sub - ssoAmt - whtAmt;
+                }
+            
+                const docNo = generateDocNo(pre, docDate);
+            
+                let cur = 'THB', exRate = 1; if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(pre)) { cur = val('doc-currency'); exRate = cur !== 'THB' ? (exchangeRates[cur]||1) : 1; }
+                let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
+                if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
+
+                const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+            
+                await setDoc(getUserDoc("documents", docNo), newDoc);
+                if (currentUser?.uid !== savingUserId) return;
+                saved = true;
+                showAlert(`บันทึก ${docNo} สำเร็จ!`); this.reset(); selectedRemarksSequence = []; selectedRemarkTexts.clear(); resetRemarkEditor('document');
+                if ($('search-remark')) $('search-remark').value = '';
+                if ($('doc-date')) $('doc-date').value = todayStr;
+                checkDocType(); if ($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); }
+            } catch (err) {
+                console.error('Document save failed', err);
+                if (currentUser?.uid === savingUserId) showAlert('บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
+            } finally {
+                documentSaveInProgress = false;
+                formControls.forEach(([el, disabled]) => { el.disabled = disabled; });
+                renderRemarksCheckboxes(); renderSettingsRemarks();
             }
+            if (saved && currentUser?.uid === savingUserId) switchTab('document-list');
         });
 
         function updateDashboard() {
@@ -2169,6 +2388,7 @@
             }); 
         }
         function editDocument(docNo) {
+            if (documentSaveInProgress || remarkSaveInProgress) return;
             const d = database.find(x => x.docNo === docNo); if(!d) return;
             showConfirm(currentLang === 'en' ? 'Load for editing? (Saves as new doc)' : 'โหลดเพื่อแก้ไข? (บันทึกเป็นเลขใหม่)', () => {
                 switchTab('create-doc'); if($('doc-type')) $('doc-type').value = d.prefix; checkDocType(); 
@@ -2183,8 +2403,7 @@
                 if($('payslip-wht-pct')) $('payslip-wht-pct').value = d.whtPct || 0;
                 if($('items-container')) { $('items-container').innerHTML = ''; d.items.forEach(it => addLineItem(it)); }
                 
-                selectedRemarksSequence = d.remarkIds ? [...d.remarkIds] : [];
-                setTimeout(() => document.querySelectorAll('.remark-checkbox').forEach(c => { c.checked = selectedRemarksSequence.includes(c.value); }), 150);
+                restoreDocumentRemarks(d);
                 
                 calculateLiveTotal(); showAlert(currentLang === 'en' ? 'Loaded as draft.' : 'โหลดข้อมูลสำเร็จ!');
             });
@@ -2278,7 +2497,7 @@
             txt('preview-subtotal', `${formatMoney(d.subtotal)} ${cur}`); txt('preview-vat', `${formatMoney(d.vat)} ${cur}`); txt('preview-grandtotal', `${formatMoney(d.grandTotal)} ${cur}`);
             
             // Set remark text and auto-resize
-            txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${l}</div>`).join('') : '-');
+            txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${productHtml(l)}</div>`).join('') : '-');
             
             if($('doc-copy-type')) txt('preview-copy-type', val('doc-copy-type')); show('ai-email-container', false);
             show('document-preview-modal', true); document.body.classList.add('modal-open');
@@ -2551,8 +2770,11 @@
                 if (employeeRemindersReady) setTimeout(checkUpcomingEmployeeLeave, 100);
             }, errHandler);
             
+            const remarksSyncUserId = currentUser.uid;
             onSnapshot(getUserCol("savedRemarks"), (snap) => {
-                savedRemarks = snap.docs.map(d => d.data()); renderSettingsRemarks(); renderRemarksCheckboxes();
+                if (currentUser?.uid !== remarksSyncUserId) return;
+                savedRemarks = snap.docs.map(d => ({ ...d.data(), id: d.id })); remarksLoaded = true; remarksDataUserId = remarksSyncUserId;
+                renderSettingsRemarks(); renderRemarksCheckboxes();
             }, errHandler);
             
             onSnapshot(getUserCol("documents"), (snap) => {
