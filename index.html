@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ระบบบัญชี ERP NUALANAN</title>
+    <link rel="stylesheet" href="./payments.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
@@ -385,6 +386,7 @@
                             <div class="flex items-center gap-2"><i class="ph ph-bank text-lg text-emerald-400"></i> 6) การเงิน/บัญชี (Finance)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-finance"></i>
                         </button>
                         <div id="menu-finance" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <button type="button" onclick="openPaymentWorkspace()" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded transition"><i class="ph ph-coins"></i> รับชำระหลายงวด / ออกเอกสาร</button>
                             <a onclick="handleMenuClick('RV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเงิน / ใบสำคัญรับ (RV)</a>
                             <a onclick="handleMenuClick('PV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบจ่ายเงิน / ใบสำคัญจ่าย (PV)</a>
                             <a onclick="handleMenuClick('JV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบสำคัญทั่วไป (Journal Voucher)</a>
@@ -658,6 +660,8 @@
                         </form>
                     </div>
                 </div>
+
+                <section id="tab-payments" class="tab-content"><div id="payment-workspace"></div></section>
 
                 <div id="tab-document-list" class="tab-content">
                     <div class="flex flex-wrap items-center gap-6 mb-6 no-print">
@@ -992,6 +996,7 @@
                                                     <div class="flex justify-between py-1.5 px-2 bg-gray-100 text-[14px]"><span class="font-bold text-gray-900" id="preview-lbl-grand"></span><span class="font-bold text-emerald-700 double-underline" id="preview-grandtotal"></span></div>
                                                 </div>
                                             </div>
+                                            <div id="preview-payment-summary" class="hidden border border-emerald-200 rounded p-2 mb-2 shrink-0 text-[12px] bg-emerald-50"></div>
                                             <div class="border border-gray-200 p-2 rounded bg-white flex-1 relative overflow-hidden mb-2" id="preview-remark-wrapper">
                                                 <p class="font-bold text-gray-900 text-[14px] shrink-0 mb-1" id="preview-lbl-remark"></p>
                                                 <div class="absolute top-[28px] bottom-2 left-2 right-2 overflow-hidden">
@@ -1200,9 +1205,10 @@
     </script>
 
     <script type="module">
+        import { createPaymentsController } from "./payments-ui.mjs";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
         const val = id => $(id) ? $(id).value : '';
@@ -1236,9 +1242,10 @@
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let currentUser = null;
+        let firebaseUnsubscribers = [];
 
         onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); }
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -1318,6 +1325,9 @@
         let remarkChoiceResolver = null;
         let selectedRemarksSequence = [];
 
+        const initialUserData = JSON.parse(JSON.stringify({companyProfile,products,customers,employees,savedRemarks,exchangeRates}));
+        function resetUserData() { const defaults=JSON.parse(JSON.stringify(initialUserData)); companyProfile=defaults.companyProfile; products=defaults.products; customers=defaults.customers; employees=defaults.employees; savedRemarks=defaults.savedRemarks; exchangeRates=defaults.exchangeRates; }
+
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
         const pendingStatusDocs = ['QT', 'EQT', 'SO', 'DO', 'INV', 'TINV', 'ABB', 'PI', 'CI', 'PO', 'PR', 'VB', 'PINV', 'PAYSLIP'], noVatDocs = ['EVAT', 'EQT', 'PI', 'CI', 'PL', 'STI', 'STO', 'STT', 'STA', 'PDO', 'MI', 'FGR', 'MR', 'RV', 'PV', 'JV', 'WHT', 'SHM', 'BC', 'BL', 'PR', 'PO', 'GRN', 'PAYSLIP'];
@@ -1372,7 +1382,7 @@
             if (documentSaveInProgress || remarkSaveInProgress) return;
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -2534,6 +2544,7 @@
             formControls.forEach(([el]) => { el.disabled = true; });
             let saved = false;
             try {
+                if (['RE','RETAX','TINV','RV'].includes(pre) && val('doc-ref-manual').trim()) await validateManualPaymentReference(pre, val('doc-ref-manual').trim());
                 if ((val('doc-remark-text').trim() || editingDocRemarkId) && !await saveRemark('document', true)) return;
                 if (currentUser?.uid !== savingUserId) return;
                 const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId), docDate = val('doc-date');
@@ -2576,7 +2587,7 @@
                 checkDocType(); if ($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); }
             } catch (err) {
                 console.error('Document save failed', err);
-                if (currentUser?.uid === savingUserId) showAlert('บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
+                if (currentUser?.uid === savingUserId) showAlert(err.code==='payment-managed'?productHtml(err.message):'บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
             } finally {
                 documentSaveInProgress = false;
                 formControls.forEach(([el, disabled]) => { el.disabled = disabled; });
@@ -2589,7 +2600,7 @@
             let tRev = 0, iCnt = 0; const ty = {}, pS = {}, cS = {};
             database.forEach(d => { 
                 ty[d.docName] = (ty[d.docName] || 0) + 1; 
-                if (d.isRevenue) { 
+                if (d.paymentLedger ? d.paymentLedger.delivered : d.isRevenue) {
                     const r = d.exchangeRate || 1; const thb = d.grandTotal * r; tRev += thb; iCnt++; 
                     cS[d.customerName || 'Unknown'] = (cS[d.customerName || 'Unknown'] || 0) + thb; 
                     d.items.forEach(i => { const pk = i.code ? `[${i.code}] ${i.name}` : i.name; pS[pk] = (pS[pk] || 0) + (i.total * r); }); 
@@ -2603,11 +2614,56 @@
             mapBars(pS, 'dash-sales-by-product'); mapBars(cS, 'dash-sales-by-customer');
         }
 
+        // Payments use the existing authenticated documents/settings paths and Firebase project.
+        let paymentsController = null, companyProfileLoaded = false;
+        function canReceivePayments(d) { return ['SO','INV'].includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
+        function paymentTotals(d) {
+            const total = d.paymentLedger?.totalCents || Math.round(Number(d.grandTotal) * 100);
+            const paid = (d.paymentLedger?.payments || []).reduce((sum,p) => sum + p.amountCents, 0);
+            return {total, paid, balance:total-paid};
+        }
+        function resetPaymentSession() { companyProfileLoaded=false; if (paymentsController) paymentsController.destroy(); paymentsController = null; }
+        function renderPaymentWorkspace() {
+            if (!paymentsController) paymentsController = createPaymentsController($('payment-workspace'), {
+                db, runTransaction, serverTimestamp, userDoc:getUserDoc, getUserId:()=>currentUser?.uid,
+                getDocuments:()=>database, getCompany:()=>companyProfile, isCompanyReady:()=>companyProfileLoaded, today:()=>employeeTodayISO(), newId:()=>crypto.randomUUID(),
+                readServerDocuments:async()=>{ const uid=currentUser?.uid; const snap=await getDocsFromServer(getUserCol('documents')); if(currentUser?.uid!==uid) throw new Error('บัญชีผู้ใช้เปลี่ยน'); return snap.docs.map(d=>d.data()); },
+                preview:previewDocument, download:downloadDocumentPdf,
+                onSaved:result=>{
+                    if(result.root) { database=database.filter(d=>d.docNo!==result.root.docNo); database.push(result.root); }
+                    if(result.document) { const latest=database.find(d=>d.docNo===result.document.docNo); database=database.filter(d=>d.docNo!==result.document.docNo); database.push({...latest,...result.document,createdAt:latest?.createdAt||new Date().toISOString()}); }
+                    updateDashboard(); updateDocumentTable(); populateRefDocDatalist(); populateAllDocsDatalist();
+                    if(paymentsController) paymentsController.refresh();
+                }
+            });
+            paymentsController.refresh();
+        }
+        function openPaymentWorkspace(docNo='') { switchTab('payments'); if(docNo && paymentsController) paymentsController.open(docNo); }
+        document.addEventListener('click',event=>{ const button=event.target.closest('[data-open-payment]'); if(button) openPaymentWorkspace(decodeURIComponent(button.dataset.openPayment)); });
+        async function validateManualPaymentReference(prefix, references) {
+            if (!['RE','RETAX','TINV','RV'].includes(prefix) || !references) return;
+            const uid=currentUser?.uid;
+            for(const reference of references.split(',').map(s=>s.trim()).filter(Boolean)) {
+                if(reference.includes('/')) throw new Error('เลขอ้างอิงไม่ถูกต้อง');
+                const snap=await getDoc(getUserDoc('documents',reference));
+                if(currentUser?.uid!==uid) throw new Error('บัญชีผู้ใช้เปลี่ยน');
+                if(snap.exists() && (snap.data().paymentLedger || snap.data().paymentManaged)) throw Object.assign(new Error('รายการนี้ใช้รับชำระหลายงวด กรุณาออกเอกสารจากเมนู รับชำระหลายงวด / ออกเอกสาร เพื่อป้องกันยอดซ้ำ'), {code:'payment-managed'});
+            }
+        }
+        function renderPreviewPaymentSummary(d) {
+            const block=$('preview-payment-summary'); if(!block) return;
+            const totals=d.paymentSummary || (d.paymentLedger ? {totalCents:paymentTotals(d).total,paidCents:paymentTotals(d).paid,balanceCents:paymentTotals(d).balance,dueDate:d.paymentLedger.dueDate} : null);
+            show('preview-payment-summary',!!totals); block.replaceChildren(); if(!totals) return;
+            const pairs=[['ยอดออเดอร์',totals.totalCents],['รับชำระสะสม ณ รายการนี้',totals.paidCents],['ยอดคงเหลือ',totals.balanceCents]];
+            for(const [label,cents] of pairs) { const row=document.createElement('div'); row.className='flex justify-between gap-4'; const a=document.createElement('span'),b=document.createElement('span'); a.textContent=label; b.textContent=formatMoney(cents/100)+' THB'; row.append(a,b); block.append(row); }
+            const due=document.createElement('div'); due.textContent='นัดชำระ: '+formatDateThai(totals.dueDate); block.append(due);
+        }
+
         function updateAllStatuses() {
-            database.forEach(doc => { if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
-            const adj = {}; database.forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
+            database.forEach(doc => { if(doc.paymentManaged) return; if(doc.paymentLedger) { const p=paymentTotals(doc); doc.status=p.balance===0?'paid':p.paid>0?'partial':'pending'; return; } if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
+            const adj = {}; database.filter(doc=>!doc.paymentManaged&&!doc.paymentLedger).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
             const visited = new Set();
-            for (const doc of database) { if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
+            for (const doc of database) { if(doc.paymentManaged||doc.paymentLedger) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
         }
 
         function documentTypeKey(d) { return d.prefix || '__untyped__'; }
@@ -2653,15 +2709,17 @@
             updateAllStatuses(); if(!$('document-table-body')) return;
             renderDocumentTypeFilter();
             const documents = getFilteredDocuments(val('document-type-filter'));
-            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span></td><td class="p-4 text-center"><div class="flex justify-center gap-1"><button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
+            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'||d.status==='partial'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='partial'?'ชำระบางส่วน':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span></td><td class="p-4 text-center"><div class="flex justify-center gap-1">${canReceivePayments(d) ? `<button type="button" data-open-payment="${encodeURIComponent(d.docNo)}" class="text-emerald-700 border border-emerald-200 px-2 py-1.5 rounded">รับชำระ</button>` : ''}<button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
         }
 
         function deleteDocument(docNo) { 
+            const financial=database.find(d=>d.docNo===docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดมีประวัติทางการเงิน ห้ามลบ กรุณาให้ผู้รับผิดชอบบัญชีตรวจสอบรายการแก้ไข/ใบลดหนี้');
             showConfirm(currentLang === 'en' ? `Delete ${docNo}?` : `ยืนยันลบ ${docNo}?`, () => { 
                 if (currentUser) deleteDoc(getUserDoc("documents", docNo));
             }); 
         }
         function editDocument(docNo) {
+            const financial=database.find(d=>d.docNo===docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดล็อกยอดที่ออกแล้ว กรุณาจัดการจากเมนู รับชำระหลายงวด / ออกเอกสาร');
             if (documentSaveInProgress || remarkSaveInProgress) return;
             const d = database.find(x => x.docNo === docNo); if(!d) return;
             showConfirm(currentLang === 'en' ? 'Load for editing? (Saves as new doc)' : 'โหลดเพื่อแก้ไข? (บันทึกเป็นเลขใหม่)', () => {
@@ -2712,14 +2770,15 @@
 
         function previewDocument(docNo) {
             const d = database.find(x => x.docNo === docNo); if (!d) return; currentlyPreviewingDoc = d;
+            const issuer = d.paymentIssuer || companyProfile;
             const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', cur = d.currency || 'THB';
             
             // Fit A4 to the visible screen without changing its print dimensions.
             previewAutoFit = true;
             updatePreviewScale(0.8, true);
 
-            txt('preview-company-name', isEn ? companyProfile.nameEn : companyProfile.nameTh);
-            txt('preview-company-addr', isEn ? companyProfile.addressEn : companyProfile.addressTh);
+            txt('preview-company-name', productHtml(isEn ? (issuer.nameEn||issuer.nameTh) : issuer.nameTh));
+            txt('preview-company-addr', productHtml(isEn ? (issuer.addressEn||issuer.addressTh) : issuer.addressTh));
             txt('preview-company-tax-label', isEn ? "Tax ID: " : "เลขประจำตัวผู้เสียภาษี: ");
             txt('preview-company-tel-label', isEn ? "Tel: " : "โทร: ");
             txt('preview-cust-label', isPay ? (isEn ? "Employee:" : "ชื่อพนักงาน / Employee:") : (isEn ? "Customer / Consignee:" : "ลูกค้า / Customer:"));
@@ -2745,25 +2804,25 @@
             if (d.sellerName && !['PAYSLIP', 'PR', 'PO', 'GRN', 'VB', 'PINV'].includes(d.prefix)) authStamp = `( ${d.sellerName} )<br>${authStamp}`;
             txt('preview-lbl-stamp-auth', authStamp);
             txt('preview-lbl-stamp-maker', isPay ? "" : (isEn ? "Company Stamp (if any)" : "ตราประทับ (ถ้ามี)"));
-            txt('pv-comp-tax', companyProfile.taxId); txt('pv-comp-phone', companyProfile.phone);
+            txt('pv-comp-tax', productHtml(issuer.taxId)+(d.paymentManaged?' · '+productHtml(issuer.branch||'สำนักงานใหญ่'):'')); txt('pv-comp-phone', productHtml(issuer.phone));
             txt('preview-doc-name', isPay ? (isEn ? "PAYSLIP" : "สลิปเงินเดือน (PAYSLIP)") : (isEn ? (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName) : d.docName));
-            txt('preview-customer', d.customerName);
+            txt('preview-customer', productHtml(d.customerName));
             txt('preview-customer-tax', isPay ? "" : (d.customerTaxId ? `Tax ID: ${d.customerTaxId}` : ''));
             txt('preview-customer-branch', isPay ? "" : (d.customerBranch ? `Branch: ${d.customerBranch}` : ''));
             txt('preview-customer-addr', isPay ? (d.customerAddr ? `ตำแหน่ง: ${d.customerAddr}` : '') : (d.customerAddr || ''));
-            txt('preview-doc-no', d.docNo); txt('preview-date', d.dateStr ?? ''); txt('preview-credit', d.creditTerm ?? ''); txt('preview-ref-no', d.refDocManual || '-');
+            txt('preview-doc-no', productHtml(d.docNo)); txt('preview-date', d.dateStr ?? ''); txt('preview-credit', d.creditTerm ?? ''); txt('preview-ref-no', productHtml(d.refDocManual || '-'));
             
-            if($('preview-company-logo')) { $('preview-company-logo').src = companyProfile.logo || ''; show('preview-company-logo', !!companyProfile.logo); }
+            if($('preview-company-logo')) { $('preview-company-logo').src = issuer.logo || ''; show('preview-company-logo', !!issuer.logo); }
             show('preview-expire-container', ['QT', 'EQT', 'PI'].includes(d.prefix) && d.expireDateStr); txt('preview-expire-date', d.expireDateStr);
             txt('preview-stamp-container', d.status === 'paid' ? `<div class="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-[-30deg] text-green-500 border-[10px] border-green-500 rounded-2xl p-6 opacity-20 text-8xl font-black tracking-widest z-0 uppercase pointer-events-none">PAID</div>` : '');
             
             const isExp = ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix), sExp = isExp && (d.incoterm || d.pol || d.pod);
             show('preview-export-details', sExp); if (sExp) { txt('preview-incoterm', d.incoterm || '-'); txt('preview-pol', d.pol || '-'); txt('preview-pod', d.pod || '-'); txt('preview-currency-label', cur); }
             
-            if($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${i.code||'-'}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${i.name}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.unit||'-'}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(i.total)}</td></tr>`).join('');
+            if($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${productHtml(i.code||'-')}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${productHtml(i.name)}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${productHtml(i.unit||'-')}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(i.total)}</td></tr>`).join('');
             
             txt('preview-amount-words', getAmountText(d.grandTotal, cur, currentLang));
-            const hv = noVatDocs.includes(d.prefix); 
+            const hv = noVatDocs.includes(d.prefix) || d.paymentManaged?.kind === 'receipt';
             show('preview-subtotal-row', !hv || isPay); 
             show('preview-vat-row', !hv);
             
@@ -2782,6 +2841,9 @@
 
             txt('preview-subtotal', `${formatMoney(d.subtotal)} ${cur}`); txt('preview-vat', `${formatMoney(d.vat)} ${cur}`); txt('preview-grandtotal', `${formatMoney(d.grandTotal)} ${cur}`);
             
+            renderPreviewPaymentSummary(d);
+            if(d.paymentManaged?.priceIncludesVat) { txt('preview-col-price','ราคา/หน่วย (รวม VAT)'); txt('preview-col-amt','จำนวนเงิน (รวม VAT)'); }
+            if(['advance','receipt'].includes(d.paymentManaged?.kind)) { txt('preview-lbl-grand','รับชำระครั้งนี้'); txt('preview-lbl-maker','ผู้ชำระเงิน'); txt('preview-lbl-auth','ผู้รับเงิน'); }
             // Set remark text and auto-resize
             txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${productHtml(l)}</div>`).join('') : '-');
             
@@ -2952,7 +3014,7 @@
             const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
             
             // กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น ตามที่เคยขอไว้
-            const fD = database.filter(d => !!d.rawDate && ((rt==='output'&&['RETAX', 'CI'].includes(d.prefix))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
+            const fD = database.filter(d => !!d.rawDate && ((rt==='output'&&(['RETAX', 'CI'].includes(d.prefix)||['advance','tax'].includes(d.paymentManaged?.kind)))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
             const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
             
             txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);
@@ -2985,6 +3047,7 @@
         function resetSystem() { 
             showConfirm('⚠️ ลบข้อมูลทั้งหมด (Set Zero)?\nข้อมูลจะถูกลบทั้งหมด', () => { 
                 if (currentUser) {
+                    if(database.some(d=>d.paymentLedger||d.paymentManaged)) return showAlert('มีเอกสารรับเงินหลายงวด ไม่อนุญาตให้ล้างประวัติทางการเงินทั้งหมด');
                     database.forEach(d => deleteDoc(getUserDoc("documents", d.docNo)).catch(err => console.error(err)));
                 }
                 showAlert('รีเซ็ตเรียบร้อยแล้ว'); 
@@ -2993,7 +3056,7 @@
 
         // --- Window Binding for Inline Handlers ---
         Object.assign(window, {
-            toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown, 
+            openPaymentWorkspace, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
             selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
             toggleResignDate, cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee,
             handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
@@ -3004,51 +3067,66 @@
         // --- Firebase Initial Data Sync ---
         async function initFirebaseData() {
             if (!currentUser) return;
+            const initializingUserId=currentUser.uid;
+            const userRef=(name,id)=>doc(db,'artifacts',appId,'users',initializingUserId,name,id);
+            const userCol=name=>collection(db,'artifacts',appId,'users',initializingUserId,name);
 
             const errHandler = (err) => {
                 console.error("Firestore Error:", err);
                 if (err.code === 'permission-denied') {
-                    showAlert('ติดสิทธิ์การเข้าถึงข้อมูล (Permission Denied)!<br><br>กรุณาไปที่ <b>Firebase Console > Firestore Database > แท็บ Rules</b><br>แล้วเปลี่ยนเป็น <br><code>allow read, write: if true;</code>');
+                    showAlert('บัญชีนี้ไม่มีสิทธิ์เข้าถึงข้อมูล กรุณาตรวจ Firestore Rules ให้ตรงกับผู้ใช้และเส้นทางข้อมูล โดยไม่เปิดสิทธิ์ให้บุคคลทั่วไป');
                 }
             };
 
             try {
-                const profileRef = getUserDoc("settings", "companyProfile");
+                const profileRef = userRef("settings", "companyProfile");
                 const docSnap = await getDoc(profileRef);
+                if(currentUser?.uid!==initializingUserId) return;
                 if (!docSnap.exists()) {
                     console.log("Seeding initial data...");
                     await setDoc(profileRef, companyProfile);
-                    await setDoc(getUserDoc("settings", "exchangeRates"), exchangeRates);
-                    products.forEach(p => setDoc(getUserDoc("products", p.id), p));
-                    customers.forEach(c => setDoc(getUserDoc("customers", c.id), c));
-                    employees.forEach(e => setDoc(getUserDoc("employees", e.id), e));
-                    savedRemarks.forEach(r => setDoc(getUserDoc("savedRemarks", r.id), r));
+                    if(currentUser?.uid!==initializingUserId) return;
+                    await setDoc(userRef("settings", "exchangeRates"), exchangeRates);
+                    products.forEach(p => setDoc(userRef("products", p.id), p));
+                    customers.forEach(c => setDoc(userRef("customers", c.id), c));
+                    employees.forEach(e => setDoc(userRef("employees", e.id), e));
+                    savedRemarks.forEach(r => setDoc(userRef("savedRemarks", r.id), r));
                 }
             } catch (err) {
                 errHandler(err);
                 return; // Stop initialization if permission denied
             }
 
-            // Real-time Listeners
-            onSnapshot(getUserDoc("settings", "companyProfile"), (docSnap) => {
-                if(docSnap.exists()) { companyProfile = docSnap.data(); updateCompanyHeader(); populateCompanyForm(); }
+            if(currentUser?.uid!==initializingUserId) return;
+            // Real-time listeners belong to one authenticated session.
+            const sessionUid=currentUser.uid;
+            const watch=(ref,optionsOrCallback,callbackOrError,errorCallback)=>{
+                const options=typeof optionsOrCallback==='function'?null:optionsOrCallback;
+                const callback=options?callbackOrError:optionsOrCallback;
+                const onError=options?errorCallback:callbackOrError;
+                const guarded=snap=>{if(currentUser?.uid===sessionUid) callback(snap);};
+                const stop=options?onSnapshot(ref,options,guarded,onError):onSnapshot(ref,guarded,onError);
+                firebaseUnsubscribers.push(stop);
+            };
+            watch(userRef("settings", "companyProfile"), (docSnap) => {
+                if(docSnap.exists()) { companyProfile = docSnap.data(); companyProfileLoaded=true; updateCompanyHeader(); populateCompanyForm(); }
             }, errHandler);
             
-            onSnapshot(getUserDoc("settings", "exchangeRates"), (docSnap) => {
+            watch(userRef("settings", "exchangeRates"), (docSnap) => {
                 if(docSnap.exists()) { exchangeRates = docSnap.data(); renderExchangeRates(); }
             }, errHandler);
             
-            onSnapshot(getUserCol("products"), (snap) => {
+            watch(userCol("products"), (snap) => {
                 products = snap.docs.map(d => d.data()); renderProducts(); renderProductDropdowns();
             }, errHandler);
             
-            onSnapshot(getUserCol("customers"), (snap) => {
+            watch(userCol("customers"), (snap) => {
                 customers = snap.docs.map(d => ({ ...d.data(), id: d.id })); customersLoaded = true; renderCustomers();
                 if (!customerSaveInProgress && document.activeElement === $('new-cust-name')) queueCustomerNameCheck();
             }, errHandler);
             
             const employeeSyncUserId = currentUser.uid;
-            onSnapshot(getUserCol("employees"), { includeMetadataChanges: true }, (snap) => {
+            watch(userCol("employees"), { includeMetadataChanges: true }, (snap) => {
                 if (currentUser?.uid !== employeeSyncUserId) return;
                 employees = snap.docs.map(d => ({ ...d.data(), id: d.id })); employeesLoaded = true; employeesDataUserId = employeeSyncUserId;
                 employeeRemindersReady = !snap.metadata.fromCache && !snap.metadata.hasPendingWrites;
@@ -3058,13 +3136,13 @@
             }, errHandler);
             
             const remarksSyncUserId = currentUser.uid;
-            onSnapshot(getUserCol("savedRemarks"), (snap) => {
+            watch(userCol("savedRemarks"), (snap) => {
                 if (currentUser?.uid !== remarksSyncUserId) return;
                 savedRemarks = snap.docs.map(d => ({ ...d.data(), id: d.id })); remarksLoaded = true; remarksDataUserId = remarksSyncUserId;
                 renderSettingsRemarks(); renderRemarksCheckboxes();
             }, errHandler);
             
-            onSnapshot(getUserCol("documents"), (snap) => {
+            watch(userCol("documents"), (snap) => {
                 database = snap.docs.map(d => {
                     let data = d.data({ serverTimestamps: 'estimate' });
                     if(data.rawDate && data.rawDate.toDate) data.rawDate = data.rawDate.toDate();
@@ -3072,6 +3150,7 @@
                     return data;
                 });
                 updateDashboard(); updateDocumentTable(); populateRefDocDatalist(); populateAllDocsDatalist();
+                if(paymentsController) paymentsController.refresh();
             }, errHandler);
         }
 
