@@ -10,10 +10,18 @@ const controller = html.match(/<script id="erp-responsive-behavior">([\s\S]*?)<\
 const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
 const turn = () => new Promise(resolve => setImmediate(resolve));
 
-function setup(t) {
+function setup(t, options = {}) {
     const dom = new JSDOM(html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', pretendToBeVisual: true, url: 'https://offline.test/' });
     t.after(() => dom.window.close());
     const w = dom.window, $ = id => w.document.getElementById(id);
+    const viewport = new w.EventTarget();
+    Object.assign(viewport, {height:800, offsetTop:0, scale:1});
+    if (!options.withoutVisualViewport) Object.defineProperty(w, 'visualViewport', {value:viewport});
+    const observed = [];
+    if (options.observeResize) w.ResizeObserver = class {
+        constructor(callback) { this.callback = callback; }
+        observe(target) { observed.push({target, callback:this.callback}); }
+    };
     const listeners = [];
     const media = { matches: true, addEventListener: (_type, fn) => listeners.push(fn) };
     w.matchMedia = () => media;
@@ -40,7 +48,7 @@ function setup(t) {
         renderCustomerDropdown(false); switchTab('create-doc');
     `);
     const resize = width => { media.matches = width < 1200; listeners.forEach(fn => fn({matches:media.matches})); w.dispatchEvent(new w.Event('resize')); };
-    return {w, $, resize};
+    return {w, $, resize, viewport, observed};
 }
 
 test('mobile drawer traps navigation, closes on Escape, and restores the draft', async t => {
@@ -157,4 +165,43 @@ test('external mobile submit uses native required validation and prevents duplic
     assert.equal(w.testWrites.length, 1);
     release(); await turn(); await turn();
     assert.equal($('mobile-doc-save').disabled, false);
+});
+
+test('save bar follows keyboard resize and viewport panning without changing pinch zoom', t => {
+    const {w,viewport} = setup(t);
+    const style = w.document.documentElement.style;
+    assert.equal(style.getPropertyValue('--erp-action-anchor'), '800px');
+    viewport.height = 300; viewport.offsetTop = 120;
+    viewport.dispatchEvent(new w.Event('resize'));
+    assert.equal(style.getPropertyValue('--erp-viewport-height'), '300px');
+    assert.equal(style.getPropertyValue('--erp-action-anchor'), '420px');
+    viewport.offsetTop = 195; viewport.dispatchEvent(new w.Event('scroll'));
+    assert.equal(style.getPropertyValue('--erp-action-anchor'), '495px');
+    viewport.scale = 2; viewport.height = 150; viewport.offsetTop = 400;
+    viewport.dispatchEvent(new w.Event('resize'));
+    assert.equal(style.getPropertyValue('--erp-viewport-height'), '300px');
+    assert.equal(style.getPropertyValue('--erp-action-anchor'), '495px');
+    viewport.scale = 1; viewport.height = 800; viewport.offsetTop = 0;
+    viewport.dispatchEvent(new w.Event('resize'));
+    assert.equal(style.getPropertyValue('--erp-action-anchor'), '800px');
+});
+
+test('save bar reserves its measured height, tracks the content edge and clears its page state', async t => {
+    const {w,$,observed} = setup(t, {observeResize:true, withoutVisualViewport:true});
+    await turn();
+    const style = w.document.documentElement.style;
+    assert.equal(style.getPropertyValue('--erp-action-anchor'), w.innerHeight + 'px');
+    $('mobile-doc-actions').getBoundingClientRect = () => ({height:94.5});
+    $('erp-content').getBoundingClientRect = () => ({left:300});
+    const watcher = observed.find(x => x.target === $('mobile-doc-actions'));
+    assert.ok(watcher); watcher.callback();
+    assert.equal(style.getPropertyValue('--erp-doc-actions-height'), '95px');
+    assert.equal(style.getPropertyValue('--erp-doc-actions-left'), '300px');
+    assert.equal(w.document.body.classList.contains('erp-document-actions-visible'), true);
+    w.switchTab('customers'); await turn();
+    assert.equal($('mobile-doc-actions').hidden, true);
+    assert.equal(w.document.body.classList.contains('erp-document-actions-visible'), false);
+    w.switchTab('create-doc'); await turn();
+    assert.equal(w.document.body.classList.contains('erp-document-actions-visible'), true);
+    assert.equal($('mobile-doc-save').form, $('create-doc-form'));
 });
