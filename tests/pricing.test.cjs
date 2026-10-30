@@ -69,8 +69,8 @@ async function setup(t){
 }
 test('real ERP product selection, override, persistence and A4 output share one calculation',async t=>{
  const e=await setup(t),{w,$,input}=e;let row=e.select();assert.equal(row.querySelector('.item-price-basis').value,'EXC');assert.equal($('live-grand').textContent,'7,088.75');assert.equal(row.querySelector('.item-row-total').textContent,'6,625.00');
- input(row.querySelector('.item-price-basis'),'INC');assert.equal($('live-grand').textContent,'6,625.00');assert.equal(w.pricingTest.getProducts()[0].priceBasis,'EXC');
- input(row.querySelector('.item-price-basis'),'EXC');const saved=await e.save();assert(saved);assert.equal(saved.pricingVersion,1);assert.equal(saved.vatEnabled,true);assert.equal(saved.grandTotal,7088.75);assert.equal(saved.vat,463.75);
+ input($('global-price-basis'),'INC');assert.equal($('live-grand').textContent,'6,625.00');assert.equal(w.pricingTest.getProducts()[0].priceBasis,'EXC');
+ input($('global-price-basis'),'EXC');const saved=await e.save();assert(saved);assert.equal(saved.pricingVersion,1);assert.equal(saved.documentPriceBasis,'EXC');assert.equal(saved.vatEnabled,true);assert.equal(saved.grandTotal,7088.75);assert.equal(saved.vat,463.75);
  w.pricingTest.setDocs([saved]);w.previewDocument(saved.docNo);assert.match($('preview-col-price').textContent,/ยังไม่รวม VAT/);assert.match($('preview-items-body').textContent,/6,625\.00/);assert.equal($('preview-grandtotal').textContent,'7,088.75 THB');assert.equal($('preview-vat-row').classList.contains('hidden'),false);
  const old=JSON.stringify(saved);w.pricingTest.setProducts([{...e.product,price:200,priceBasis:'INC'}]);w.previewDocument(saved.docNo);assert.equal(JSON.stringify(saved),old);assert.equal($('preview-grandtotal').textContent,'7,088.75 THB');
  w.closePreview();w.editDocument(saved.docNo);$('custom-confirm-ok').click();row=$('items-container').firstElementChild;assert.equal(row.querySelector('.item-price').value,'25');assert.equal(row.querySelector('.item-price-basis').value,'EXC');assert.equal($('live-grand').textContent,'7,088.75');
@@ -87,11 +87,11 @@ test('product price basis saves through the existing unit confirmation without m
  const write=e.writes.find(x=>x.ref==='products/sticker');assert(write);assert.equal(write.data.priceBasis,'INC');assert.equal(write.data.price,25);assert.equal(write.data.code,'C001');assert.equal(e.writes.some(x=>x.ref.startsWith('documents/')),false);
 });
 test('export and G-item controls preserve no-VAT behavior; document errors and failed writes retain the draft',async t=>{
- const e=await setup(t),{w,$,input}=e;const row=e.select();$('doc-type').value='EQT';w.checkDocType();assert.equal($('live-grand').textContent,'6,625.00');assert.equal(row.querySelector('.item-price-basis').disabled,true);
- $('doc-type').value='PO';w.checkDocType();assert.equal($('live-grand').textContent,'7,088.75');assert.equal(row.querySelector('.item-price-basis').disabled,false);
+ const e=await setup(t),{w,$,input}=e;const row=e.select();$('doc-type').value='EQT';w.checkDocType();assert.equal($('live-grand').textContent,'6,625.00');assert.equal($('global-price-basis').disabled,true);
+ $('doc-type').value='PO';w.checkDocType();assert.equal($('live-grand').textContent,'7,088.75');assert.equal($('global-price-basis').disabled,false);
  input(row.querySelector('.item-price'),'-1');assert.equal($('live-grand').textContent,'—');await e.save();assert.equal(e.writes.length,0);assert.equal(row.querySelector('.item-price').value,'-1');
  input(row.querySelector('.item-price'),'25');e.setFail(true);await e.save();assert.equal(e.writes.length,0);assert.equal(row.querySelector('.item-price').value,'25');assert.equal($('doc-save-button').disabled,false);
- e.setFail(false);w.pricingTest.setProducts([{...e.product,code:'G001'}]);row.querySelector('[data-product-option]').click();assert.equal(row.querySelector('.item-price-basis').value,'NONE');assert.equal(row.querySelector('.item-price-basis').disabled,true);assert.equal($('live-vat').textContent,'0.00');
+ e.setFail(false);w.pricingTest.setProducts([{...e.product,code:'G001'}]);row.querySelector('[data-product-option]').click();assert.equal(row.querySelector('.item-price-basis').value,'NONE');assert.equal(row.querySelector('.item-price-basis').type,'hidden');assert.equal($('live-vat').textContent,'0.00');
 });
 test('excluded-price SO snapshots remain valid for installment payments and linked tax documents',async t=>{
  const e=await setup(t),{w,$}=e;e.select();$('doc-type').value='SO';w.checkDocType();const saved=await e.save();
@@ -113,4 +113,52 @@ test('a tax invoice deducting an advance from excluded-price goods prints reconc
  w.pricingTest.setDocs([final]);w.previewDocument(final.docNo);assert.match($('preview-col-amt').textContent,/ก่อน VAT/);
  const rows=[...$('preview-items-body').rows];assert.match(rows[0].cells[7].textContent,/6,625\.00/);assert.match(rows[1].cells[7].textContent,/-3,975\.00/);
  assert.match(rows[0].cells[5].textContent,/ยังไม่รวม VAT/);assert.match(rows[1].cells[5].textContent,/รวม VAT แล้ว/);assert.equal($('preview-grandtotal').textContent,'2,835.50 THB');
+});
+test('one header choice updates all eight partly edited legacy PO rows without changing prices or the saved source',async t=>{
+ const e=await setup(t),{w,$,input}=e;
+ const items=[45,45,45,30,30,15,15,40].map((qty,index)=>line({qty,code:'C'+String(index+1).padStart(3,'0'),priceBasis:index<3?'EXC':'NONE'}));
+ const old={...calculate(items),status:'pending',docNo:'PO-PARTLY-EDITED',prefix:'PO',docName:'PO',customerName:'โรงพิมพ์ตัวอย่าง',currency:'THB',remark:''};
+ const sourceSnapshot=JSON.stringify(old);w.pricingTest.setDocs([old]);w.editDocument(old.docNo);$('custom-confirm-ok').click();
+ assert.equal($('global-price-basis').value,'');assert.equal($('live-grand').textContent,'6,861.25');
+ assert.equal(w.document.querySelectorAll('#items-container select.item-price-basis').length,0);
+ assert.equal($('global-price-basis').closest('#item-column-head').id,'item-column-head');
+ assert.equal($('global-price-basis').querySelectorAll('option:not([hidden])').length,2);
+ input($('global-price-basis'),'EXC');
+ const rows=[...$('items-container').children];assert.equal(rows.length,8);
+ for(const row of rows){assert.equal(row.querySelector('.item-price').value,'25');assert.equal(row.querySelector('.item-price-basis').value,'EXC');}
+ assert.equal($('live-subtotal').textContent,'6,625.00');assert.equal($('live-vat').textContent,'463.75');assert.equal($('live-grand').textContent,'7,088.75');
+ input($('global-price-basis'),'INC');assert.equal($('live-grand').textContent,'6,625.00');assert.equal($('live-vat').textContent,'433.41');
+ input($('global-price-basis'),'EXC');const saved=await e.save();assert.equal(saved.documentPriceBasis,'EXC');assert.equal(saved.items.length,8);assert(saved.items.every(item=>item.priceBasis==='EXC'&&item.price===25&&item.taxRate===7));
+ assert.equal(JSON.stringify(old),sourceSnapshot);w.pricingTest.setDocs([saved]);w.previewDocument(saved.docNo);assert.match($('preview-col-price').textContent,/ยังไม่รวม VAT/);assert.equal($('preview-grandtotal').textContent,'7,088.75 THB');
+});
+test('the whole-document basis stays selected for additions, product selection and language changes, with G still exempt',async t=>{
+ const e=await setup(t),{w,$,input}=e;
+ input($('global-price-basis'),'EXC');w.pricingTest.setProducts([{...e.product,priceBasis:'INC'}]);e.select();
+ assert.equal($('global-price-basis').value,'EXC');assert.equal($('live-grand').textContent,'7,088.75');assert.equal(w.pricingTest.getProducts()[0].priceBasis,'INC');
+ w.addLineItem();const second=$('items-container').lastElementChild;second.querySelector('[data-product-option]').click();assert.equal(second.querySelector('.item-price-basis').value,'EXC');assert.equal($('live-grand').textContent,'7,115.50');
+ w.addLineItem({code:'G001',name:'G legacy',qty:1,unit:'PCS',price:100});w.calculateLiveTotal();const g=$('items-container').lastElementChild;
+ assert.equal(g.querySelector('.item-price-basis').value,'NONE');assert.equal($('live-grand').textContent,'7,215.50');
+ w.toggleLanguage();assert.equal($('global-price-basis').value,'EXC');assert.match($('global-price-basis').selectedOptions[0].textContent,/VAT excluded/);assert.equal(g.querySelector('.item-price-basis').value,'NONE');
+ input($('global-price-basis'),'INC');assert.equal($('live-grand').textContent,'6,750.00');assert.equal(g.querySelector('.item-price-basis').value,'NONE');
+});
+test('a copied historical no-VAT PO changes all taxable rows only after an explicit header choice, and reset clears that choice',async t=>{
+ const e=await setup(t),{w,$,input}=e;
+ const old={docNo:'PO-OLD-GLOBAL',prefix:'PO',docName:'PO',customerName:'โรงพิมพ์ตัวอย่าง',items:[line({priceBasis:undefined,total:6625})],subtotal:6625,vat:0,grandTotal:6625,currency:'THB',remark:''};
+ w.pricingTest.setDocs([old]);w.editDocument(old.docNo);$('custom-confirm-ok').click();assert.equal($('global-price-basis').value,'');assert.equal($('live-grand').textContent,'6,625.00');
+ input($('global-price-basis'),'EXC');assert.equal($('live-grand').textContent,'7,088.75');
+ const saved=await e.save();assert.equal(saved.documentPriceBasis,'EXC');assert.equal(old.grandTotal,6625);assert.equal(old.vat,0);
+ assert.equal($('global-price-basis').value,'INC');assert.equal($('global-price-basis').dataset.mode,'catalog');
+});
+test('quotation import restores the single header basis and new rows inherit it',async t=>{
+ const e=await setup(t),{w,$,input}=e;
+ const quote={...calculate([line()],'QT'),documentPriceBasis:'EXC',docNo:'QT-GLOBAL',prefix:'QT',customerName:'โรงพิมพ์ตัวอย่าง',remark:''};
+ w.pricingTest.setDocs([quote]);input($('global-price-basis'),'INC');$('ref-qt-select').value=quote.docNo;w.pullDataFromQuotation();
+ assert.equal($('global-price-basis').value,'EXC');assert.equal($('live-grand').textContent,'7,088.75');
+ w.addLineItem({code:'C002',name:'เพิ่มหลังดึงใบเสนอราคา',qty:1,unit:'PCS',price:25});w.calculateLiveTotal();assert.equal($('items-container').lastElementChild.querySelector('.item-price-basis').value,'EXC');assert.equal($('live-grand').textContent,'7,115.50');
+});
+test('a G product does not choose the VAT price basis before the first taxable product',async t=>{
+ const e=await setup(t),{w,$}=e;
+ w.pricingTest.setProducts([{...e.product,code:'G001',priceBasis:'INC'}]);const first=e.select();assert.equal(first.querySelector('.item-price-basis').value,'NONE');
+ w.pricingTest.setProducts([e.product]);w.addLineItem();$('items-container').lastElementChild.querySelector('[data-product-option]').click();
+ assert.equal($('global-price-basis').value,'EXC');assert.equal(first.querySelector('.item-price-basis').value,'NONE');assert.equal($('items-container').lastElementChild.querySelector('.item-price-basis').value,'EXC');
 });

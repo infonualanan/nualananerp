@@ -122,9 +122,11 @@
             #qt-details-container .grid, #export-details-container .grid, #payslip-deductions-container .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             #items-scroll { overflow: visible; padding: 12px; }
             #items-layout { min-width: 0; }
-            #item-column-head { display: flex; justify-content: flex-end; }
-            #item-column-head > div:not(:nth-child(6)) { display: none; }
-            #item-column-head > div:nth-child(6)::before { content: 'ประเภทส่วนลด'; margin-right: 8px; font-weight: normal; }
+            #item-column-head { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
+            #item-column-head > div:not(:nth-child(5)):not(:nth-child(6)) { display: none; }
+            #item-column-head > .item-price-header { text-align: left; }
+            #item-column-head > div:nth-child(6) { display: block; text-align: left; }
+            #item-column-head > div:nth-child(6)::before { content: 'ประเภทส่วนลด'; display: block; margin-bottom: 4px; font-weight: normal; }
             #items-container .item-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid #dbe8df; border-radius: 8px; background: #fcfefc; align-items: end; }
             #items-container .item-row > div:nth-child(1), #items-container .item-row > div:nth-child(2) { grid-column: span 2; }
             #items-container .item-row > div:nth-child(7) { grid-column: span 3; }
@@ -598,7 +600,7 @@
                                 <div id="items-scroll" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm overflow-x-auto table-scroll">
                                     <div id="items-layout" class="min-w-[900px] pb-4">
                                         <div id="item-column-head" class="item-grid font-semibold text-gray-600 text-[12px] uppercase mb-2 pb-2 border-b">
-                                            <div>รหัสสินค้า (Code)</div><div>รายละเอียด (Description)</div><div class="text-center">จำนวน</div><div class="text-center">หน่วย (Unit)</div><div class="text-right">ราคา/หน่วย <br><span class="text-[10px] text-gray-400 font-normal">ระบุ VAT ในแต่ละรายการ</span></div>
+                                            <div>รหัสสินค้า (Code)</div><div>รายละเอียด (Description)</div><div class="text-center">จำนวน</div><div class="text-center">หน่วย (Unit)</div><div class="item-price-header text-right"><label id="global-price-basis-label" for="global-price-basis" class="block mb-1">ราคา/หน่วย</label><div class="bg-gray-100 px-2 py-1 rounded flex items-center gap-1 border border-gray-200"><select id="global-price-basis" data-mode="catalog" class="min-w-0 w-full bg-transparent font-bold text-gray-700 outline-none cursor-pointer appearance-none" aria-label="รูปแบบราคา/หน่วย รวม VAT หรือไม่รวม VAT ทั้งเอกสาร" onchange="applyDocumentPriceBasis()"><option value="" hidden disabled>ตามเอกสารเดิม</option><option value="INC" selected>(รวม VAT)</option><option value="EXC">(ไม่รวม VAT)</option></select><i class="ph ph-caret-down text-gray-500 text-[10px] pointer-events-none" aria-hidden="true"></i></div><span id="global-price-basis-scope" class="block mt-1 text-[10px] text-gray-400 font-normal normal-case">ใช้กับทั้งใบ</span></div>
                                             <div class="text-right flex justify-end items-center gap-1">
                                                 <div class="bg-gray-100 px-2 py-1 rounded flex items-center gap-1 border border-gray-200"><select id="global-disc-type" class="bg-transparent font-bold text-gray-700 outline-none cursor-pointer appearance-none" onchange="calculateLiveTotal()"><option value="disc_%">ส่วนลด (%)</option><option value="gp_%">GP (%)</option></select><i class="ph ph-caret-down text-gray-500 text-[10px] pointer-events-none"></i></div>
                                             </div>
@@ -2508,7 +2510,7 @@
             if ($('doc-ref-manual')) $('doc-ref-manual').value = qtNo;
             const qtDoc = database.find(d => d.docNo === qtNo); if(!qtDoc) return;
             if (qtDoc.customerName) document.querySelectorAll('#customer-options-list li').forEach(li => { if(li.textContent.includes(qtDoc.customerName)) li.click(); });
-            if($('items-container')) { $('items-container').innerHTML = ''; qtDoc.items.forEach(it => addLineItem(it)); }
+            if($('items-container')) { restoreDocumentPriceBasis(qtDoc); $('items-container').innerHTML = ''; qtDoc.items.forEach(it => addLineItem(it)); }
             if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(val('doc-type'))) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const [id, def] = k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = qtDoc[id] || def || ''; }); }
             restoreDocumentRemarks(qtDoc);
             calculateLiveTotal();
@@ -2529,17 +2531,47 @@
             $(id)?.addEventListener('input', updateProductPricePreview);
             $(id)?.addEventListener('change', updateProductPricePreview);
         });
+        function resetDocumentPriceBasis() {
+            const select = $('global-price-basis'); if (!select) return;
+            select.value = 'INC'; select.dataset.mode = 'catalog';
+        }
+        function restoreDocumentPriceBasis(doc) {
+            const select = $('global-price-basis'); if (!select) return;
+            let basis = ['INC', 'EXC'].includes(doc.documentPriceBasis) ? doc.documentPriceBasis : null;
+            if (!basis) {
+                const bases = new Set((doc.items || []).filter(item => !String(item.code || '').toUpperCase().startsWith('G')).map(item => {
+                    if (item.priceBasis === 'NONE' || (item.pricingVersion === 1 && item.taxRate === 0) || (!item.pricingVersion && !item.priceBasis && noVatDocs.includes(doc.prefix))) return 'NONE';
+                    return productPriceBasis(item);
+                }));
+                if (bases.size === 1 && !bases.has('NONE')) basis = [...bases][0];
+                else if (bases.size === 0) basis = 'INC';
+            }
+            select.value = basis || ''; select.dataset.mode = basis ? 'global' : 'snapshot';
+        }
+        function updateGlobalPriceBasisUi() {
+            const select = $('global-price-basis'); if (!select) return;
+            select.disabled = documentSaveInProgress || !usesVatPricing(val('doc-type'));
+            select.options[0].textContent = currentLang === 'en' ? 'Saved conditions' : 'ตามเอกสารเดิม';
+            select.options[1].textContent = currentLang === 'en' ? '(VAT included)' : '(รวม VAT)';
+            select.options[2].textContent = currentLang === 'en' ? '(VAT excluded)' : '(ไม่รวม VAT)';
+            productText('global-price-basis-label', currentLang === 'en' ? 'Unit price' : 'ราคา/หน่วย');
+            productText('global-price-basis-scope', currentLang === 'en' ? 'Applies to the whole document' : 'ใช้กับทั้งใบ');
+            select.setAttribute('aria-label', currentLang === 'en' ? 'Unit price VAT basis for the whole document' : 'รูปแบบราคา/หน่วย รวม VAT หรือไม่รวม VAT ทั้งเอกสาร');
+        }
+        function applyDocumentPriceBasis() {
+            const select = $('global-price-basis');
+            if (!select || !['INC', 'EXC'].includes(select.value) || !usesVatPricing(val('doc-type'))) return;
+            select.dataset.mode = 'global';
+            document.querySelectorAll('.item-row').forEach(updateLinePricingUi);
+            calculateLiveTotal();
+        }
+        $('create-doc-form')?.addEventListener('reset', resetDocumentPriceBasis);
         function updateLinePricingUi(row) {
-            const select = row.querySelector('.item-price-basis'); if (!select) return;
+            const metadata = row.querySelector('.item-price-basis'); if (!metadata) return;
             const noVat = (row.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G');
-            if (noVat) select.value = 'NONE';
-            select.disabled = documentSaveInProgress || noVat || !usesVatPricing(val('doc-type'));
-            select.setAttribute('aria-label', currentLang === 'en' ? 'Entered unit price includes or excludes VAT' : 'ราคาต่อหน่วยที่กรอก รวม VAT หรือยังไม่รวม VAT');
-            select.querySelector('[value="INC"]').textContent = priceBasisLabel('INC');
-            select.querySelector('[value="EXC"]').textContent = priceBasisLabel('EXC');
-            const legacy = select.querySelector('[value="NONE"]');
-            legacy.textContent = priceBasisLabel('NONE') + (noVat ? ' (G)' : (currentLang === 'en' ? ' (saved item)' : ' (รายการเดิม)'));
-            legacy.hidden = select.value !== 'NONE';
+            const global = $('global-price-basis');
+            if (noVat) metadata.value = 'NONE';
+            else if (global?.dataset.mode === 'global' && ['INC', 'EXC'].includes(global.value)) metadata.value = global.value;
         }
         function selectProductItem(rowId, code, displayText, name, unit, price, priceBasis = 'INC') {
             if ($(`${rowId}-code`)) $(`${rowId}-code`).value = code;
@@ -2548,6 +2580,13 @@
             show(`${rowId}-search-menu`, false);
             const row = $(`${rowId}-code`)?.closest('.item-row');
             if (row) {
+                const global = $('global-price-basis');
+                if (code && global?.dataset.mode === 'catalog' && !code.toUpperCase().startsWith('G')) {
+                    const otherRows = [...document.querySelectorAll('.item-row')].filter(item => item !== row && !(item.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G'));
+                    const hasOtherItems = otherRows.some(item => item.querySelector('.item-code')?.value || item.querySelector('.item-name')?.value || Number(item.querySelector('.item-price')?.value));
+                    if (!hasOtherItems) global.value = priceBasis === 'EXC' ? 'EXC' : 'INC';
+                    global.dataset.mode = 'global';
+                }
                 const amount = code ? Number(price) || 0 : 0;
                 row.querySelector('.item-name').value = code ? name : '';
                 row.querySelector('.item-unit').value = code ? unit || 'PCS' : 'PCS';
@@ -2565,7 +2604,7 @@
             const dt = cd || (currentLang === 'en' ? '-- Select --' : '-- เลือก --'), tc = cd ? 'text-gray-900' : 'text-gray-500';
             const legacyNoVat = !!data && !data.pricingVersion && !data.priceBasis && noVatDocs.includes(val('doc-type'));
             const basis = cd.toUpperCase().startsWith('G') || data?.priceBasis === 'NONE' || (data?.pricingVersion === 1 && data.taxRate === 0) || legacyNoVat ? 'NONE' : productPriceBasis(data);
-            nr.innerHTML = `<div class="custom-dropdown-container relative"><input type="text" class="item-code hidden" id="${id}-code" value="${esc(cd)}"><input type="hidden" class="item-base-price" id="${id}-base-price" value="${esc(bp)}"><button type="button" onclick="toggleSearchMenu('${id}')" onkeydown="handleEnter(event, this)" class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none bg-white text-left flex justify-between shadow-sm"><span id="${id}-display-text" class="truncate ${tc} font-bold">${esc(dt)}</span><i class="ph ph-caret-down text-gray-400"></i></button><div id="${id}-search-menu" class="custom-search-menu hidden absolute z-[90] w-[300px] mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden left-0 top-full"><div class="p-2 border-b bg-gray-50 space-y-2"><select id="${id}-category-filter" aria-label="${currentLang === 'en' ? 'Product code category' : 'หมวดรหัสสินค้า'}" class="w-full border rounded bg-white p-1.5 text-[12px] outline-none" onchange="filterCustomDropdown('${id}')">${productCategoryOptions()}</select><input type="text" id="${id}-search-input" class="w-full border p-1.5 text-[12px] outline-none" placeholder="${currentLang === 'en' ? 'Search name / code...' : 'ค้นหาชื่อ / รหัสสินค้า...'}" aria-label="${currentLang === 'en' ? 'Search product name or code' : 'ค้นหาชื่อหรือรหัสสินค้า'}" oninput="filterCustomDropdown('${id}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); filterCustomDropdown('${id}'); }"></div><ul id="${id}-options-list" class="max-h-48 overflow-y-auto">${getProductListItems(id)}</ul></div></div><div><input type="text" class="item-name w-full border p-1.5 text-sm outline-none" placeholder="รายละเอียด" value="${esc(data?.name || '')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-qty w-full border p-1.5 text-center text-sm outline-none" min="0.000001" step="any" value="${esc(data?.qty ?? 1)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="text" class="item-unit w-full border p-1.5 text-center text-sm outline-none" placeholder="หน่วย" value="${esc(data?.unit || 'PCS')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-price w-full border p-1.5 text-right text-sm outline-none" ${val('doc-type') === 'PAYSLIP' ? '' : 'min="0"'} max="1000000000" step="0.01" value="${esc(data?.price ?? 0)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><select class="item-price-basis mt-1 w-full border border-emerald-200 rounded bg-emerald-50 p-1 text-[11px] text-emerald-800" onchange="calculateLiveTotal()"><option value="INC">รวม VAT แล้ว</option><option value="EXC">ยังไม่รวม VAT</option><option value="NONE" hidden>ไม่คิด VAT</option></select></div><div class="relative"><input type="number" class="item-disc-val w-full border p-1.5 text-right text-sm outline-none pr-5" min="0" max="100" step="0.01" placeholder="0" value="${esc(data?.discVal ?? '')}" oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold pointer-events-none">%</span></div><div class="text-right font-bold text-sm text-gray-700 self-center item-row-total">${formatMoney(data?.displayTotal ?? data?.total ?? 0)}</div><div class="text-right"><button type="button" onclick="this.closest('.item-row').remove(); calculateLiveTotal();" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="ph ph-trash"></i></button></div>`;
+            nr.innerHTML = `<div class="custom-dropdown-container relative"><input type="text" class="item-code hidden" id="${id}-code" value="${esc(cd)}"><input type="hidden" class="item-base-price" id="${id}-base-price" value="${esc(bp)}"><button type="button" onclick="toggleSearchMenu('${id}')" onkeydown="handleEnter(event, this)" class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none bg-white text-left flex justify-between shadow-sm"><span id="${id}-display-text" class="truncate ${tc} font-bold">${esc(dt)}</span><i class="ph ph-caret-down text-gray-400"></i></button><div id="${id}-search-menu" class="custom-search-menu hidden absolute z-[90] w-[300px] mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden left-0 top-full"><div class="p-2 border-b bg-gray-50 space-y-2"><select id="${id}-category-filter" aria-label="${currentLang === 'en' ? 'Product code category' : 'หมวดรหัสสินค้า'}" class="w-full border rounded bg-white p-1.5 text-[12px] outline-none" onchange="filterCustomDropdown('${id}')">${productCategoryOptions()}</select><input type="text" id="${id}-search-input" class="w-full border p-1.5 text-[12px] outline-none" placeholder="${currentLang === 'en' ? 'Search name / code...' : 'ค้นหาชื่อ / รหัสสินค้า...'}" aria-label="${currentLang === 'en' ? 'Search product name or code' : 'ค้นหาชื่อหรือรหัสสินค้า'}" oninput="filterCustomDropdown('${id}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); filterCustomDropdown('${id}'); }"></div><ul id="${id}-options-list" class="max-h-48 overflow-y-auto">${getProductListItems(id)}</ul></div></div><div><input type="text" class="item-name w-full border p-1.5 text-sm outline-none" placeholder="รายละเอียด" value="${esc(data?.name || '')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-qty w-full border p-1.5 text-center text-sm outline-none" min="0.000001" step="any" value="${esc(data?.qty ?? 1)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="text" class="item-unit w-full border p-1.5 text-center text-sm outline-none" placeholder="หน่วย" value="${esc(data?.unit || 'PCS')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-price w-full border p-1.5 text-right text-sm outline-none" ${val('doc-type') === 'PAYSLIP' ? '' : 'min="0"'} max="1000000000" step="0.01" value="${esc(data?.price ?? 0)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><input type="hidden" class="item-price-basis" value="${esc(basis)}"></div><div class="relative"><input type="number" class="item-disc-val w-full border p-1.5 text-right text-sm outline-none pr-5" min="0" max="100" step="0.01" placeholder="0" value="${esc(data?.discVal ?? '')}" oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold pointer-events-none">%</span></div><div class="text-right font-bold text-sm text-gray-700 self-center item-row-total">${formatMoney(data?.displayTotal ?? data?.total ?? 0)}</div><div class="text-right"><button type="button" onclick="this.closest('.item-row').remove(); calculateLiveTotal();" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="ph ph-trash"></i></button></div>`;
             nr.querySelector('.item-price-basis').value = basis;
             window.labelResponsiveLineItem(nr);
             $('items-container').appendChild(nr);
@@ -2593,6 +2632,7 @@
 
         function calculateLiveTotal() {
             const pre = val('doc-type'), rows = [...document.querySelectorAll('.item-row')];
+            updateGlobalPriceBasisUi();
             rows.forEach(updateLinePricingUi);
             let pricing;
             try {
@@ -2674,7 +2714,7 @@
                 let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
                 if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
 
-                const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+                const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, documentPriceBasis: ['INC', 'EXC'].includes(val('global-price-basis')) ? val('global-price-basis') : null, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
                 await setDoc(getUserDoc("documents", docNo), newDoc);
                 if (currentUser?.uid !== savingUserId) return;
@@ -2832,7 +2872,7 @@
                 if($('global-disc-type')) $('global-disc-type').value = d.items[0]?.discType || 'disc_%';
                 if($('payslip-sso-pct')) $('payslip-sso-pct').value = d.ssoPct || 0;
                 if($('payslip-wht-pct')) $('payslip-wht-pct').value = d.whtPct || 0;
-                if($('items-container')) { $('items-container').innerHTML = ''; d.items.forEach(it => addLineItem(it)); }
+                if($('items-container')) { restoreDocumentPriceBasis(d); $('items-container').innerHTML = ''; d.items.forEach(it => addLineItem(it)); }
                 
                 restoreDocumentRemarks(d);
                 
@@ -3170,7 +3210,7 @@
 
         // --- Window Binding for Inline Handlers ---
         Object.assign(window, {
-            openPaymentWorkspace, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
+            openPaymentWorkspace, applyDocumentPriceBasis, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
             selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
             toggleResignDate, cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee,
             handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
