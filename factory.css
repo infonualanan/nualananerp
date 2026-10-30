@@ -1,0 +1,68 @@
+#factory-workspace{font-family:inherit;color:#243b30;font-size:14px;line-height:1.55;min-width:0}
+#factory-workspace *{box-sizing:border-box}
+#factory-workspace [hidden]{display:none!important}
+#factory-workspace .fx-header{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+#factory-workspace h2{font-size:22px;font-weight:600;margin:0}
+#factory-workspace h3{font-size:16px;font-weight:600;margin:0 0 12px}
+#factory-workspace .fx-header p,#factory-workspace .fx-hint{font-size:12px;color:#52675b;margin:6px 0 12px;overflow-wrap:anywhere}
+#factory-workspace button{font:inherit;border:1px solid #cddcd2;border-radius:7px;background:#fff;color:#254b35;padding:9px 12px;min-height:40px;cursor:pointer}
+#factory-workspace button:disabled{cursor:default;opacity:.55}
+#factory-workspace .fx-primary{background:#17613d;color:#fff;border-color:#17613d}
+#factory-workspace .fx-nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+#factory-workspace .fx-nav button{font-size:12px;padding:8px 10px}
+#factory-workspace .fx-nav button[aria-pressed=true]{background:#e4f3e9;border-color:#81b092;color:#135336}
+#factory-workspace #fx-message{padding:10px 12px;border-radius:6px;background:#eaf5ee;color:#20583a;margin:12px 0;overflow-wrap:anywhere}
+#factory-workspace #fx-message.fx-error{background:#fff0ed;color:#9c2d25}
+#factory-workspace .fx-selection{display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,2fr);align-items:center;gap:12px;margin-bottom:18px}
+#factory-workspace .fx-selection label,#factory-workspace .fx-label{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:12px}
+#factory-workspace #fx-job-summary{background:#f2f6f3;padding:12px;border-radius:7px;overflow-wrap:anywhere}
+#factory-workspace input,#factory-workspace select,#factory-workspace textarea{font:inherit;font-size:14px;min-width:0;min-height:40px;padding:9px 10px;border:1px solid #cedbd2;border-radius:6px;background:#fff;color:#233c2c;width:100%}
+#factory-workspace textarea{resize:vertical;min-height:70px}
+#factory-workspace .fx-box{padding:18px;background:#fff;border:1px solid #dce6df;border-radius:9px;margin-bottom:18px}
+#factory-workspace .fx-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#factory-workspace .fx-wide{grid-column:1/-1}
+#factory-workspace .fx-check{display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px}
+#factory-workspace .fx-check input{width:18px;height:18px;min-height:18px;flex:none}
+#factory-workspace .fx-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+#factory-workspace .fx-table-wrap{max-width:100%;margin:12px 0 18px}
+#factory-workspace .fx-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}
+#factory-workspace .fx-table th,#factory-workspace .fx-table td{padding:10px 6px;border-bottom:1px solid #dce6df;vertical-align:top;overflow-wrap:anywhere}
+#factory-workspace .fx-table th{text-align:left;background:#f3f7f4;color:#4d6656;font-weight:500}
+#factory-workspace .fx-table td{font-variant-numeric:tabular-nums}
+#factory-workspace .fx-empty{padding:18px;background:#f4f7f5;border-radius:7px;margin-bottom:16px}
+#factory-workspace .fx-review{padding:18px;border:2px solid #82b497;border-radius:9px;background:#f3faf5;margin:14px 0}
+#factory-workspace .fx-paper,#factory-print-area .fx-paper{padding:18px;background:#fff;color:#111;border:1px solid #d6d6d6;break-after:page;margin-bottom:14px}
+#factory-workspace .fx-paper>header,#factory-print-area .fx-paper>header{display:grid;grid-template-columns:65px minmax(0,1fr);align-items:center;gap:12px;margin-bottom:16px}
+#factory-workspace .fx-paper>header img,#factory-print-area .fx-paper>header img{max-width:65px;max-height:55px;object-fit:contain}
+#factory-workspace .fx-paper>header h3,#factory-print-area .fx-paper>header h3{font-size:18px;text-align:center;font-weight:600;margin:0}
+#factory-workspace .fx-paper-meta,#factory-print-area .fx-paper-meta{margin:10px 0;font-size:12px;white-space:normal;overflow-wrap:anywhere}
+#factory-workspace .fx-paper .fx-table th,#factory-workspace .fx-paper .fx-table td,#factory-print-area .fx-table th,#factory-print-area .fx-table td{border:1px solid #111;padding:8px 5px;text-align:center;vertical-align:middle;background:#fff;color:#111;overflow-wrap:anywhere}
+#factory-workspace .fx-paper footer,#factory-print-area .fx-paper footer{text-align:right;font-size:11px;margin-top:18px}
+#factory-workspace .fx-sign,#factory-print-area .fx-sign{font-size:12px;margin:18px 0}
+#factory-print-area{display:none}
+@media(max-width:700px){#factory-workspace .fx-fields,#factory-workspace .fx-selection{grid-template-columns:minmax(0,1fr)}#factory-workspace .fx-box{padding:14px}}
+@media(max-width:520px){
+ #factory-workspace .fx-table,#factory-workspace .fx-table tbody{display:block}
+ #factory-workspace .fx-table thead{display:none}
+ #factory-workspace .fx-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 0;border-bottom:1px solid #dce6df}
+ #factory-workspace .fx-table td{display:block;border:0;padding:0;text-align:left!important}
+ #factory-workspace .fx-table td:first-child{grid-column:1/-1}
+ #factory-workspace .fx-table td:before{content:attr(data-label);display:block;font-size:11px;color:#52675b}
+ #factory-workspace .fx-paper{padding:12px}
+ #factory-workspace .fx-paper .fx-table tr{border:1px solid #dce6df;padding:10px;margin:6px 0}
+ #factory-workspace .fx-paper .fx-table td{border:0;padding:0}
+}
+@media(pointer:coarse){#factory-workspace button,#factory-workspace input,#factory-workspace select,#factory-workspace .fx-check{min-height:44px}#factory-workspace input,#factory-workspace select,#factory-workspace textarea{font-size:16px}#factory-workspace .fx-check input{min-height:18px}}
+@media print{
+ body.factory-print>:not(#factory-print-area){display:none!important}
+ body.factory-print #factory-print-area{display:block!important;color:#000;background:#fff;font:10pt/1.4 Tahoma,sans-serif}
+ #factory-print-area .fx-paper{border:0;margin:0;padding:0;break-after:page}
+ #factory-print-area .fx-paper:last-child{break-after:auto}
+ #factory-print-area .fx-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9pt}
+ #factory-print-area .fx-table thead{display:table-header-group}
+ #factory-print-area .fx-table tbody{display:table-row-group}
+ #factory-print-area .fx-table tr{display:table-row;break-inside:avoid}
+ #factory-print-area .fx-table th,#factory-print-area .fx-table td{display:table-cell}
+ #factory-print-area .fx-table td:before{display:none}
+ #factory-print-area button{display:none!important}
+}

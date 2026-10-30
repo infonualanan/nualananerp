@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>ระบบบัญชี ERP NUALANAN</title>
     <link rel="stylesheet" href="./payments.css">
+    <link rel="stylesheet" href="./factory.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
@@ -362,6 +363,10 @@
                             <div class="flex items-center gap-2"><i class="ph ph-warehouse text-lg text-emerald-400"></i> 4) คลังสินค้า (Inventory)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-inventory"></i>
                         </button>
                         <div id="menu-inventory" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <button type="button" onclick="openFactoryWorkspace('stock')" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">สต๊อก / จอง / ประวัติ LOT</button>
+                            <button type="button" onclick="openFactoryWorkspace('receive')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">รับเข้าจริง / ตั้งยอดยกมา</button>
+                            <button type="button" onclick="openFactoryWorkspace('shipping')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">ขนส่ง / จัดส่งตาม LOT</button>
+                            <button type="button" onclick="openFactoryWorkspace('setup')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">ทะเบียนวัตถุดิบ / บรรจุภัณฑ์ / สินค้า</button>
                             <a onclick="handleMenuClick('STI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเข้า (Stock In)</a>
                             <a onclick="handleMenuClick('STO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบจ่ายออก (Stock Out)</a>
                             <a onclick="handleMenuClick('STT', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบโอนย้ายคลัง (Stock Transfer)</a>
@@ -375,12 +380,26 @@
                             <div class="flex items-center gap-2"><i class="ph ph-factory text-lg text-emerald-400"></i> 5) การผลิต (Production)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-production"></i>
                         </button>
                         <div id="menu-production" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <button type="button" onclick="openFactoryWorkspace('order')" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">งานผลิตเชื่อมคลัง / LOT</button>
+                            <button type="button" onclick="openFactoryWorkspace('recipes')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">สูตรและ Revision ที่อนุมัติ</button>
+                            <button type="button" onclick="openFactoryWorkspace('issue')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">เบิก / ชั่งจริงตาม LOT</button>
+                            <button type="button" onclick="openFactoryWorkspace('actual')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">บันทึกกระบวนการ / ผลผลิต / คืนวัสดุ</button>
                             <a onclick="handleMenuClick('PDO', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบสั่งผลิต (Production Order)</a>
                             <a onclick="handleMenuClick('MI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบเบิกวัตถุดิบเข้าผลิต (Material Issue)</a>
                             <a onclick="handleMenuClick('FGR', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเข้าผลิตสำเร็จ (Finished Goods Rec.)</a>
                             <a onclick="handleMenuClick('MR', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบคืนวัตถุดิบ (Material Return)</a>
                             <div class="border-t border-white/10 my-1"></div>
                             <a onclick="handleMenuClick('YSR', 'report')" class="block px-2 py-1.5 text-xs text-emerald-300 font-medium hover:bg-white/5 rounded cursor-pointer transition"><i class="ph ph-chart-line"></i> รายงานผลผลิต/ของเสีย (Yield & Scrap)</a>
+                        </div>
+                    </li>
+                    <li>
+                        <button onclick="toggleSubmenu('menu-factory-qa')" class="w-full text-left px-3 py-2 text-white/80 hover:bg-white/10 rounded-lg flex items-center justify-between transition-all font-medium text-sm mt-1">
+                            <div class="flex items-center gap-2"><i class="ph ph-shield-check text-lg text-emerald-400"></i> QA / GHP–HACCP</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-factory-qa"></i>
+                        </button>
+                        <div id="menu-factory-qa" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <button type="button" onclick="openFactoryWorkspace('incoming')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">ตรวจรับวัตถุดิบ / บรรจุภัณฑ์</button>
+                            <button type="button" onclick="openFactoryWorkspace('quality')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">ตรวจบรรจุ / ซีล / ปล่อย LOT</button>
+                            <button type="button" onclick="openFactoryWorkspace('forms')" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">ฟอร์มบริษัท / รายงานรับ–จ่าย</button>
                         </div>
                     </li>
                     <li>
@@ -665,6 +684,7 @@
                 </div>
 
                 <section id="tab-payments" class="tab-content"><div id="payment-workspace"></div></section>
+                <section id="tab-factory" class="tab-content"><div id="factory-workspace"></div></section>
 
                 <div id="tab-document-list" class="tab-content">
                     <div class="flex flex-wrap items-center gap-6 mb-6 no-print">
@@ -854,6 +874,7 @@
                 </div>
 
                 <div id="tab-stock-card" class="tab-content">
+                    <p class="text-sm text-amber-800 bg-amber-50 p-3 rounded mb-3">ประวัติจากเอกสารเดิม ยังไม่รวมรายการในระบบโรงงานใหม่ ดูยอดรับ–จ่ายและ LOT ใหม่ที่ คลังสินค้า → สต๊อก / จอง / ประวัติ LOT</p>
                     <div class="flex justify-between items-center mb-6 no-print"><h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><i class="ph ph-chart-line"></i> รายงานสต๊อกคงเหลือ</h2></div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex gap-4 items-end no-print text-[14px]">
                         <div class="flex-1"><label class="block text-[12px] font-medium text-gray-700 mb-1">เลือกสินค้าเพื่อดูความเคลื่อนไหว</label><select id="stc-product-select" class="border border-gray-300 rounded-lg p-2 outline-none w-full"><option value="">-- กรุณาเลือกสินค้า --</option></select></div>
@@ -1210,9 +1231,10 @@
 
     <script type="module">
         import { createPaymentsController } from "./payments-ui.mjs";
+        import { createFactoryController } from "./factory-ui.mjs";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
         const val = id => $(id) ? $(id).value : '';
@@ -1249,7 +1271,7 @@
         let firebaseUnsubscribers = [];
 
         onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -1450,9 +1472,10 @@
 
         function switchTab(tabId) {
             if (documentSaveInProgress || remarkSaveInProgress) return;
+            if (factoryController && (factoryController.busy || factoryController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการโรงงานก่อนเปลี่ยนหน้า'); return; }
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -2753,6 +2776,24 @@
             mapBars(pS, 'dash-sales-by-product'); mapBars(cS, 'dash-sales-by-customer');
         }
 
+        // Factory records use separate collections in the same authenticated ERP account.
+        let factoryController = null, factoryView = 'order';
+        function resetFactorySession() { if (factoryController) factoryController.destroy(); factoryController = null; factoryView = 'order'; }
+        function renderFactoryWorkspace() {
+            if (!currentUser) return;
+            if (!factoryController) factoryController = createFactoryController($('factory-workspace'), {
+                db, runTransaction, serverTimestamp, userDoc:getUserDoc, getDocFromServer,
+                getUserId:()=>currentUser?.uid,
+                getActor:()=>({name:currentUser?.displayName || currentUser?.email || currentUser?.uid || ''}),
+                getProducts:()=>products, getDocuments:()=>database, getCompany:()=>companyProfile,
+                today:()=>employeeTodayISO(), now:()=>new Date().toISOString(), newId:()=>crypto.randomUUID(),
+                readCollection:async name=>{const uid=currentUser?.uid; const snap=await getDocsFromServer(getUserCol(name)); if(currentUser?.uid!==uid)throw new Error('บัญชีผู้ใช้เปลี่ยน'); return snap.docs.map(d=>({...d.data(),id:d.id}));},
+                watchMeta:(next,error)=>onSnapshot(getUserDoc('factory_meta','current'),snapshot=>next(snapshot.exists()?snapshot.data():{revision:0}),error)
+            });
+            factoryController.open(factoryView);
+        }
+        function openFactoryWorkspace(view='order') { factoryView=view; switchTab('factory'); }
+
         // Payments use the existing authenticated documents/settings paths and Firebase project.
         let paymentsController = null, companyProfileLoaded = false;
         function canReceivePayments(d) { return ['SO','INV'].includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
@@ -3210,7 +3251,7 @@
 
         // --- Window Binding for Inline Handlers ---
         Object.assign(window, {
-            openPaymentWorkspace, applyDocumentPriceBasis, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
+            openFactoryWorkspace, openPaymentWorkspace, applyDocumentPriceBasis, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
             selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
             toggleResignDate, cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee,
             handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
