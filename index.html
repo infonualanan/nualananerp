@@ -598,13 +598,14 @@
                                 <div id="items-scroll" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm overflow-x-auto table-scroll">
                                     <div id="items-layout" class="min-w-[900px] pb-4">
                                         <div id="item-column-head" class="item-grid font-semibold text-gray-600 text-[12px] uppercase mb-2 pb-2 border-b">
-                                            <div>รหัสสินค้า (Code)</div><div>รายละเอียด (Description)</div><div class="text-center">จำนวน</div><div class="text-center">หน่วย (Unit)</div><div class="text-right">ราคา/หน่วย <br><span class="text-[10px] text-gray-400 font-normal">(รวม VAT)</span></div>
+                                            <div>รหัสสินค้า (Code)</div><div>รายละเอียด (Description)</div><div class="text-center">จำนวน</div><div class="text-center">หน่วย (Unit)</div><div class="text-right">ราคา/หน่วย <br><span class="text-[10px] text-gray-400 font-normal">ระบุ VAT ในแต่ละรายการ</span></div>
                                             <div class="text-right flex justify-end items-center gap-1">
                                                 <div class="bg-gray-100 px-2 py-1 rounded flex items-center gap-1 border border-gray-200"><select id="global-disc-type" class="bg-transparent font-bold text-gray-700 outline-none cursor-pointer appearance-none" onchange="calculateLiveTotal()"><option value="disc_%">ส่วนลด (%)</option><option value="gp_%">GP (%)</option></select><i class="ph ph-caret-down text-gray-500 text-[10px] pointer-events-none"></i></div>
                                             </div>
                                             <div class="text-right">รวมเป็นเงิน</div><div></div>
                                         </div>
                                         <div id="items-container" class="space-y-3 text-[14px]"></div>
+                                        <p id="pricing-error" role="alert" class="hidden mt-3 text-sm text-red-700"></p>
                                         <div id="items-summary" class="mt-4 flex justify-between items-start">
                                             <button type="button" onclick="addLineItem()" class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1 text-[14px] bg-emerald-50 px-3 py-1.5 rounded-md transition border border-emerald-200"><i class="ph ph-plus-circle"></i> <span data-i18n="btn_add_item">เพิ่มรายการ</span></button>
                                             
@@ -814,7 +815,8 @@
                                     <div class="flex gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option></select><input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
                                 </div>
                                 <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
-                                <div class="grid grid-cols-2 gap-2"><div><label for="new-prod-unit" class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit) <span class="text-red-500">*</span></label><input type="text" id="new-prod-unit" required placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded"></div><div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required step="0.01" class="w-full border p-2 rounded"></div></div>
+                                <div class="grid grid-cols-2 gap-2"><div><label for="new-prod-unit" class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit) <span class="text-red-500">*</span></label><input type="text" id="new-prod-unit" required placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded"></div><div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required min="0" max="1000000000" step="0.01" class="w-full border p-2 rounded"></div></div>
+                                <div><label for="new-prod-price-basis" class="block text-[12px] text-gray-600 mb-1">ราคาที่กรอกนี้</label><select id="new-prod-price-basis" class="w-full border p-2 rounded"><option value="INC">รวม VAT แล้ว</option><option value="EXC">ยังไม่รวม VAT</option></select><p id="product-price-preview" class="mt-2 text-xs text-emerald-700" role="status" aria-live="polite"></p></div>
                                 <div class="flex gap-2">
                                     <button type="submit" id="btn-save-prod" class="flex-1 bg-emerald-600 text-white p-2 rounded font-medium" data-i18n="btn_save_prod">บันทึก</button>
                                     <button type="button" id="btn-cancel-prod" onclick="cancelEditProduct()" class="hidden flex-1 bg-gray-200 text-gray-700 p-2 rounded font-medium" data-i18n="btn_cancel">ยกเลิก</button>
@@ -1333,6 +1335,72 @@
         const pendingStatusDocs = ['QT', 'EQT', 'SO', 'DO', 'INV', 'TINV', 'ABB', 'PI', 'CI', 'PO', 'PR', 'VB', 'PINV', 'PAYSLIP'], noVatDocs = ['EVAT', 'EQT', 'PI', 'CI', 'PL', 'STI', 'STO', 'STT', 'STA', 'PDO', 'MI', 'FGR', 'MR', 'RV', 'PV', 'JV', 'WHT', 'SHM', 'BC', 'BL', 'PR', 'PO', 'GRN', 'PAYSLIP'];
         const todayRaw = new Date(), todayStr = `${todayRaw.getFullYear()}-${(todayRaw.getMonth() + 1).toString().padStart(2, '0')}-${todayRaw.getDate().toString().padStart(2, '0')}`;
         
+        // Unit-price VAT rules: one calculation path for live totals and saved snapshots.
+        function usesVatPricing(prefix) {
+            return !!prefix && (!noVatDocs.includes(prefix) || ['PR', 'PO', 'GRN'].includes(prefix));
+        }
+        function priceBasisLabel(basis, isEn = currentLang === 'en') {
+            return basis === 'EXC' ? (isEn ? 'VAT excluded' : 'ยังไม่รวม VAT') : basis === 'NONE' ? (isEn ? 'No VAT' : 'ไม่คิด VAT') : (isEn ? 'VAT included' : 'รวม VAT แล้ว');
+        }
+        function productPriceBasis(product) { return product?.priceBasis === 'EXC' ? 'EXC' : 'INC'; }
+        function pricingFailure(message) { const error = new Error(message); error.code = 'pricing-invalid'; return error; }
+        function priceUnits(value, digits, negative = false) {
+            const text = String(value ?? '').trim(), pattern = new RegExp('^' + (negative ? '-?' : '') + '\\d+(?:\\.\\d{1,' + digits + '})?$');
+            if (!pattern.test(text)) throw pricingFailure('กรุณาตรวจสอบราคา จำนวน และส่วนลด');
+            const sign = text.startsWith('-') ? -1 : 1, [whole, fraction = ''] = text.replace(/^-/, '').split('.');
+            const units = sign * (Number(whole) * 10 ** digits + Number(fraction.padEnd(digits, '0')));
+            if (!Number.isSafeInteger(units)) throw pricingFailure('ยอดเงินเกินขอบเขตที่รองรับ');
+            return units;
+        }
+        function roundPriceRatio(numerator, denominator) {
+            return Number(numerator < 0n ? -((-numerator + denominator / 2n) / denominator) : (numerator + denominator / 2n) / denominator);
+        }
+        function calculateDocumentPricing(rawItems, prefix) {
+            const vatEnabled = usesVatPricing(prefix), groups = { INC: 0, EXC: 0 };
+            let subtotalCents = 0, vatCents = 0, totalCents = 0;
+            const items = rawItems.map(raw => {
+                const priceCents = priceUnits(raw.price ?? 0, 2, prefix === 'PAYSLIP');
+                const quantity = priceUnits(raw.qty ?? 1, 6), discount = priceUnits(raw.discVal || 0, 2);
+                if (quantity <= 0 || quantity > 1000000000000 || Math.abs(priceCents) > 100000000000 || discount < 0 || discount > 10000) throw pricingFailure('จำนวนต้องมากกว่า 0 ราคาไม่เกิน 1,000,000,000 บาท และส่วนลด 0–100%');
+                const entered = roundPriceRatio(BigInt(priceCents) * BigInt(quantity), 1000000n);
+                if (!Number.isSafeInteger(entered)) throw pricingFailure('ยอดเงินเกินขอบเขตที่รองรับ');
+                const deducted = roundPriceRatio(BigInt(entered) * BigInt(discount), 10000n), after = entered - deducted;
+                const code = String(raw.code || '').toUpperCase();
+                const basis = raw.priceBasis === 'EXC' ? 'EXC' : raw.priceBasis === 'NONE' || code.startsWith('G') ? 'NONE' : 'INC';
+                const taxable = vatEnabled && basis !== 'NONE' && !code.startsWith('G');
+                let net = after, tax = 0, gross = after;
+                if (taxable) {
+                    const before = groups[basis]; groups[basis] += after;
+                    if (!Number.isSafeInteger(groups[basis])) throw pricingFailure('ยอดเงินเกินขอบเขตที่รองรับ');
+                    if (basis === 'EXC') {
+                        tax = roundPriceRatio(BigInt(groups.EXC) * 7n, 100n) - roundPriceRatio(BigInt(before) * 7n, 100n);
+                        gross = net + tax;
+                    } else {
+                        net = roundPriceRatio(BigInt(groups.INC) * 100n, 107n) - roundPriceRatio(BigInt(before) * 100n, 107n);
+                        tax = gross - net;
+                    }
+                }
+                subtotalCents += net; vatCents += tax; totalCents += gross;
+                if (![subtotalCents, vatCents, totalCents].every(Number.isSafeInteger)) throw pricingFailure('ยอดเงินเกินขอบเขตที่รองรับ');
+                return {...raw, price: priceCents / 100, qty: quantity / 1000000, discVal: discount / 100, priceBasis: basis, taxRate: taxable ? 7 : 0, pricingVersion: 1, rowDisc: deducted / 100, displayTotal: after / 100, total: gross / 100, itemBeforeVat: net / 100, itemVat: tax / 100};
+            });
+            return {items, pricingVersion: 1, vatEnabled, subtotal: subtotalCents / 100, vat: vatCents / 100, grandTotal: totalCents / 100};
+        }
+        function readDocumentPricing() {
+            return calculateDocumentPricing([...document.querySelectorAll('.item-row')].map(row => ({
+                code: row.querySelector('.item-code')?.value || '', name: row.querySelector('.item-name')?.value || '',
+                qty: row.querySelector('.item-qty')?.value || '', unit: row.querySelector('.item-unit')?.value || '',
+                price: row.querySelector('.item-price')?.value ?? 0, basePrice: Number(row.querySelector('.item-base-price')?.value || row.querySelector('.item-price')?.value || 0),
+                discVal: row.querySelector('.item-disc-val')?.value || 0, discType: val('global-disc-type') || 'disc_%',
+                priceBasis: row.querySelector('.item-price-basis')?.value || 'INC'
+            })), val('doc-type'));
+        }
+        function printedItemBasis(item, doc) {
+            if (item.pricingVersion === 1) return item.taxRate === 0 ? 'NONE' : productPriceBasis(item);
+            return doc.paymentManaged?.priceIncludesVat ? 'INC' : null;
+        }
+        // End unit-price VAT rules.
+
         const translations = {
             th: { menu_dashboard: "ภาพรวม (Dashboard)", menu_create: "สร้างเอกสารใหม่", menu_docs: "คลังเอกสารทั้งหมด", menu_customers: "ฐานข้อมูลคู่ค้า / ลูกค้าหลัก", menu_employees: "ฐานข้อมูลพนักงาน", menu_products: "ฐานข้อมูลสินค้า / บริการ", menu_vat: "รายงานภาษี", menu_settings: "ตั้งค่าระบบ", menu_company: "ข้อมูลพื้นฐานบริษัท", title_dashboard: "ภาพรวมธุรกิจ (Executive Dashboard)", dash_revenue: "ยอดขายสุทธิ (รวมภาษี)", dash_docs: "เอกสารทั้งหมดที่ออก", dash_invs: "ใบกำกับภาษีขาย", dash_doc_type_title: "จำนวนเอกสารแยกตามประเภท", dash_sales_by_product: "สัดส่วนยอดขายแยกตามสินค้า", dash_sales_by_customer: "สัดส่วนยอดขายแยกตามลูกค้า", currency: "บาท", unit_doc: "ฉบับ", title_create_doc: "สร้างเอกสารใหม่", label_doc_type: "ประเภทเอกสาร", opt_select_type: "-- เลือกประเภท --", label_customer: "ชื่อลูกค้า / คู่ค้า", opt_select_cust: "-- เลือกลูกค้า --", label_credit: "เครดิต (Credit)", label_seller: "พนักงานขาย", label_vendor_inv: "อ้างอิงใบกำกับภาษีผู้ขาย", label_vendor_inv_desc: "สำหรับรายงานภาษีซื้อ", export_details: "ข้อมูลการส่งออก", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "เงื่อนไขใบเสนอราคา", valid_until: "กำหนดยืนราคา", title_items: "รายละเอียดรายการ (Line Items)", btn_add_item: "เพิ่มรายการ", label_select_remarks: "เลือกข้อความหมายเหตุ", btn_save_doc: "บันทึกเอกสาร", title_doc_list: "คลังเอกสารทั้งหมด", col_doc_no: "เลขที่เอกสาร", col_type: "ประเภท", col_customer: "ลูกค้า/ผู้ติดต่อ", col_email: "อีเมล", col_date: "วันที่", col_status: "สถานะ", col_total: "ยอดสุทธิ", col_action: "จัดการ", col_ref_no: "อ้างอิง", title_customers: "ข้อมูลลูกค้า/คู่ค้า", title_add_cust: "เพิ่มลูกค้าใหม่", lbl_cust_name: "ชื่อบริษัท/องค์กร", lbl_cust_contact: "ชื่อลูกค้า", lbl_cust_email: "อีเมล", col_cust_code: "รหัส", lbl_cust_tax: "เลขภาษี", lbl_cust_branch: "สาขา", lbl_cust_addr: "ที่อยู่", btn_save_cust: "บันทึก", btn_update: "อัปเดต", btn_cancel: "ยกเลิก", title_employees: "ข้อมูลพนักงาน", title_add_emp: "เพิ่มพนักงานใหม่", lbl_emp_name: "ชื่อ-นามสกุล", lbl_emp_pos: "ตำแหน่ง", title_products: "รายการสินค้า", title_add_prod: "เพิ่มสินค้าใหม่", lbl_prod_name: "ชื่อสินค้า/บริการ", lbl_prod_price: "ราคา", btn_save_prod: "บันทึก", title_exchange_rate: "ตั้งค่าอัตราแลกเปลี่ยน", desc_exchange_rate: "* เทียบ 1 สกุลเงิน = ? บาท", btn_save: "บันทึก", menu_settings: "ตั้งค่าระบบ", title_vat_report: "รายงานภาษี (VAT)", lbl_report_type: "ประเภท", lbl_report_month: "เดือน/ปี", btn_view_report: "ดูรายงาน", btn_print_report: "พิมพ์", title_preview: "ตัวอย่างเอกสาร", btn_draft_email: "ร่างอีเมล (AI)", btn_print: "พิมพ์", btn_save_company: "บันทึกข้อมูลบริษัท", tax_id_label: "Tax ID:", phone_label: "โทร:", menu_payslip: "สลิปเงินเดือน" },
             en: { menu_dashboard: "Dashboard", menu_create: "Create Doc", menu_docs: "All Docs", menu_customers: "Customers", menu_employees: "Employees", menu_products: "Products", menu_vat: "VAT Reports", menu_settings: "Settings", menu_company: "Company Profile", title_dashboard: "Executive Dashboard", dash_revenue: "Net Sales", dash_docs: "Total Docs", dash_invs: "Tax Invoices", dash_doc_type_title: "Docs by Type", dash_sales_by_product: "Sales by Product", dash_sales_by_customer: "Sales by Customer", currency: "THB", unit_doc: "Docs", title_create_doc: "Create New Document", label_doc_type: "Document Type", opt_select_type: "-- Select Type --", label_customer: "Customer / Vendor", opt_select_cust: "-- Select Customer --", label_credit: "Credit Term", label_seller: "Salesperson", label_vendor_inv: "Vendor Tax Inv No.", label_vendor_inv_desc: "Required for Input VAT", export_details: "Export Details", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "Quotation Details", valid_until: "Valid Until", title_items: "Line Items", btn_add_item: "Add Item", label_select_remarks: "Select Remarks", btn_save_doc: "Save Document", title_doc_list: "Document Library", col_doc_no: "Doc No.", col_type: "Type", col_customer: "Customer", col_email: "Email", col_date: "Date", col_status: "Status", col_total: "Net Total", col_action: "Action", col_ref_no: "Ref No.", title_customers: "Customers & Vendors", title_add_cust: "Add New", lbl_cust_name: "Company Name", lbl_cust_contact: "Contact Name", lbl_cust_email: "Email", col_cust_code: "Code", lbl_cust_tax: "Tax ID", lbl_cust_branch: "Branch", lbl_cust_addr: "Address", btn_save_cust: "Save", btn_update: "Update", btn_cancel: "Cancel", title_employees: "Employees", title_add_emp: "Add New Employee", lbl_emp_name: "Full Name", lbl_emp_pos: "Position", title_products: "Products", title_add_prod: "Add New", lbl_prod_name: "Product Name", lbl_prod_price: "Price", btn_save_prod: "Save", title_exchange_rate: "Exchange Rates", desc_exchange_rate: "* 1 FCY = ? THB", btn_save: "Save", menu_settings: "Settings", title_vat_report: "VAT Reports", lbl_report_type: "Type", lbl_report_month: "Month/Year", btn_view_report: "View Report", btn_print_report: "Print", title_preview: "Preview", btn_draft_email: "Draft Email", btn_print: "Print", btn_save_company: "Save Profile", tax_id_label: "Tax ID:", phone_label: "Tel:", menu_payslip: "Payslip" }
@@ -1895,6 +1963,7 @@
             const title = document.querySelector('[data-i18n="title_add_prod"]');
             if (title) title.textContent = editingProductId ? (isEn ? 'Edit Product' : 'แก้ไขสินค้า') : translations[currentLang].title_add_prod;
             productText('btn-save-prod', productSaveInProgress ? (isEn ? 'Saving...' : 'กำลังบันทึก...') : translations[currentLang][editingProductId ? 'btn_update' : 'btn_save_prod']);
+            updateProductPricePreview();
             const body = $('products-table-body');
             if (!body) return;
             body.innerHTML = filtered.length ? filtered.map(p => {
@@ -1905,7 +1974,7 @@
                     <td class="p-4">${productHtml(code)} ${badge ? `<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">${badge}</span>` : ''}</td>
                     <td class="p-4">${productHtml(p.name)}</td>
                     <td class="p-4 text-center">${productHtml(p.unit)}</td>
-                    <td class="p-4 text-right">${formatMoney(p.price)}</td>
+                    <td class="p-4 text-right">${formatMoney(p.price)}<small class="block text-[11px] text-gray-500">${priceBasisLabel(code.toUpperCase().startsWith('G') ? 'NONE' : productPriceBasis(p))}</small></td>
                     <td class="p-4 text-center">
                         <button type="button" data-product-edit="${id}" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="${editLabel}" aria-label="${editLabel} ${productHtml(p.name)}"><i class="ph ph-pencil"></i></button>
                         <button type="button" data-product-delete="${id}" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="${deleteLabel}" aria-label="${deleteLabel} ${productHtml(p.name)}"><i class="ph ph-trash"></i></button>
@@ -1943,7 +2012,7 @@
         }
         function productText(id, value) { if ($(id)) $(id).textContent = value; }
         function productFormValues() {
-            return { code: val('new-prod-code').trim().toUpperCase(), name: val('new-prod-name').trim(), unit: val('new-prod-unit').trim(), price: Number(val('new-prod-price')) };
+            return { code: val('new-prod-code').trim().toUpperCase(), name: val('new-prod-name').trim(), unit: val('new-prod-unit').trim(), price: Number(val('new-prod-price')), priceBasis: val('new-prod-price-basis') === 'EXC' ? 'EXC' : 'INC' };
         }
         function duplicateProductCode(data, id, list = products) {
             return list.some(p => p.id !== id && String(p.code || '').trim().toUpperCase() === data.code);
@@ -1959,6 +2028,8 @@
             $('new-prod-name').value = p.name || '';
             $('new-prod-unit').value = p.unit || '';
             $('new-prod-price').value = p.price ?? 0;
+            $('new-prod-price-basis').value = productPriceBasis(p);
+            updateProductPricePreview();
             show('btn-cancel-prod', true);
             renderProducts();
         }
@@ -1985,6 +2056,7 @@
                 input.value = `${px}-${String(max + 1).padStart(4, '0')}`; input.readOnly = true;
                 input.classList.add('bg-gray-100', 'text-gray-500');
             }
+            updateProductPricePreview();
         }
         if ($('product-category-filter')) $('product-category-filter').addEventListener('change', renderProducts);
         if ($('product-search')) $('product-search').addEventListener('input', renderProducts);
@@ -2006,11 +2078,11 @@
             for (const field of ['code', 'name', 'unit']) {
                 if (!data[field]) { $('new-prod-' + field).focus(); return showAlert(isEn ? 'Please enter a product code, name and unit.' : 'กรุณาระบุรหัส ชื่อสินค้า และหน่วยให้ครบถ้วน'); }
             }
-            if (!val('new-prod-price').trim() || !Number.isFinite(data.price)) return showAlert(isEn ? 'Please enter a valid price.' : 'กรุณาระบุราคาให้ถูกต้อง');
+            if (!val('new-prod-price').trim() || !Number.isFinite(data.price) || data.price < 0 || data.price > 1000000000) return showAlert(isEn ? 'Please enter a valid price.' : 'กรุณาระบุราคาให้ถูกต้อง');
             if (duplicateProductCode(data, editingProductId)) return showAlert(isEn ? 'This product code already exists.' : 'รหัสนี้มีอยู่แล้ว');
             pendingProductConfirmation = { uid: currentUser.uid, id: editingProductId, data };
             productText('product-unit-title', isEn ? 'Confirm product unit' : 'ยืนยันหน่วยสินค้า');
-            productText('product-unit-description', isEn ? 'Check the unit before saving this product.' : 'กรุณาตรวจสอบหน่วยให้ถูกต้องก่อนบันทึกทุกครั้ง');
+            productText('product-unit-description', (isEn ? 'Check unit and price: ' : 'ตรวจสอบหน่วยและราคา: ') + formatMoney(data.price) + ' THB / ' + priceBasisLabel(data.code.startsWith('G') ? 'NONE' : data.priceBasis));
             productText('product-unit-code', data.code);
             productText('product-unit-name', data.name);
             productText('product-unit-label', isEn ? 'Unit' : 'หน่วย (Unit)');
@@ -2358,7 +2430,7 @@
             } else {
                 const id = decodeURIComponent(button.getAttribute('data-product-option'));
                 const p = products.find(product => String(product.id) === id);
-                if (p) selectProductItem(rowId, p.code, `${p.code} : ${p.name}`, p.name, p.unit, p.price);
+                if (p) selectProductItem(rowId, p.code, `${p.code} : ${p.name}`, p.name, p.unit, p.price, productPriceBasis(p));
             }
         });
 
@@ -2442,19 +2514,62 @@
             calculateLiveTotal();
         }
 
-        function selectProductItem(rowId, code, displayText, name, unit, price) {
-            if($(`${rowId}-code`)) $(`${rowId}-code`).value = code; productText(`${rowId}-display-text`, code || displayText); if($(`${rowId}-display-text`)) $(`${rowId}-display-text`).className = `truncate ${code ? 'text-gray-900' : 'text-gray-500'} font-bold`; show(`${rowId}-search-menu`, false);
+        function updateProductPricePreview() {
+            const price = $('new-prod-price'), basis = $('new-prod-price-basis'); if (!price || !basis) return;
+            const noVat = val('new-prod-code').trim().toUpperCase().startsWith('G');
+            basis.disabled = noVat || productSaveInProgress;
+            try {
+                if (!price.value.trim()) { price.setCustomValidity(''); price.removeAttribute('aria-invalid'); productText('product-price-preview', ''); return; }
+                const result = calculateDocumentPricing([{code: val('new-prod-code'), price: price.value, qty: 1, discVal: 0, priceBasis: basis.value}], 'QT');
+                price.setCustomValidity(''); price.removeAttribute('aria-invalid');
+                productText('product-price-preview', noVat ? priceBasisLabel('NONE') + ': ' + formatMoney(result.grandTotal) + ' THB' : (currentLang === 'en' ? 'Unit price including VAT 7%: ' : 'ราคาต่อหน่วยรวม VAT 7%: ') + formatMoney(result.grandTotal) + ' THB');
+            } catch (error) { price.setCustomValidity(error.message); price.setAttribute('aria-invalid', 'true'); productText('product-price-preview', error.message); }
+        }
+        ['new-prod-price', 'new-prod-code', 'new-prod-price-basis'].forEach(id => {
+            $(id)?.addEventListener('input', updateProductPricePreview);
+            $(id)?.addEventListener('change', updateProductPricePreview);
+        });
+        function updateLinePricingUi(row) {
+            const select = row.querySelector('.item-price-basis'); if (!select) return;
+            const noVat = (row.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G');
+            if (noVat) select.value = 'NONE';
+            select.disabled = documentSaveInProgress || noVat || !usesVatPricing(val('doc-type'));
+            select.setAttribute('aria-label', currentLang === 'en' ? 'Entered unit price includes or excludes VAT' : 'ราคาต่อหน่วยที่กรอก รวม VAT หรือยังไม่รวม VAT');
+            select.querySelector('[value="INC"]').textContent = priceBasisLabel('INC');
+            select.querySelector('[value="EXC"]').textContent = priceBasisLabel('EXC');
+            const legacy = select.querySelector('[value="NONE"]');
+            legacy.textContent = priceBasisLabel('NONE') + (noVat ? ' (G)' : (currentLang === 'en' ? ' (saved item)' : ' (รายการเดิม)'));
+            legacy.hidden = select.value !== 'NONE';
+        }
+        function selectProductItem(rowId, code, displayText, name, unit, price, priceBasis = 'INC') {
+            if ($(`${rowId}-code`)) $(`${rowId}-code`).value = code;
+            productText(`${rowId}-display-text`, code || displayText);
+            if ($(`${rowId}-display-text`)) $(`${rowId}-display-text`).className = `truncate ${code ? 'text-gray-900' : 'text-gray-500'} font-bold`;
+            show(`${rowId}-search-menu`, false);
             const row = $(`${rowId}-code`)?.closest('.item-row');
-            if (row) { const pr = parseFloat(price) || 0; ['name', 'unit:PCS', 'base-price:0', 'price:0'].forEach(k => { const [cls, def] = k.split(':'); const el = row.querySelector(`.item-${cls}`); if(el) el.value = code ? (cls==='price'?convertPriceFromTHB(pr).toFixed(2):cls==='base-price'?pr:eval(cls)) : (def||''); }); }
+            if (row) {
+                const amount = code ? Number(price) || 0 : 0;
+                row.querySelector('.item-name').value = code ? name : '';
+                row.querySelector('.item-unit').value = code ? unit || 'PCS' : 'PCS';
+                row.querySelector('.item-base-price').value = amount;
+                row.querySelector('.item-price').value = convertPriceFromTHB(amount).toFixed(2);
+                row.querySelector('.item-price-basis').value = code.toUpperCase().startsWith('G') ? 'NONE' : priceBasis === 'EXC' ? 'EXC' : 'INC';
+            }
             calculateLiveTotal();
         }
-
         function addLineItem(data = null) {
-            if(!$('items-container')) return; const nr = document.createElement('div'); nr.className = 'item-grid item-row border-b border-gray-100 pb-2'; const id = 'item-' + Date.now() + Math.floor(Math.random() * 1000);
-            const bp = data?.basePrice ?? data?.price ?? '', cd = data?.code ?? '', dt = cd || (currentLang === 'en' ? '-- Select --' : '-- เลือก --'), tc = cd ? 'text-gray-900' : 'text-gray-500';
-            nr.innerHTML = `<div class="custom-dropdown-container relative"><input type="text" class="item-code hidden" id="${id}-code" value="${cd}"><input type="hidden" class="item-base-price" id="${id}-base-price" value="${bp}"><button type="button" onclick="toggleSearchMenu('${id}')" onkeydown="handleEnter(event, this)" class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none bg-white text-left flex justify-between shadow-sm"><span id="${id}-display-text" class="truncate ${tc} font-bold">${dt}</span><i class="ph ph-caret-down text-gray-400"></i></button><div id="${id}-search-menu" class="custom-search-menu hidden absolute z-[90] w-[300px] mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden left-0 top-full"><div class="p-2 border-b bg-gray-50 space-y-2"><select id="${id}-category-filter" aria-label="${currentLang === 'en' ? 'Product code category' : 'หมวดรหัสสินค้า'}" class="w-full border rounded bg-white p-1.5 text-[12px] outline-none" onchange="filterCustomDropdown('${id}')">${productCategoryOptions()}</select><input type="text" id="${id}-search-input" class="w-full border p-1.5 text-[12px] outline-none" placeholder="${currentLang === 'en' ? 'Search name / code...' : 'ค้นหาชื่อ / รหัสสินค้า...'}" aria-label="${currentLang === 'en' ? 'Search product name or code' : 'ค้นหาชื่อหรือรหัสสินค้า'}" oninput="filterCustomDropdown('${id}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); filterCustomDropdown('${id}'); }"></div><ul id="${id}-options-list" class="max-h-48 overflow-y-auto">${getProductListItems(id)}</ul></div></div><div><input type="text" class="item-name w-full border p-1.5 text-sm outline-none" placeholder="รายละเอียด" value="${data?.name||''}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-qty w-full border p-1.5 text-center text-sm outline-none" min="1" value="${data?.qty||'1'}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="text" class="item-unit w-full border p-1.5 text-center text-sm outline-none" placeholder="หน่วย" value="${data?.unit||'PCS'}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-price w-full border p-1.5 text-right text-sm outline-none" min="0" step="0.01" value="${data?.price||'0'}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div class="relative"><input type="number" class="item-disc-val w-full border p-1.5 text-right text-sm outline-none pr-5" step="0.01" placeholder="0" value="${data?.discVal||''}" oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold pointer-events-none">%</span></div><div class="text-right font-bold text-sm text-gray-700 self-center item-row-total">${formatMoney(data?.total||0)}</div><div class="text-right"><button type="button" onclick="this.closest('.item-row').remove(); calculateLiveTotal();" class="text-red-500 hover:bg-red-50 p-1.5 rounded" tabindex="-1"><i class="ph ph-trash"></i></button></div>`;
+            if (!$('items-container')) return;
+            const nr = document.createElement('div'); nr.className = 'item-grid item-row border-b border-gray-100 pb-2';
+            const id = 'item-' + crypto.randomUUID(), esc = productHtml;
+            const bp = data?.basePrice ?? data?.price ?? '', cd = String(data?.code ?? '');
+            const dt = cd || (currentLang === 'en' ? '-- Select --' : '-- เลือก --'), tc = cd ? 'text-gray-900' : 'text-gray-500';
+            const legacyNoVat = !!data && !data.pricingVersion && !data.priceBasis && noVatDocs.includes(val('doc-type'));
+            const basis = cd.toUpperCase().startsWith('G') || data?.priceBasis === 'NONE' || (data?.pricingVersion === 1 && data.taxRate === 0) || legacyNoVat ? 'NONE' : productPriceBasis(data);
+            nr.innerHTML = `<div class="custom-dropdown-container relative"><input type="text" class="item-code hidden" id="${id}-code" value="${esc(cd)}"><input type="hidden" class="item-base-price" id="${id}-base-price" value="${esc(bp)}"><button type="button" onclick="toggleSearchMenu('${id}')" onkeydown="handleEnter(event, this)" class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none bg-white text-left flex justify-between shadow-sm"><span id="${id}-display-text" class="truncate ${tc} font-bold">${esc(dt)}</span><i class="ph ph-caret-down text-gray-400"></i></button><div id="${id}-search-menu" class="custom-search-menu hidden absolute z-[90] w-[300px] mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden left-0 top-full"><div class="p-2 border-b bg-gray-50 space-y-2"><select id="${id}-category-filter" aria-label="${currentLang === 'en' ? 'Product code category' : 'หมวดรหัสสินค้า'}" class="w-full border rounded bg-white p-1.5 text-[12px] outline-none" onchange="filterCustomDropdown('${id}')">${productCategoryOptions()}</select><input type="text" id="${id}-search-input" class="w-full border p-1.5 text-[12px] outline-none" placeholder="${currentLang === 'en' ? 'Search name / code...' : 'ค้นหาชื่อ / รหัสสินค้า...'}" aria-label="${currentLang === 'en' ? 'Search product name or code' : 'ค้นหาชื่อหรือรหัสสินค้า'}" oninput="filterCustomDropdown('${id}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); filterCustomDropdown('${id}'); }"></div><ul id="${id}-options-list" class="max-h-48 overflow-y-auto">${getProductListItems(id)}</ul></div></div><div><input type="text" class="item-name w-full border p-1.5 text-sm outline-none" placeholder="รายละเอียด" value="${esc(data?.name || '')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-qty w-full border p-1.5 text-center text-sm outline-none" min="0.000001" step="any" value="${esc(data?.qty ?? 1)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="text" class="item-unit w-full border p-1.5 text-center text-sm outline-none" placeholder="หน่วย" value="${esc(data?.unit || 'PCS')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-price w-full border p-1.5 text-right text-sm outline-none" ${val('doc-type') === 'PAYSLIP' ? '' : 'min="0"'} max="1000000000" step="0.01" value="${esc(data?.price ?? 0)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><select class="item-price-basis mt-1 w-full border border-emerald-200 rounded bg-emerald-50 p-1 text-[11px] text-emerald-800" onchange="calculateLiveTotal()"><option value="INC">รวม VAT แล้ว</option><option value="EXC">ยังไม่รวม VAT</option><option value="NONE" hidden>ไม่คิด VAT</option></select></div><div class="relative"><input type="number" class="item-disc-val w-full border p-1.5 text-right text-sm outline-none pr-5" min="0" max="100" step="0.01" placeholder="0" value="${esc(data?.discVal ?? '')}" oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold pointer-events-none">%</span></div><div class="text-right font-bold text-sm text-gray-700 self-center item-row-total">${formatMoney(data?.displayTotal ?? data?.total ?? 0)}</div><div class="text-right"><button type="button" onclick="this.closest('.item-row').remove(); calculateLiveTotal();" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="ph ph-trash"></i></button></div>`;
+            nr.querySelector('.item-price-basis').value = basis;
             window.labelResponsiveLineItem(nr);
             $('items-container').appendChild(nr);
+            updateLinePricingUi(nr);
         }
         function handleEnter(e, el) { 
             if (e.key === 'Enter') { 
@@ -2477,44 +2592,32 @@
         }
 
         function calculateLiveTotal() {
-            let gTotal = 0, tVat = 0, sub = 0; const pre = val('doc-type');
-            
-            document.querySelectorAll('.item-row').forEach(row => {
-                const c = row.querySelector('.item-code')?.value.toUpperCase()||'', q = parseFloat(row.querySelector('.item-qty')?.value)||0, p = parseFloat(row.querySelector('.item-price')?.value)||0, dv = parseFloat(row.querySelector('.item-disc-val')?.value)||0;
-                let net = (q * p) * (1 - dv/100);
-                if(row.querySelector('.item-row-total')) row.querySelector('.item-row-total').textContent = formatMoney(net);
-                gTotal += net; let iv = 0, ib = net;
-                if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
-                tVat += iv; sub += ib;
-            });
-            
-            if (noVatDocs.includes(pre)) { 
-                tVat = 0; sub = gTotal; 
-                show('live-subtotal-row', pre === 'PAYSLIP'); 
-                show('live-vat-row', false); 
-            } else { 
-                show('live-subtotal-row', true); show('live-vat-row', true); 
+            const pre = val('doc-type'), rows = [...document.querySelectorAll('.item-row')];
+            rows.forEach(updateLinePricingUi);
+            let pricing;
+            try {
+                pricing = readDocumentPricing(); show('pricing-error', false);
+                rows.forEach((row, index) => { row.querySelector('.item-row-total').textContent = formatMoney(pricing.items[index].displayTotal); });
+            } catch (error) {
+                productText('pricing-error', error.message); show('pricing-error', true);
+                rows.forEach(row => { row.querySelector('.item-row-total').textContent = '—'; });
+                ['live-subtotal', 'live-vat', 'live-grand'].forEach(id => txt(id, '—')); return;
             }
-
+            let gTotal = pricing.grandTotal, sub = pricing.subtotal;
+            show('live-subtotal-row', pricing.vatEnabled || pre === 'PAYSLIP'); show('live-vat-row', pricing.vatEnabled);
             let ssoAmt = 0, whtAmt = 0;
             if (pre === 'PAYSLIP') {
-                const ssoPct = parseFloat(val('payslip-sso-pct')) || 0;
-                const whtPct = parseFloat(val('payslip-wht-pct')) || 0;
-                ssoAmt = sub * (ssoPct / 100);
-                whtAmt = sub * (whtPct / 100);
+                ssoAmt = sub * ((parseFloat(val('payslip-sso-pct')) || 0) / 100);
+                whtAmt = sub * ((parseFloat(val('payslip-wht-pct')) || 0) / 100);
                 gTotal = sub - ssoAmt - whtAmt;
-                
-                show('live-sso-row', ssoPct > 0);
-                if($('live-sso')) $('live-sso').textContent = `-${formatMoney(ssoAmt)}`;
-                show('live-wht-row', whtPct > 0);
-                if($('live-wht')) $('live-wht').textContent = `-${formatMoney(whtAmt)}`;
-                if($('live-subtotal-label')) $('live-subtotal-label').textContent = "เงินเดือนรวม:";
+                show('live-sso-row', ssoAmt !== 0); txt('live-sso', `-${formatMoney(ssoAmt)}`);
+                show('live-wht-row', whtAmt !== 0); txt('live-wht', `-${formatMoney(whtAmt)}`);
+                txt('live-subtotal-label', currentLang === 'en' ? 'Gross salary:' : 'เงินเดือนรวม:');
             } else {
                 show('live-sso-row', false); show('live-wht-row', false);
-                if($('live-subtotal-label')) $('live-subtotal-label').textContent = "มูลค่าก่อนภาษี:";
+                txt('live-subtotal-label', currentLang === 'en' ? 'Amount before VAT:' : 'มูลค่าก่อนภาษี:');
             }
-
-            txt('live-subtotal', formatMoney(sub)); txt('live-vat', formatMoney(tVat)); txt('live-grand', formatMoney(gTotal));
+            txt('live-subtotal', formatMoney(sub)); txt('live-vat', formatMoney(pricing.vat)); txt('live-grand', formatMoney(gTotal));
         }
 
         function generateDocNo(prefix, docDateStr) {
@@ -2545,23 +2648,18 @@
             let saved = false;
             try {
                 if (['RE','RETAX','TINV','RV'].includes(pre) && val('doc-ref-manual').trim()) await validateManualPaymentReference(pre, val('doc-ref-manual').trim());
+                const pricing = readDocumentPricing();
                 if ((val('doc-remark-text').trim() || editingDocRemarkId) && !await saveRemark('document', true)) return;
                 if (currentUser?.uid !== savingUserId) return;
                 const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId), docDate = val('doc-date');
-                let gTotal = 0, tVat = 0, sub = 0; const items = [];
-                document.querySelectorAll('.item-row').forEach(row => {
-                    const c = row.querySelector('.item-code')?.value.toUpperCase()||'', n = row.querySelector('.item-name').value, q = parseFloat(row.querySelector('.item-qty').value)||0, u = row.querySelector('.item-unit').value, p = parseFloat(row.querySelector('.item-price').value)||0, bp = parseFloat(row.querySelector('.item-base-price')?.value)||p, dv = parseFloat(row.querySelector('.item-disc-val').value)||0;
-                    let net = (q * p) * (1 - dv/100), iv = 0, ib = net;
-                    if (!c.startsWith('G')) { ib = net * 100/107; iv = net - ib; }
-                    gTotal += net; tVat += iv; sub += ib; items.push({ code: c, name: n, qty: q, unit: u, price: p, basePrice: bp, discVal: dv, discType: val('global-disc-type') || 'disc_%', rowDisc: (q*p)-net, total: net, itemBeforeVat: ib, itemVat: iv });
-                });
-            
+                const items = pricing.items;
+                let gTotal = pricing.grandTotal, tVat = pricing.vat, sub = pricing.subtotal;
+
                 const remarkEntries = getSelectedRemarkEntries();
                 const rIds = remarkEntries.map(entry => entry.id);
                 const finalRemarkText = formatRemarkEntries(remarkEntries);
 
                 let ssoPct = 0, whtPct = 0, ssoAmt = 0, whtAmt = 0;
-                if (noVatDocs.includes(pre)) { tVat = 0; sub = gTotal; }
                 if (isPay) {
                     ssoPct = parseFloat(val('payslip-sso-pct')) || 0;
                     whtPct = parseFloat(val('payslip-wht-pct')) || 0;
@@ -2576,7 +2674,7 @@
                 let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
                 if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
 
-                const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+                const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
                 await setDoc(getUserDoc("documents", docNo), newDoc);
                 if (currentUser?.uid !== savingUserId) return;
@@ -2587,11 +2685,12 @@
                 checkDocType(); if ($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); }
             } catch (err) {
                 console.error('Document save failed', err);
-                if (currentUser?.uid === savingUserId) showAlert(err.code==='payment-managed'?productHtml(err.message):'บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
+                if (currentUser?.uid === savingUserId) showAlert(['payment-managed', 'pricing-invalid'].includes(err.code)?productHtml(err.message):'บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
             } finally {
                 documentSaveInProgress = false;
                 formControls.forEach(([el, disabled]) => { el.disabled = disabled; });
                 renderRemarksCheckboxes(); renderSettingsRemarks();
+                if (typeof calculateLiveTotal === 'function') calculateLiveTotal();
             }
             if (saved && currentUser?.uid === savingUserId) switchTab('document-list');
         });
@@ -2819,10 +2918,25 @@
             const isExp = ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix), sExp = isExp && (d.incoterm || d.pol || d.pod);
             show('preview-export-details', sExp); if (sExp) { txt('preview-incoterm', d.incoterm || '-'); txt('preview-pol', d.pol || '-'); txt('preview-pod', d.pod || '-'); txt('preview-currency-label', cur); }
             
-            if($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${productHtml(i.code||'-')}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${productHtml(i.name)}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${productHtml(i.unit||'-')}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(i.total)}</td></tr>`).join('');
-            
+            const showPriceBasis = !isPay && (d.vatEnabled === true || (!noVatDocs.includes(d.prefix) && d.paymentManaged?.kind !== 'receipt' && d.items.some(i => i.pricingVersion === 1)));
+            let mixedPriceBases = false;
+            if (showPriceBasis) {
+                const bases = [...new Set(d.items.map(i => printedItemBasis(i, d)))];
+                mixedPriceBases = bases.length > 1;
+                const basisTitle = bases.length === 1 ? priceBasisLabel(bases[0]) : (isEn ? 'Basis per item' : 'รูปแบบตามรายการ');
+                txt('preview-col-price', (isEn ? 'Unit price' : 'ราคา/หน่วย') + '<br>(' + cur + ')<br><span class="text-[10px] font-normal">' + basisTitle + '</span>');
+                txt('preview-col-amt', (isEn ? 'Amount' : 'จำนวนเงิน') + '<br>(' + cur + ')<br><span class="text-[10px] font-normal">' + (mixedPriceBases ? (isEn ? 'Before VAT' : 'ก่อน VAT') : basisTitle) + '</span>');
+            }
+            if ($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => {
+                const basis = mixedPriceBases ? printedItemBasis(i, d) : null;
+                const label = basis ? '<small class="block text-[10px] font-normal text-gray-500">' + priceBasisLabel(basis) + '</small>' : '';
+                const enteredAmount = i.pricingVersion === 1 ? (i.displayTotal ?? i.total) : i.total;
+                const amount = mixedPriceBases ? (i.itemBeforeVat ?? enteredAmount) : enteredAmount;
+                return `<tr class="border-b border-gray-100"><td class="py-1.5 px-2 text-center border-r border-gray-200 w-10">${idx+1}</td><td class="py-1.5 px-2 text-center text-gray-500 border-r border-gray-200 w-20">${productHtml(i.code||'-')}</td><td class="py-1.5 px-2 font-medium border-r border-gray-200">${productHtml(i.name)}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${i.qty}</td><td class="py-1.5 px-2 text-center border-r border-gray-200 w-12">${productHtml(i.unit||'-')}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-20">${formatMoney(i.price)}${label}</td><td class="py-1.5 px-2 text-right border-r border-gray-200 w-16 text-red-600">${i.discVal>0?`${i.discVal}%<br><span class="text-[10px] text-gray-400">(-${formatMoney(i.rowDisc)})</span>`:'-'}</td><td class="py-1.5 px-2 text-right font-bold w-24">${formatMoney(amount)}</td></tr>`;
+            }).join('');
+
             txt('preview-amount-words', getAmountText(d.grandTotal, cur, currentLang));
-            const hv = noVatDocs.includes(d.prefix) || d.paymentManaged?.kind === 'receipt';
+            const hv = (d.pricingVersion === 1 ? !d.vatEnabled : noVatDocs.includes(d.prefix)) || d.paymentManaged?.kind === 'receipt';
             show('preview-subtotal-row', !hv || isPay); 
             show('preview-vat-row', !hv);
             
@@ -2842,7 +2956,7 @@
             txt('preview-subtotal', `${formatMoney(d.subtotal)} ${cur}`); txt('preview-vat', `${formatMoney(d.vat)} ${cur}`); txt('preview-grandtotal', `${formatMoney(d.grandTotal)} ${cur}`);
             
             renderPreviewPaymentSummary(d);
-            if(d.paymentManaged?.priceIncludesVat) { txt('preview-col-price','ราคา/หน่วย (รวม VAT)'); txt('preview-col-amt','จำนวนเงิน (รวม VAT)'); }
+            if(d.paymentManaged?.priceIncludesVat && !showPriceBasis) { txt('preview-col-price','ราคา/หน่วย (รวม VAT)'); txt('preview-col-amt','จำนวนเงิน (รวม VAT)'); }
             if(['advance','receipt'].includes(d.paymentManaged?.kind)) { txt('preview-lbl-grand','รับชำระครั้งนี้'); txt('preview-lbl-maker','ผู้ชำระเงิน'); txt('preview-lbl-auth','ผู้รับเงิน'); }
             // Set remark text and auto-resize
             txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${productHtml(l)}</div>`).join('') : '-');
