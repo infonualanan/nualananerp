@@ -46,7 +46,7 @@ export function createLedger(root, mode, dueDate, today, documents = []) {
     if (!validDate(dueDate) || dueDate < today) throw new Error('กำหนดวันนัดชำระให้ไม่ก่อนวันนี้');
     const total = moneyCents(root.grandTotal), net = mode === 'domestic-vat7' ? Math.round(total * 100 / 107) : total;
     if (mode === 'domestic-vat7' && (Math.abs(moneyCents(root.subtotal) - net) > 1 || Math.abs(moneyCents(root.vat) - (total - net)) > 1 || Math.abs((root.items || []).reduce((sum,i)=>sum+moneyCents(i.total),0)-total)>1)) throw new Error('ยอดต้นทางต้องรวม VAT 7% เต็มทั้งออเดอร์ หากมีสินค้ายกเว้นภาษี ให้ใช้รับเงิน/ใบเสร็จอย่างเดียว');
-    return {version:1, mode, totalCents:total, netCents:net, vatCents:total-net, dueDate, delivered:false, deliveryDate:'', payments:[], documents:[]};
+    return {version:1, mode, totalCents:total, netCents:net, vatCents:total-net, dueDate, dueHistory:[{date:today,dueDate}], delivered:false, deliveryDate:'', payments:[], documents:[]};
 }
 function assertLedger(root) {
     assertRoot(root);
@@ -90,6 +90,7 @@ export function applyOperation(root, action, docNo, today, allDocuments = []) {
         if (!proof && !String(p.proofNote || '').trim()) throw new Error('แนบหลักฐานหรือระบุรายละเอียดหลักฐานก่อนรับเงิน');
         payment = {id:action.requestId,docNo,amountCents:gross,date,method:p.method,reference:p.reference,proofName:proof ? proof.name : String(p.proofNote).trim(),recordedAt:action.now,number:l.payments.length+1};
         l.payments.push(payment); l.dueDate=p.dueDate;
+        l.dueHistory=[...(l.dueHistory||[]),{date:p.date,dueDate:p.dueDate}];
         items=[{...item((kind === 'advance' ? 'รับล่วงหน้าค่าสินค้า' : 'รับชำระค่าสินค้า')+' งวดที่ '+payment.number+' ตาม '+root.docNo,gross),itemBeforeVat:net/100,itemVat:vat/100}];
         note='รับเงินครั้งนี้ '+amountText(gross)+' บาท ('+percentage(gross,l.totalCents)+')\nช่องทาง '+p.method+' · อ้างอิง '+p.reference+'\nหลักฐาน: '+payment.proofName;
         if (kind === 'receipt' && l.deliveryTaxDocNo) note+='\nอ้างอิงใบกำกับ '+l.deliveryTaxDocNo+' (ไม่ออก VAT เพิ่ม)';
@@ -122,7 +123,7 @@ export function applyOperation(root, action, docNo, today, allDocuments = []) {
         if (action.issuer) output.paymentIssuer=clone(action.issuer);
         if (action.proof && payment) output.paymentProof=clone(action.proof);
     }
-    l.documents.push({requestId:action.requestId,docNo:prefix?docNo:'',kind,date,grossCents:gross,netCents:net,vatCents:vat});
+    l.documents.push({requestId:action.requestId,docNo:prefix?docNo:'',kind,date,grossCents:gross,netCents:net,vatCents:vat,...(action.fingerprint?{fingerprint:action.fingerprint}:{})});
     l.revision=(l.revision||0)+1;
     return {ledger:l,document:output,docNo:output?.docNo||'',summary};
 }

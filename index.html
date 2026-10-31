@@ -6,6 +6,7 @@
     <title>ระบบบัญชี ERP NUALANAN</title>
     <link rel="stylesheet" href="./payments.css">
     <link rel="stylesheet" href="./factory.css">
+    <link rel="stylesheet" href="./billing.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
@@ -412,6 +413,7 @@
                             <div class="flex items-center gap-2"><i class="ph ph-bank text-lg text-emerald-400"></i> 6) การเงิน/บัญชี (Finance)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-finance"></i>
                         </button>
                         <div id="menu-finance" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <button type="button" onclick="openBillingWorkspace('billing')" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">วางบิล / ลูกหนี้ / รับเงินรวมหลายใบ</button>
                             <button type="button" onclick="openPaymentWorkspace()" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded transition"><i class="ph ph-coins"></i> รับชำระหลายงวด / ออกเอกสาร</button>
                             <a onclick="handleMenuClick('RV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเงิน / ใบสำคัญรับ (RV)</a>
                             <a onclick="handleMenuClick('PV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบจ่ายเงิน / ใบสำคัญจ่าย (PV)</a>
@@ -690,6 +692,7 @@
 
                 <section id="tab-payments" class="tab-content"><div id="payment-workspace"></div></section>
                 <section id="tab-factory" class="tab-content"><div id="factory-workspace"></div></section>
+                <section id="tab-billing" class="tab-content"><div id="billing-workspace"></div></section>
 
                 <div id="tab-document-list" class="tab-content">
                     <div class="flex flex-wrap items-center gap-6 mb-6 no-print">
@@ -1253,6 +1256,7 @@
     <script type="module">
         import { createPaymentsController } from "./payments-ui.mjs";
         import { createFactoryController } from "./factory-ui.mjs";
+        import { createBillingController } from "./billing-ui.mjs";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -1292,7 +1296,7 @@
         let firebaseUnsubscribers = [];
 
         onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -1494,9 +1498,10 @@
         function switchTab(tabId) {
             if (documentSaveInProgress || remarkSaveInProgress) return;
             if (factoryController && (factoryController.busy || factoryController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการโรงงานก่อนเปลี่ยนหน้า'); return; }
+            if (billingController && (billingController.busy || billingController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการบัญชีก่อนเปลี่ยนหน้า'); return; }
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -2758,7 +2763,7 @@
                 let fCust = 'Unknown', fTax = '', fBran = '', fAdd = '', fEm = '';
                 if (isPay) { const e = employees.find(e => e.id === custId); if(e) { fCust=e.name; fAdd=e.position; fEm=e.email; fTax=e.taxId; } } else if (cust) { fCust=cust.name; fTax=cust.taxId; fBran=cust.branch; fAdd=cust.address; fEm=cust.email; }
 
-                const newDoc = { docNo, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, documentPriceBasis: ['INC', 'EXC'].includes(val('global-price-basis')) ? val('global-price-basis') : null, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
+                const newDoc = { docNo, customerId:custId, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, documentPriceBasis: ['INC', 'EXC'].includes(val('global-price-basis')) ? val('global-price-basis') : null, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
                 await setDoc(getUserDoc("documents", docNo), newDoc);
                 if (currentUser?.uid !== savingUserId) return;
@@ -2815,6 +2820,33 @@
         }
         function openFactoryWorkspace(view='order') { factoryView=view; switchTab('factory'); }
 
+        // Billing uses the existing receivable ledgers and the current authenticated account.
+        let billingController = null, billingView = 'billing';
+        function resetBillingSession() { if(billingController) billingController.destroy(); billingController=null; billingView='billing'; }
+        function renderBillingWorkspace() {
+            if(!currentUser) return;
+            if(!billingController) billingController=createBillingController($('billing-workspace'), {
+                db,runTransaction,serverTimestamp,userDoc:getUserDoc,getDocFromServer,
+                getUserId:()=>currentUser?.uid,getActor:()=>({name:currentUser?.displayName||currentUser?.email||currentUser?.uid||''}),
+                getCompany:()=>companyProfile,isCompanyReady:()=>companyProfileLoaded,
+                today:()=>employeeTodayISO(),now:()=>new Date().toISOString(),newId:()=>crypto.randomUUID(),
+                readServerDocuments:async()=>{const uid=currentUser?.uid;const snap=await getDocsFromServer(getUserCol('documents'));if(currentUser?.uid!==uid)throw new Error('บัญชีผู้ใช้เปลี่ยน');return snap.docs.map(d=>({...d.data(),docNo:d.id}));},
+                readCollection:async name=>{const uid=currentUser?.uid;const snap=await getDocsFromServer(getUserCol(name));if(currentUser?.uid!==uid)throw new Error('บัญชีผู้ใช้เปลี่ยน');return snap.docs.map(d=>({...d.data(),id:d.id}));},
+                watchMeta:(next,error)=>onSnapshot(getUserDoc('settings','accounting-revision'),snap=>next(snap.exists()?snap.data().revision||0:0),error),
+                openPayments:openPaymentWorkspace,
+                onSaved:result=>{
+                    for(const change of result.rootChanges||[]) {const old=database.find(d=>d.docNo===change.docNo);if(old)Object.assign(old,change);}
+                    for(const doc of result.documents||[]) {const old=database.find(d=>d.docNo===doc.docNo);database=database.filter(d=>d.docNo!==doc.docNo);database.push({...old,...doc,createdAt:old?.createdAt||new Date().toISOString()});}
+                    updateDashboard();updateDocumentTable();populateRefDocDatalist();populateAllDocsDatalist();
+                    if(paymentsController)paymentsController.refresh();
+                }
+            });
+            billingController.open(billingView);
+        }
+        function openBillingWorkspace(view='billing') { billingView=view;switchTab('billing'); }
+        async function openBillingDocument(no) { if(billingController?.busy||billingController?.pending)return;openBillingWorkspace('history');if(billingController)await billingController.openDocument(no); }
+        async function downloadBillingDocument(no) { await openBillingDocument(no);if(billingController)await billingController.download(); }
+
         // Payments use the existing authenticated documents/settings paths and Firebase project.
         let paymentsController = null, companyProfileLoaded = false;
         function canReceivePayments(d) { return ['SO','INV'].includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
@@ -2842,13 +2874,13 @@
         function openPaymentWorkspace(docNo='') { switchTab('payments'); if(docNo && paymentsController) paymentsController.open(docNo); }
         document.addEventListener('click',event=>{ const button=event.target.closest('[data-open-payment]'); if(button) openPaymentWorkspace(decodeURIComponent(button.dataset.openPayment)); });
         async function validateManualPaymentReference(prefix, references) {
-            if (!['RE','RETAX','TINV','RV'].includes(prefix) || !references) return;
+            if (!['RE','RETAX','TINV','RV','CN','DN'].includes(prefix) || !references) return;
             const uid=currentUser?.uid;
             for(const reference of references.split(',').map(s=>s.trim()).filter(Boolean)) {
                 if(reference.includes('/')) throw new Error('เลขอ้างอิงไม่ถูกต้อง');
                 const snap=await getDoc(getUserDoc('documents',reference));
                 if(currentUser?.uid!==uid) throw new Error('บัญชีผู้ใช้เปลี่ยน');
-                if(snap.exists() && (snap.data().paymentLedger || snap.data().paymentManaged)) throw Object.assign(new Error('รายการนี้ใช้รับชำระหลายงวด กรุณาออกเอกสารจากเมนู รับชำระหลายงวด / ออกเอกสาร เพื่อป้องกันยอดซ้ำ'), {code:'payment-managed'});
+                if(snap.exists() && (snap.data().paymentLedger || snap.data().paymentManaged || snap.data().billingManaged)) throw Object.assign(new Error('รายการนี้ใช้รับชำระหลายงวด กรุณาออกเอกสารจากเมนู รับชำระหลายงวด / ออกเอกสาร เพื่อป้องกันยอดซ้ำ'), {code:'payment-managed'});
             }
         }
         function renderPreviewPaymentSummary(d) {
@@ -2861,10 +2893,10 @@
         }
 
         function updateAllStatuses() {
-            database.forEach(doc => { if(doc.paymentManaged) return; if(doc.paymentLedger) { const p=paymentTotals(doc); doc.status=p.balance===0?'paid':p.paid>0?'partial':'pending'; return; } if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
-            const adj = {}; database.filter(doc=>!doc.paymentManaged&&!doc.paymentLedger).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
+            database.forEach(doc => { if(doc.paymentManaged||doc.billingManaged) return; if(doc.paymentLedger) { const p=paymentTotals(doc); doc.status=p.balance===0?'paid':p.paid>0?'partial':'pending'; return; } if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
+            const adj = {}; database.filter(doc=>!doc.paymentManaged&&!doc.paymentLedger&&!doc.billingManaged).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
             const visited = new Set();
-            for (const doc of database) { if(doc.paymentManaged||doc.paymentLedger) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
+            for (const doc of database) { if(doc.paymentManaged||doc.paymentLedger||doc.billingManaged) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
         }
 
         function documentTypeKey(d) { return d.prefix || '__untyped__'; }
@@ -2914,13 +2946,13 @@
         }
 
         function deleteDocument(docNo) { 
-            const financial=database.find(d=>d.docNo===docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดมีประวัติทางการเงิน ห้ามลบ กรุณาให้ผู้รับผิดชอบบัญชีตรวจสอบรายการแก้ไข/ใบลดหนี้');
+            const financial=database.find(d=>d.docNo===docNo); if(financial?.billingManaged)return openBillingDocument(docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดมีประวัติทางการเงิน ห้ามลบ กรุณาให้ผู้รับผิดชอบบัญชีตรวจสอบรายการแก้ไข/ใบลดหนี้');
             showConfirm(currentLang === 'en' ? `Delete ${docNo}?` : `ยืนยันลบ ${docNo}?`, () => { 
                 if (currentUser) deleteDoc(getUserDoc("documents", docNo));
             }); 
         }
         function editDocument(docNo) {
-            const financial=database.find(d=>d.docNo===docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดล็อกยอดที่ออกแล้ว กรุณาจัดการจากเมนู รับชำระหลายงวด / ออกเอกสาร');
+            const financial=database.find(d=>d.docNo===docNo); if(financial?.billingManaged)return openBillingDocument(docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดล็อกยอดที่ออกแล้ว กรุณาจัดการจากเมนู รับชำระหลายงวด / ออกเอกสาร');
             if (documentSaveInProgress || remarkSaveInProgress) return;
             const d = database.find(x => x.docNo === docNo); if(!d) return;
             showConfirm(currentLang === 'en' ? 'Load for editing? (Saves as new doc)' : 'โหลดเพื่อแก้ไข? (บันทึกเป็นเลขใหม่)', () => {
@@ -2970,6 +3002,7 @@
         }
 
         function previewDocument(docNo) {
+            if(database.find(d=>d.docNo===docNo)?.billingManaged){openBillingDocument(docNo).catch(e=>showAlert(productHtml(e.message)));return;}
             const d = database.find(x => x.docNo === docNo); if (!d) return; currentlyPreviewingDoc = d;
             const issuer = d.paymentIssuer || companyProfile;
             const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', cur = d.currency || 'THB';
@@ -3143,6 +3176,7 @@
         }
 
         async function downloadDocumentPdf(docNo) {
+            if(database.find(d=>d.docNo===docNo)?.billingManaged){await downloadBillingDocument(docNo);return;}
             if (pdfExportInProgress) return;
             if (!database.some(d => d.docNo === docNo)) return showAlert(currentLang === 'en' ? 'Document not found.' : 'ไม่พบเอกสารนี้');
             pdfExportInProgress = true;
@@ -3263,7 +3297,7 @@
         function resetSystem() { 
             showConfirm('⚠️ ลบข้อมูลทั้งหมด (Set Zero)?\nข้อมูลจะถูกลบทั้งหมด', () => { 
                 if (currentUser) {
-                    if(database.some(d=>d.paymentLedger||d.paymentManaged)) return showAlert('มีเอกสารรับเงินหลายงวด ไม่อนุญาตให้ล้างประวัติทางการเงินทั้งหมด');
+                    if(database.some(d=>d.paymentLedger||d.paymentManaged||d.billingManaged)) return showAlert('มีเอกสารรับเงินหลายงวด ไม่อนุญาตให้ล้างประวัติทางการเงินทั้งหมด');
                     database.forEach(d => deleteDoc(getUserDoc("documents", d.docNo)).catch(err => console.error(err)));
                 }
                 showAlert('รีเซ็ตเรียบร้อยแล้ว'); 
@@ -3272,7 +3306,7 @@
 
         // --- Window Binding for Inline Handlers ---
         Object.assign(window, {
-            openFactoryWorkspace, openPaymentWorkspace, applyDocumentPriceBasis, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
+            openBillingWorkspace, openBillingDocument, downloadBillingDocument, openFactoryWorkspace, openPaymentWorkspace, applyDocumentPriceBasis, toggleLanguage, switchTab, handleMenuClick, toggleSubmenu, checkDocType, toggleSearchMenu, filterCustomDropdown,
             selectCustomOption, handleCurrencyChange, calculateLiveTotal, addLineItem, handleEnter, filterRemarks, 
             toggleResignDate, cancelEditCustomer, cancelEditEmployee, editCustomer, deleteCustomer, editEmployee, deleteEmployee,
             handleProductPrefixChange, deleteProduct, editProduct, cancelEditProduct, deleteRemark, editRemark, cancelEditRemark, handleRemarkCheck, generateStockCard, generateShippingMark, generateVatReport, 
