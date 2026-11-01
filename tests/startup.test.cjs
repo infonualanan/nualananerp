@@ -38,6 +38,7 @@ test('failed authentication module stays visible with a retry and recovers when 
 test('complete ERP startup wires login and restores an existing session without business writes',async t=>{
  for(const user of [null,{uid:'existing-user',email:'existing@example.com'}]){
   const {w,$}=setup(t);let notify,authError,writes=0,signIns=0;
+  w.closeErpMenu=()=>{};
   w.initializeApp=()=>({});w.getAuth=()=>({});w.getFirestore=()=>({});
   w.onAuthStateChanged=(auth,next,error)=>{notify=next;authError=error;};
   w.doc=(...a)=>a.join('/');w.collection=(...a)=>a.join('/');
@@ -50,6 +51,14 @@ test('complete ERP startup wires login and restores an existing session without 
   notify(user);await new Promise(resolve=>setTimeout(resolve,10));
   assert.equal(w.document.documentElement.dataset.erpStartup,'ready');
   assert.equal($('main-app').style.display,user?'flex':'none');assert.equal($('login-screen').style.display,user?'none':'flex');assert.equal(writes,0);
+  assert.equal($('tab-dashboard').classList.contains('active'),true);
+  assert.equal(w.document.querySelectorAll('.tab-content.active').length,1);
+  if(user){
+   w.switchTab('customers');assert.equal($('tab-customers').classList.contains('active'),true);
+   notify(null);notify(user);await new Promise(resolve=>setTimeout(resolve,1));
+   assert.equal($('tab-dashboard').classList.contains('active'),true,'signing back in selects a visible start page');
+   assert.equal(w.document.querySelectorAll('.tab-content.active').length,1);assert.equal(writes,0);
+  }
   if(!user){$('login-username').value='existing@example.com';$('login-password').value='test-only-password';$('login-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await new Promise(resolve=>setTimeout(resolve,1));assert.equal(signIns,1);}
   assert.equal(typeof authError,'function');
  }

@@ -472,7 +472,7 @@
 
             <main id="erp-workspace" class="flex-1 overflow-y-auto p-8 relative bg-gray-50/50">
 
-                <div id="tab-dashboard" class="tab-content text-[14px]">
+                <div id="tab-dashboard" class="tab-content active text-[14px]">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-chart-bar"></i> <span data-i18n="title_dashboard">ภาพรวมธุรกิจ (Executive Dashboard)</span></h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex items-center gap-4"><div class="p-4 bg-green-100 text-green-600 rounded-lg"><i class="ph ph-money text-3xl"></i></div><div><p class="text-[12px] text-gray-500 font-medium" data-i18n="dash_revenue">ยอดขายสุทธิ (รวมภาษี)</p><p class="text-xl font-bold text-gray-800" id="dash-total-revenue">0.00 <span class="text-[12px] font-normal text-gray-500" data-i18n="currency">บาท</span></p></div></div>
@@ -3435,6 +3435,7 @@
 
         function initApp() {
             if (window.appInitialized) return;
+            switchTab('dashboard');
             initFirebaseData();
             window.appInitialized = true;
         }
