@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="./assets/erp-tailwind-3.4.17.css">
     <link rel="stylesheet" href="./assets/phosphor-2.1.2.css">
     <link rel="stylesheet" href="./payments.css">
+    <link rel="stylesheet" href="./vault.css">
     <link rel="stylesheet" href="./factory.css">
     <link rel="stylesheet" href="./billing.css">
     
@@ -415,6 +416,7 @@
                             <div class="flex items-center gap-2"><i class="ph ph-bank text-lg text-emerald-400"></i> 6) การเงิน/บัญชี (Finance)</div><i class="ph ph-caret-down text-xs text-white/50" id="icon-menu-finance"></i>
                         </button>
                         <div id="menu-finance" class="hidden pl-8 pr-2 py-1 space-y-0.5">
+                            <button type="button" onclick="openAccountingVault()" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">คลังเอกสารบัญชี / อ่านรูป–PDF ด้วย AI</button>
                             <button type="button" onclick="openBillingWorkspace('billing')" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">วางบิล / ลูกหนี้ / รับเงินรวมหลายใบ</button>
                             <button type="button" onclick="openPaymentWorkspace()" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded transition"><i class="ph ph-coins"></i> รับชำระหลายงวด / ออกเอกสาร</button>
                             <a onclick="handleMenuClick('RV', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเงิน / ใบสำคัญรับ (RV)</a>
@@ -695,6 +697,7 @@
                 <section id="tab-payments" class="tab-content"><div id="payment-workspace"></div></section>
                 <section id="tab-factory" class="tab-content"><div id="factory-workspace"></div></section>
                 <section id="tab-billing" class="tab-content"><div id="billing-workspace"></div></section>
+                <section id="tab-vault" class="tab-content"><div id="accounting-vault-workspace"></div></section>
 
                 <div id="tab-document-list" class="tab-content">
                     <div class="flex flex-wrap items-center gap-6 mb-6 no-print">
@@ -1287,7 +1290,7 @@
         import { createBillingController } from "./billing-ui.mjs";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction, Bytes } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
         const val = id => $(id) ? $(id).value : '';
@@ -1324,7 +1327,7 @@
         let firebaseUnsubscribers = [];
 
         onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetVaultSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -1526,11 +1529,12 @@
 
         function switchTab(tabId) {
             if (documentSaveInProgress || remarkSaveInProgress) return;
+            if (vaultController?.busy) { showAlert('กำลังอ่านหรือบันทึกเอกสาร กรุณารอให้เสร็จก่อนเปลี่ยนหน้า'); return; }
             if (factoryController && (factoryController.busy || factoryController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการโรงงานก่อนเปลี่ยนหน้า'); return; }
             if (billingController && (billingController.busy || billingController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการบัญชีก่อนเปลี่ยนหน้า'); return; }
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -2829,6 +2833,35 @@
             if($('dash-doc-types')) $('dash-doc-types').innerHTML = Object.keys(ty).length ? Object.entries(ty).map(([n,c]) => `<li class="flex justify-between items-center bg-gray-50 p-3 border rounded"><span class="font-medium text-xs">${n}</span><span class="bg-blue-100 text-blue-800 py-1 px-2 rounded text-xs font-bold">${c}</span></li>`).join('') : `<li class="text-gray-500 italic">${currentLang==='th'?'ยังไม่มีข้อมูล':'No docs'}</li>`;
             const mapBars = (obj, cont) => { if($(cont)) { const sorted = Object.entries(obj).sort((a,b)=>b[1]-a[1]); const tot = sorted.reduce((s,[_,a])=>s+a,0); $(cont).innerHTML = sorted.length ? sorted.map(([n,a]) => `<div><div class="flex justify-between text-xs mb-1"><span class="font-medium text-gray-700 truncate pr-2 w-2/3" title="${n}">${n}</span><span class="text-gray-600 font-bold whitespace-nowrap">${formatMoney(a)} (${tot>0?((a/tot)*100).toFixed(1):0}%)</span></div><div class="w-full bg-gray-100 rounded-full h-1.5"><div class="bg-${cont==='dash-sales-by-product'?'emerald':'blue'}-500 h-1.5 rounded-full" style="width: ${tot>0?(a/tot)*100:0}%"></div></div></div>`).join('') : `<li class="text-gray-500 italic text-sm list-none">${currentLang==='th'?'ยังไม่มีข้อมูล':'No sales'}</li>`; } };
             mapBars(pS, 'dash-sales-by-product'); mapBars(cS, 'dash-sales-by-customer');
+        }
+
+        // Loaded on demand so document-reader errors cannot interrupt ERP startup.
+        let vaultController = null, vaultLoading = null, vaultEpoch = 0;
+        function resetVaultSession() { vaultEpoch++; vaultController?.destroy(); vaultController = null; vaultLoading = null; }
+        function openAccountingVault() { switchTab('vault'); }
+        Object.assign(window, {openAccountingVault});
+        async function renderAccountingVault() {
+            if (!currentUser) return;
+            if (vaultController) { vaultController.open(); return; }
+            if (vaultLoading) return;
+            const uid=currentUser.uid, epoch=vaultEpoch, host=$('accounting-vault-workspace');
+            host.textContent='กำลังเปิดคลังเอกสารบัญชี…';
+            vaultLoading=import('./vault-ui.mjs');
+            try {
+                const {createVaultController}=await vaultLoading;
+                if(currentUser?.uid!==uid || vaultEpoch!==epoch)return;
+                vaultController=createVaultController(host, {
+                    db, runTransaction, serverTimestamp, userDoc:getUserDoc, getDocFromServer,
+                    getUserId:()=>currentUser?.uid, getIdToken:()=>currentUser.getIdToken(),
+                    getActor:()=>({name:currentUser?.displayName || currentUser?.email || ''}),
+                    getCompany:()=>companyProfile, today:()=>employeeTodayISO(),
+                    toBytes:bytes=>Bytes.fromUint8Array(bytes),
+                    watchRecords:(next,error)=>onSnapshot(getUserCol('accounting_vault'),snap=>next(snap.docs.map(d=>({...d.data(),id:d.id}))),error)
+                });
+                vaultController.open();
+            } catch(error) {
+                if(currentUser?.uid===uid && vaultEpoch===epoch) { host.textContent='เปิดคลังเอกสารไม่สำเร็จ กรุณาเลือกเมนูอีกครั้ง'; console.error('Accounting vault failed to load', error); }
+            } finally { if(vaultEpoch===epoch)vaultLoading=null; }
         }
 
         // Factory records use separate collections in the same authenticated ERP account.
