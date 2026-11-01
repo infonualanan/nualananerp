@@ -2,6 +2,12 @@
 
 Static ERP frontend connected to the existing Firebase project `nualananerp-1`. Deployment stays at https://nualananerp.vercel.app.
 
+## Startup assets
+
+Layout CSS and the regular Phosphor icon font are committed in `assets/` and served from this ERP's origin. Page parsing no longer waits for the Tailwind Play CDN or the unversioned unpkg icon loader. Firebase still uses its existing official SDK URL. The login screen shows connection status and a retry if authentication startup fails or exceeds 15 seconds; a late successful connection restores normal login.
+
+To regenerate styles after changing utility classes, run `npm --prefix tools/styles ci --ignore-scripts` and `npm --prefix tools/styles run build`, and commit the generated assets. Versions and lockfile are pinned. The style builder scans the actual HTML and module sources, preserving both dashboard chart colors. This does not change the Firebase project, saved documents, or financial calculations.
+
 ## รูปแบบราคา รวม VAT / ยังไม่รวม VAT
 
 - ในฐานสินค้า เลือก **ราคาที่กรอกนี้ → รวม VAT แล้ว / ยังไม่รวม VAT** พร้อมดูราคาต่อหน่วยรวม VAT 7% ก่อนบันทึก ใช้รหัสสินค้าเดิมและยืนยันหน่วยตามขั้นตอนเดิม

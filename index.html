@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>ระบบบัญชี ERP NUALANAN</title>
+    <link rel="stylesheet" href="./assets/erp-tailwind-3.4.17.css">
+    <link rel="stylesheet" href="./assets/phosphor-2.1.2.css">
     <link rel="stylesheet" href="./payments.css">
     <link rel="stylesheet" href="./factory.css">
     <link rel="stylesheet" href="./billing.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
@@ -268,10 +268,12 @@
                 <div id="login-error" class="text-red-500 text-[13px] text-center hidden font-medium bg-red-50 py-2 rounded">
                     <i class="ph ph-warning-circle inline-block align-middle mr-1"></i> ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง!
                 </div>
-                <button type="submit" id="btn-login-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition-all flex items-center justify-center gap-2 mt-4">
+                <button type="submit" id="btn-login-submit" disabled class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50">
                     <span>เข้าสู่ระบบ</span> <i class="ph ph-sign-in text-lg"></i>
                 </button>
             </form>
+            <p id="app-startup-status" role="status" class="mt-3 text-sm text-gray-600">กำลังเชื่อมต่อระบบเข้าสู่ระบบ…</p>
+            <button type="button" id="app-startup-retry" hidden class="mt-2 px-4 py-2 border rounded-lg text-sm text-emerald-700">ลองโหลดใหม่</button>
             <div class="mt-8 pt-4 border-t border-gray-100 text-xs text-gray-500 flex flex-col gap-1">
                 <span>* หากยังไม่มีบัญชี ระบบจะสร้างบัญชีให้โดยอัตโนมัติเมื่อเข้าสู่ระบบครั้งแรก (รหัสผ่านขั้นต่ำ 6 ตัวอักษร)</span>
             </div>
@@ -1105,6 +1107,32 @@
         </div>
     </dialog>
 
+    <script id="erp-startup-behavior">
+    (() => {
+        const status = document.getElementById('app-startup-status');
+        const retry = document.getElementById('app-startup-retry');
+        const submit = document.getElementById('btn-login-submit');
+        let ready = false;
+        const timeout = setTimeout(() => setState('failed'), 15000);
+        function setState(state) {
+            if (ready && state !== 'ready') return;
+            ready = state === 'ready';
+            document.documentElement.dataset.erpStartup = state;
+            submit.disabled = !ready;
+            status.hidden = ready;
+            retry.hidden = state !== 'failed';
+            if (state === 'failed') status.textContent = 'เชื่อมต่อระบบเข้าสู่ระบบไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วกดลองโหลดใหม่';
+            if (ready) clearTimeout(timeout);
+        }
+        window.erpSetStartupState = setState;
+        retry.addEventListener('click', () => window.location.reload());
+        window.addEventListener('error', event => {
+            if (event.target?.tagName === 'SCRIPT' && event.target.type === 'module') setState('failed');
+        }, true);
+        setState('loading');
+    })();
+    </script>
+
     <script id="erp-responsive-behavior">
     (() => {
         const byId = id => document.getElementById(id);
@@ -1307,7 +1335,8 @@
                 $('login-screen').style.display = 'flex';
                 $('login-screen').style.opacity = '1';
             }
-        });
+            window.erpSetStartupState?.('ready');
+        }, () => window.erpSetStartupState?.('failed'));
 
         const getUserCol = (colName) => collection(db, 'artifacts', appId, 'users', currentUser.uid, colName);
         const getUserDoc = (colName, docId) => doc(db, 'artifacts', appId, 'users', currentUser.uid, colName, docId);

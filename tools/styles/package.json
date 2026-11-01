@@ -1,0 +1,6 @@
+{
+  "name": "nualananerp-static-styles",
+  "private": true,
+  "scripts": { "build": "node build.cjs" },
+  "devDependencies": { "tailwindcss": "3.4.17", "@phosphor-icons/web": "2.1.2" }
+}
