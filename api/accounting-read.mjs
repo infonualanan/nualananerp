@@ -1,11 +1,9 @@
-import {getApps,initializeApp} from 'firebase-admin/app';
-import {getAuth} from 'firebase-admin/auth';
 import {getVercelOidcToken} from '@vercel/oidc';
 import {readFile} from 'node:fs/promises';
 import {createDocumentReader} from '../server/document-reader.mjs';
-const app=getApps().find(x=>x.name==='erp-document-reader')||initializeApp({projectId:'nualananerp-1'},'erp-document-reader');
+import {verifyFirebaseToken} from '../server/firebase-token.mjs';
 export default createDocumentReader({
- verifyToken:token=>getAuth(app).verifyIdToken(token),
+ verifyToken:verifyFirebaseToken,
  getGatewayToken:()=>getVercelOidcToken(),
  allowedUids:()=>String(process.env.OCR_ALLOWED_UIDS||'').split(',').map(x=>x.trim()).filter(Boolean),
  model:process.env.OCR_MODEL||'openai/gpt-4.1-mini',
