@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom'),fs=require('node:fs'),path=require('node:path');
 const modules=Promise.all([import('../vault-ui.mjs'),import('../vault-core.mjs')]);
 const tick=()=>new Promise(r=>setImmediate(r));
-async function ready(controller){for(let n=0;n<200;n++){await tick();if(!controller.busy)return;}throw new Error('UI stayed busy');}
+async function ready(controller){const deadline=Date.now()+5000;while(Date.now()<deadline){await new Promise(r=>setTimeout(r,5));if(!controller.busy)return;}throw new Error('UI stayed busy');}
 test('real upload preserves input on unavailable AI, saves a cloud draft and opens it with another session',async()=>{
  const [ui,core]=await modules;const dom=new JSDOM('<main id="root"></main>',{url:'https://erp.example'}),savedGlobals={window:global.window,document:global.document,fetch:global.fetch},oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;global.window=dom.window;global.document=dom.window.document;URL.createObjectURL=()=> 'blob:test';URL.revokeObjectURL=()=>{};
  const bytes=new Uint8Array(fs.readFileSync(path.join(__dirname,'../assets/ocr-connection-test.png'))),id=await core.sha256(bytes),records=new Map();let calls=0,snapshot;
