@@ -223,7 +223,7 @@
 
     <div id="custom-alert-modal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm no-print text-[14px]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all scale-100">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-4xl"></i></div>
+            <div id="custom-alert-symbol" class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i id="custom-alert-icon" class="ph ph-check-circle text-4xl"></i></div>
             <h3 id="custom-alert-title" class="text-xl font-bold text-gray-800 mb-2">สำเร็จ!</h3>
             <p id="custom-alert-msg" class="text-gray-600 mb-6">ดำเนินการเรียบร้อยแล้ว</p>
             <button onclick="document.getElementById('custom-alert-modal').classList.add('hidden')" class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition shadow-sm">ตกลง</button>
@@ -1309,7 +1309,13 @@
         const txt = (id, text) => { if($(id)) $(id).innerHTML = text; };
         const show = (id, cond) => { if($(id)) { if(cond) $(id).classList.remove('hidden'); else $(id).classList.add('hidden'); } };
         
-        function showAlert(message) { txt('custom-alert-msg', message); show('custom-alert-modal', true); }
+        function showAlert(message, options = {}) {
+            txt('custom-alert-title', options.title || 'สำเร็จ!');
+            const icon = $('custom-alert-icon'), symbol = $('custom-alert-symbol');
+            if (icon) icon.className = 'ph ' + (options.warning ? 'ph-warning-circle' : 'ph-check-circle') + ' text-4xl';
+            if (symbol) { symbol.style.backgroundColor = options.warning ? '#fef3c7' : ''; symbol.style.color = options.warning ? '#92400e' : ''; }
+            txt('custom-alert-msg', message); show('custom-alert-modal', true);
+        }
         function showConfirm(message, onConfirm) {
             txt('custom-confirm-msg', message); show('custom-confirm-modal', true);
             const btnOk = $('custom-confirm-ok'), btnCancel = $('custom-confirm-cancel');
@@ -2197,7 +2203,7 @@
         if ($('product-usage-filter')) $('product-usage-filter').addEventListener('change', renderProducts);
         function warnMissingProductUsage() {
             $('new-prod-usage').focus();
-            showAlert(currentLang === 'en' ? 'Please select item use: sales, purchase, or buy and sell.' : 'โปรดระบุประเภทใช้งาน: สินค้าขาย สินค้าซื้อ หรือสินค้าทั้งซื้อทั้งขาย ก่อนบันทึก');
+            showAlert(currentLang === 'en' ? 'Please select item use: sales, purchase, or buy and sell.' : 'โปรดระบุประเภทใช้งาน: สินค้าขาย สินค้าซื้อ หรือสินค้าทั้งซื้อทั้งขาย ก่อนบันทึก', { title: currentLang === 'en' ? 'Please select item use' : 'โปรดระบุประเภทใช้งาน', warning: true });
         }
         if ($('new-prod-usage')) $('new-prod-usage').addEventListener('invalid', event => { event.preventDefault(); warnMissingProductUsage(); });
         if ($('product-search')) $('product-search').addEventListener('input', renderProducts);

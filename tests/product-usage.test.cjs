@@ -73,9 +73,9 @@ test('new and legacy records require an explicit item use and a missing choice p
  const e=await setup(t),{w,$,change}=e,field=$('new-prod-usage');
  assert.equal(field.required,true);assert.equal(field.value,'');assert.equal(field.selectedOptions[0].textContent,'โปรดระบุ');
  change($('new-prod-code'),'TEST-REQUIRED');change($('new-prod-name'),'สินค้าทดสอบบังคับเลือก');change($('new-prod-price'),'20');
- $('btn-save-prod').click();assert.equal($('custom-alert-modal').classList.contains('hidden'),false);assert.match($('custom-alert-msg').textContent,/โปรดระบุประเภทใช้งาน/);assert.equal($('product-unit-dialog').open,false);assert.equal(e.writes.length,0);
+ $('btn-save-prod').click();assert.equal($('custom-alert-modal').classList.contains('hidden'),false);assert.equal($('custom-alert-title').textContent,'โปรดระบุประเภทใช้งาน');assert.equal($('custom-alert-icon').classList.contains('ph-warning-circle'),true);assert.match($('custom-alert-msg').textContent,/โปรดระบุประเภทใช้งาน/);assert.equal($('product-unit-dialog').open,false);assert.equal(e.writes.length,0);
  w.editProduct('legacy');e.submit();assert.equal(e.writes.length,0);assert.equal(e.records.get('products/legacy').tradeUsage,undefined);assert.equal($('product-unit-dialog').open,false);
- w.cancelEditProduct();w.toggleLanguage();assert.equal(field.value,'');assert.equal(field.selectedOptions[0].textContent,'Please select');
+ w.cancelEditProduct();w.toggleLanguage();assert.equal(field.value,'');assert.equal(field.selectedOptions[0].textContent,'Please select');e.submit();assert.equal($('custom-alert-title').textContent,'Please select item use');w.showAlert('normal success');assert.equal($('custom-alert-title').textContent,'สำเร็จ!');assert.equal($('custom-alert-icon').classList.contains('ph-check-circle'),true);assert.equal($('custom-alert-symbol').style.backgroundColor,'');
 });
 test('each save shows a dedicated item-use confirmation and the next new record resets to Please select',async t=>{
  const e=await setup(t),{w,$,change}=e;
