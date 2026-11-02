@@ -1,4 +1,4 @@
-export const MAX_FILE_BYTES=2500000;
+export {MAX_PDF_BYTES as MAX_FILE_BYTES} from './file-limits.mjs';
 export const TYPES={tax_invoice:'ใบกำกับภาษี',receipt_tax:'ใบเสร็จรับเงิน/ใบกำกับภาษี',receipt:'ใบเสร็จรับเงิน',invoice:'ใบแจ้งหนี้',credit_note:'ใบลดหนี้',debit_note:'ใบเพิ่มหนี้',other:'เอกสารอื่น'};
 export const FIELDS=['documentType','documentNo','documentDate','currency','sellerName','sellerTaxId','sellerBranch','sellerAddress','buyerName','buyerTaxId','buyerBranch','buyerAddress','priceBasis','vatRate','discount','subtotal','vat','grandTotal','reportMonth','referenceNo','note'];
 const ITEM_FIELDS=['name','quantity','unit','unitPrice','discount','lineTotal'];

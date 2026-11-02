@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/accounting-read.mjs": {
-      "maxDuration": 60,
+      "maxDuration": 180,
       "includeFiles": "assets/ocr-connection-test.png"
     }
   }

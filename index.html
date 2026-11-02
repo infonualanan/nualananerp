@@ -1290,7 +1290,7 @@
         import { createBillingController } from "./billing-ui.mjs";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction, Bytes } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction, Bytes, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const $ = id => document.getElementById(id);
         const val = id => $(id) ? $(id).value : '';
@@ -2856,6 +2856,7 @@
                     getActor:()=>({name:currentUser?.displayName || currentUser?.email || ''}),
                     getCompany:()=>companyProfile, today:()=>employeeTodayISO(),
                     toBytes:bytes=>Bytes.fromUint8Array(bytes),
+                    writeFileChunkBatch:async entries=>{const uid=currentUser?.uid,batch=writeBatch(db);for(const e of entries)batch.set(e.ref,e.data);await batch.commit();if(currentUser?.uid!==uid)throw new Error('บัญชีผู้ใช้เปลี่ยน');},
                     watchRecords:(next,error)=>onSnapshot(getUserCol('accounting_vault'),snap=>next(snap.docs.map(d=>({...d.data(),id:d.id}))),error)
                 });
                 vaultController.open();
