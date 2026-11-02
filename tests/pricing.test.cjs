@@ -82,7 +82,7 @@ test('old PO snapshots and copied drafts keep their original amount and no-VAT t
 });
 test('product price basis saves through the existing unit confirmation without modifying issued documents',async t=>{
  const e=await setup(t),{w,$,input}=e;w.editProduct('sticker');assert.equal($('new-prod-price-basis').value,'EXC');assert.match($('product-price-preview').textContent,/26\.75/);
- input($('new-prod-price-basis'),'INC');assert.match($('product-price-preview').textContent,/25\.00/);
+ input($('new-prod-price-basis'),'INC');input($('new-prod-usage'),'purchase');assert.match($('product-price-preview').textContent,/25\.00/);
  $('add-product-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));assert.equal($('product-unit-dialog').open,true);assert.match($('product-unit-description').textContent,/รวม VAT แล้ว/);$('product-unit-confirm').click();await wait();await wait();
  const write=e.writes.find(x=>x.ref==='products/sticker');assert(write);assert.equal(write.data.priceBasis,'INC');assert.equal(write.data.price,25);assert.equal(write.data.code,'C001');assert.equal(e.writes.some(x=>x.ref.startsWith('documents/')),false);
 });

@@ -835,11 +835,11 @@
                             <option value="">ทั้งหมด</option><option value="manual">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option>
                         </select>
                         <select id="product-usage-filter" aria-label="กรองสินค้าขายหรือซื้อเข้า" class="border border-gray-300 rounded bg-white p-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="">ทุกประเภทการใช้งาน</option><option value="sale">ใช้ขาย (รวมซื้อและขาย)</option><option value="purchase">ซื้อเข้า (รวมซื้อและขาย)</option><option value="both">ทั้งซื้อและขาย</option><option value="unclassified">ยังไม่ระบุประเภท</option>
+                            <option value="">ทุกประเภทการใช้งาน</option><option value="sale">ใช้ขาย (รวมซื้อและขาย)</option><option value="purchase">ใช้ซื้อ (รวมซื้อและขาย)</option><option value="both">สินค้าทั้งซื้อทั้งขาย</option><option value="unclassified">ยังไม่ระบุประเภท</option>
                         </select>
                         <span id="product-search-count" class="text-xs text-gray-500" role="status" aria-live="polite"></span>
                     </div>
-                    <p id="product-usage-help" class="text-sm text-gray-500 mb-4">แยกสินค้าขาย / ซื้อเข้าได้โดยใช้รหัสเดิม รายการเดิมที่ยังไม่ระบุประเภทยังคงเลือกออกเอกสารได้ทั้งสองฝั่ง</p>
+                    <p id="product-usage-help" class="text-sm text-gray-500 mb-4">แยกสินค้าขาย / สินค้าซื้อโดยใช้รหัสเดิม รายการเดิมที่ยังไม่ระบุประเภทเลือกออกเอกสารได้ทั้งสองฝั่ง เมื่อแก้ไขต้องระบุประเภทก่อนบันทึก</p>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                         <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-currency-circle-dollar text-emerald-600 text-xl"></i> <span data-i18n="title_exchange_rate">ตั้งค่าอัตราแลกเปลี่ยน</span></h3></div>
                         <form id="exchange-rate-form" class="flex flex-wrap gap-4 items-end">
@@ -859,7 +859,7 @@
                                     <div class="flex gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option></select><input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
                                 </div>
                                 <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
-                                <div><label for="new-prod-usage" id="new-prod-usage-label" class="block text-[12px] text-gray-600 mb-1">ประเภทการใช้งาน</label><select id="new-prod-usage" class="w-full border p-2 rounded"><option value="" hidden>ยังไม่ระบุประเภท (รายการเดิม)</option><option value="sale" selected>สินค้าขาย</option><option value="purchase">สินค้าซื้อเข้า</option><option value="both">ทั้งซื้อและขาย</option></select></div>
+                                <div><label for="new-prod-usage" id="new-prod-usage-label" class="block text-[12px] text-gray-600 mb-1">ประเภทใช้งาน *</label><select id="new-prod-usage" required aria-required="true" class="w-full border p-2 rounded"><option value="" selected disabled>โปรดระบุ</option><option value="sale">สินค้าขาย</option><option value="purchase">สินค้าซื้อ</option><option value="both">สินค้าทั้งซื้อทั้งขาย</option></select></div>
                                 <div class="grid grid-cols-2 gap-2"><div><label for="new-prod-unit" class="block text-[12px] text-gray-600 mb-1">หน่วย (Unit) <span class="text-red-500">*</span></label><input type="text" id="new-prod-unit" required placeholder="เช่น PCS, KG" value="PCS" class="w-full border p-2 rounded"></div><div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_price">ราคา</span> <span class="text-red-500">*</span></label><input type="number" id="new-prod-price" required min="0" max="1000000000" step="0.01" class="w-full border p-2 rounded"></div></div>
                                 <div><label for="new-prod-price-basis" class="block text-[12px] text-gray-600 mb-1">ราคาที่กรอกนี้</label><select id="new-prod-price-basis" class="w-full border p-2 rounded"><option value="INC">รวม VAT แล้ว</option><option value="EXC">ยังไม่รวม VAT</option></select><p id="product-price-preview" class="mt-2 text-xs text-emerald-700" role="status" aria-live="polite"></p></div>
                                 <div class="flex gap-2">
@@ -1091,13 +1091,15 @@
         </div>
     </dialog>
 
-    <dialog id="product-unit-dialog" aria-labelledby="product-unit-title" aria-describedby="product-unit-description" style="width:calc(100% - 2rem)" class="max-w-md rounded-2xl border-0 p-6 shadow-2xl text-gray-800 no-print">
+    <dialog id="product-unit-dialog" aria-labelledby="product-unit-title" aria-describedby="product-unit-description product-unit-usage-label product-unit-usage-value" style="width:calc(100% - 2rem);max-height:calc(100dvh - 2rem);overflow-y:auto" class="max-w-md rounded-2xl border-0 p-6 shadow-2xl text-gray-800 no-print">
         <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mb-4" aria-hidden="true"><i class="ph ph-package"></i></div>
-        <h3 id="product-unit-title" class="text-xl font-bold mb-2">ยืนยันหน่วยสินค้า</h3>
-        <p id="product-unit-description" class="text-sm text-gray-500 mb-4">กรุณาตรวจสอบหน่วยให้ถูกต้องก่อนบันทึกทุกครั้ง</p>
+        <h3 id="product-unit-title" class="text-xl font-bold mb-2">ยืนยันประเภทใช้งานและหน่วยสินค้า</h3>
+        <p id="product-unit-description" class="text-sm text-gray-500 mb-4">กรุณาตรวจสอบประเภทใช้งาน หน่วย และราคาก่อนบันทึกทุกครั้ง</p>
         <div class="p-3 border rounded bg-gray-50 mb-5 break-words">
             <p id="product-unit-code" class="text-emerald-700 font-bold text-sm"></p>
             <p id="product-unit-name" class="text-sm font-medium mt-1"></p>
+            <p id="product-unit-usage-label" class="text-xs text-gray-500 mt-3">ประเภทใช้งาน</p>
+            <p id="product-unit-usage-value" class="text-xl font-bold text-emerald-700 mt-1"></p>
             <p id="product-unit-label" class="text-xs text-gray-500 mt-3">หน่วย (Unit)</p>
             <p id="product-unit-value" class="text-2xl font-bold text-emerald-700 mt-1"></p>
         </div>
@@ -2082,7 +2084,7 @@
             return ['sale', 'purchase', 'both'].includes(product?.tradeUsage) ? product.tradeUsage : '';
         }
         function productUsageLabel(usage) {
-            return (currentLang === 'en' ? { sale: 'Sales item', purchase: 'Purchase item', both: 'Buy and sell', '': 'Unclassified' } : { sale: 'สินค้าขาย', purchase: 'สินค้าซื้อเข้า', both: 'ทั้งซื้อและขาย', '': 'ยังไม่ระบุประเภท' })[usage] || '';
+            return (currentLang === 'en' ? { sale: 'Sales item', purchase: 'Purchase item', both: 'Buy and sell', '': 'Unclassified' } : { sale: 'สินค้าขาย', purchase: 'สินค้าซื้อ', both: 'สินค้าทั้งซื้อทั้งขาย', '': 'ยังไม่ระบุประเภท' })[usage] || '';
         }
         function productUsageBadge(product) {
             const usage = productUsage(product);
@@ -2105,14 +2107,14 @@
         function updateProductUsageLabels() {
             const isEn = currentLang === 'en', filter = $('product-usage-filter'), field = $('new-prod-usage');
             if (filter) {
-                const labels = isEn ? { '': 'All uses', sale: 'For sale (including buy and sell)', purchase: 'For purchase (including buy and sell)', both: 'Buy and sell', unclassified: 'Unclassified' } : { '': 'ทุกประเภทการใช้งาน', sale: 'ใช้ขาย (รวมซื้อและขาย)', purchase: 'ซื้อเข้า (รวมซื้อและขาย)', both: 'ทั้งซื้อและขาย', unclassified: 'ยังไม่ระบุประเภท' };
+                const labels = isEn ? { '': 'All uses', sale: 'For sale (including buy and sell)', purchase: 'For purchase (including buy and sell)', both: 'Buy and sell', unclassified: 'Unclassified' } : { '': 'ทุกประเภทการใช้งาน', sale: 'ใช้ขาย (รวมซื้อและขาย)', purchase: 'ใช้ซื้อ (รวมซื้อและขาย)', both: 'สินค้าทั้งซื้อทั้งขาย', unclassified: 'ยังไม่ระบุประเภท' };
                 for (const option of filter.options) option.textContent = labels[option.value];
                 filter.setAttribute('aria-label', isEn ? 'Filter sales or purchase items' : 'กรองสินค้าขายหรือซื้อเข้า');
             }
-            if (field) for (const option of field.options) option.textContent = productUsageLabel(option.value) + (!option.value ? (isEn ? ' (existing item)' : ' (รายการเดิม)') : '');
-            productText('new-prod-usage-label', isEn ? 'Item use' : 'ประเภทการใช้งาน');
+            if (field) for (const option of field.options) option.textContent = option.value ? productUsageLabel(option.value) : (isEn ? 'Please select' : 'โปรดระบุ');
+            productText('new-prod-usage-label', isEn ? 'Item use *' : 'ประเภทใช้งาน *');
             productText('product-usage-column', isEn ? 'Item use' : 'ประเภทการใช้งาน');
-            productText('product-usage-help', isEn ? 'Use the same product code for sales, purchases or both. Existing unclassified items remain selectable on both sides.' : 'แยกสินค้าขาย / ซื้อเข้าได้โดยใช้รหัสเดิม รายการเดิมที่ยังไม่ระบุประเภทยังคงเลือกออกเอกสารได้ทั้งสองฝั่ง');
+            productText('product-usage-help', isEn ? 'Use the same code for sales, purchases or both. Existing unclassified items remain selectable on both sides; choose an item use before saving edits.' : 'แยกสินค้าขาย / สินค้าซื้อโดยใช้รหัสเดิม รายการเดิมที่ยังไม่ระบุประเภทเลือกออกเอกสารได้ทั้งสองฝั่ง เมื่อแก้ไขต้องระบุประเภทก่อนบันทึก');
         }
         function normalizeProductSearch(value) {
             return String(value || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -2193,6 +2195,11 @@
         }
         if ($('product-category-filter')) $('product-category-filter').addEventListener('change', renderProducts);
         if ($('product-usage-filter')) $('product-usage-filter').addEventListener('change', renderProducts);
+        function warnMissingProductUsage() {
+            $('new-prod-usage').focus();
+            showAlert(currentLang === 'en' ? 'Please select item use: sales, purchase, or buy and sell.' : 'โปรดระบุประเภทใช้งาน: สินค้าขาย สินค้าซื้อ หรือสินค้าทั้งซื้อทั้งขาย ก่อนบันทึก');
+        }
+        if ($('new-prod-usage')) $('new-prod-usage').addEventListener('invalid', event => { event.preventDefault(); warnMissingProductUsage(); });
         if ($('product-search')) $('product-search').addEventListener('input', renderProducts);
         if ($('product-search-form')) $('product-search-form').addEventListener('submit', e => { e.preventDefault(); renderProducts(); });
         if ($('product-search-clear')) $('product-search-clear').addEventListener('click', () => { $('product-search').value = ''; renderProducts(); $('product-search').focus(); });
@@ -2207,20 +2214,22 @@
             const dialog = $('product-unit-dialog'), isEn = currentLang === 'en';
             if (productSaveInProgress || dialog.open) return;
             if (!currentUser) return showAlert(isEn ? 'Please sign in before saving.' : 'กรุณาเข้าสู่ระบบก่อนบันทึก');
-            if (!$('add-product-form').reportValidity()) return;
             const data = productFormValues();
             const previousUsage = productUsage(products.find(p => p.id === editingProductId));
-            if (!['sale', 'purchase', 'both'].includes(data.tradeUsage) && !(editingProductId && !previousUsage && data.tradeUsage === '')) return showAlert(isEn ? 'Choose a sales, purchase or buy-and-sell item.' : 'กรุณาเลือกสินค้าขาย สินค้าซื้อเข้า หรือทั้งซื้อและขาย');
+            if (!['sale', 'purchase', 'both'].includes(data.tradeUsage)) return warnMissingProductUsage();
+            if (!$('add-product-form').reportValidity()) return;
             for (const field of ['code', 'name', 'unit']) {
                 if (!data[field]) { $('new-prod-' + field).focus(); return showAlert(isEn ? 'Please enter a product code, name and unit.' : 'กรุณาระบุรหัส ชื่อสินค้า และหน่วยให้ครบถ้วน'); }
             }
             if (!val('new-prod-price').trim() || !Number.isFinite(data.price) || data.price < 0 || data.price > 1000000000) return showAlert(isEn ? 'Please enter a valid price.' : 'กรุณาระบุราคาให้ถูกต้อง');
             if (duplicateProductCode(data, editingProductId)) return showAlert(isEn ? 'This product code already exists.' : 'รหัสนี้มีอยู่แล้ว');
             pendingProductConfirmation = { uid: currentUser.uid, id: editingProductId, data, previousUsage };
-            productText('product-unit-title', isEn ? 'Confirm product unit' : 'ยืนยันหน่วยสินค้า');
-            productText('product-unit-description', productUsageLabel(data.tradeUsage) + ' · ' + (isEn ? 'Check unit and price: ' : 'ตรวจสอบหน่วยและราคา: ') + formatMoney(data.price) + ' THB / ' + priceBasisLabel(data.code.startsWith('G') ? 'NONE' : data.priceBasis));
+            productText('product-unit-title', isEn ? 'Confirm item use and unit' : 'ยืนยันประเภทใช้งานและหน่วยสินค้า');
+            productText('product-unit-description', (isEn ? 'Check item use, unit and price before every save: ' : 'ตรวจสอบประเภทใช้งาน หน่วย และราคาก่อนบันทึกทุกครั้ง: ') + formatMoney(data.price) + ' THB / ' + priceBasisLabel(data.code.startsWith('G') ? 'NONE' : data.priceBasis));
             productText('product-unit-code', data.code);
             productText('product-unit-name', data.name);
+            productText('product-unit-usage-label', isEn ? 'Item use' : 'ประเภทใช้งาน');
+            productText('product-unit-usage-value', productUsageLabel(data.tradeUsage));
             productText('product-unit-label', isEn ? 'Unit' : 'หน่วย (Unit)');
             productText('product-unit-value', data.unit);
             productText('product-unit-cancel', isEn ? 'Go back and edit' : 'กลับไปแก้ไข');
@@ -2547,7 +2556,7 @@
         }
         function renderProductDropdowns() {
             const usage = documentProductUsage(), isEn = currentLang === 'en';
-            productText('doc-product-usage-hint', usage ? (isEn ? 'Choose ' + (usage === 'sale' ? 'sales' : 'purchase') + ' items, buy-and-sell items or existing unclassified items.' : 'เลือก' + productUsageLabel(usage) + ' / ทั้งซื้อและขาย / รายการเดิมที่ยังไม่ระบุประเภท') : (isEn ? 'All item uses are available for this document.' : 'เอกสารนี้เลือกสินค้าได้ทุกประเภทการใช้งาน'));
+            productText('doc-product-usage-hint', usage ? (isEn ? 'Choose ' + (usage === 'sale' ? 'sales' : 'purchase') + ' items, buy-and-sell items or existing unclassified items.' : 'เลือก' + productUsageLabel(usage) + ' / ' + productUsageLabel('both') + ' / รายการเดิมที่ยังไม่ระบุประเภท') : (isEn ? 'All item uses are available for this document.' : 'เอกสารนี้เลือกสินค้าได้ทุกประเภทการใช้งาน'));
             document.querySelectorAll('.item-row').forEach(row => {
                 const ul = row.querySelector('.custom-search-menu ul');
                 if (!ul) return;
