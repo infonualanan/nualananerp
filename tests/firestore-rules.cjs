@@ -131,3 +131,20 @@ test('salary letters persist snapshots across devices, allocate unique numbers a
  await assert.rejects(issue(request('salary-test-0003')),/เปลี่ยนแล้ว/);
  assert.equal((await getDocs(collection(db,root+'hr_salary_certificates'))).size,2);
 });
+
+test('mixed salary receipt amounts persist through the real SDK and restore on a second device',async()=>{
+ const {createSalaryIssuer}=await import('../salary-certificate-firestore.mjs');
+ const {createContent,sourceStamp}=await import('../salary-certificate-core.mjs');
+ const {demoCompany,demoEmployees,demoDraft}=await import('../salary-certificate-demo-data.mjs');
+ const uid='salary-split-owner',db=env.authenticatedContext(uid).firestore(),root='artifacts/default-app-id/users/'+uid+'/';
+ const company=structuredClone(demoCompany),employees=structuredClone(demoEmployees),draft={...demoDraft('2026-11-02'),reviewed:true,paymentMethod:'mixed',cashAmount:'10000.15',bankAmount:'21750.60'};
+ await setDoc(doc(db,root+'settings/companyProfile'),company);for(const e of employees)await setDoc(doc(db,root+'employees/'+e.id),e);
+ const adapter={db,runTransaction,serverTimestamp,getUserId:()=>uid,userDoc:(c,i)=>doc(db,root+c+'/'+i),today:()=> '2026-11-02',getActor:()=>({name:'ทดสอบข้อมูลสมมติ'})};
+ const issue=createSalaryIssuer(adapter),sources={company,employees,today:'2026-11-02'};
+ const request=()=>({id:'salary-split-0001',uid,draft:structuredClone(draft),content:createContent(draft,sources),sourceStamp:sourceStamp(sources,draft)});
+ const first=await issue(request());assert.equal((await issue(request())).number,first.number);
+ const second=env.authenticatedContext(uid).firestore(),saved=(await getDocFromServer(doc(second,root+'hr_salary_certificates/salary-split-0001'))).data();
+ assert.deepEqual(saved.content.paymentSplit,{cashSatang:1000015,bankSatang:2175060});assert.equal(saved.content.totalSatang,3250000);
+ draft.cashAmount='5000.15';draft.bankAmount='26750.60';await assert.rejects(issue(request()),/ต่างกัน/);
+ assert.equal((await getDocs(collection(db,root+'hr_salary_certificates'))).size,1);
+});

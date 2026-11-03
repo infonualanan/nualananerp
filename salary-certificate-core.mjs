@@ -1,4 +1,4 @@
-export const PAYMENT_METHODS = Object.freeze({cash:'เงินสด',bank:'โอนผ่านธนาคาร'});
+export const PAYMENT_METHODS = Object.freeze({cash:'เงินสด',bank:'โอนผ่านธนาคาร',mixed:'รับเงินสดและผ่านธนาคาร'});
 export const SIGNER_TITLES = Object.freeze(['กรรมการผู้จัดการ','ผู้จัดการทั่วไป']);
 export const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const text = (value,max=200) => { const s=String(value??'').trim(); if(s.length>max)throw new Error('ข้อความยาวเกินกำหนด'); return s; };
@@ -26,7 +26,7 @@ export function companySnapshot(source) {
     }
     return c;
 }
-export function blankDraft(today) { return {employeeId:'',issueDate:today,purpose:'',recipient:'',rateUnit:'month',baseSalary:'',allowances:[],paymentMethod:'',signerId:'',reviewed:false}; }
+export function blankDraft(today) { return {employeeId:'',issueDate:today,purpose:'',recipient:'',rateUnit:'month',baseSalary:'',allowances:[],paymentMethod:'',cashAmount:'',bankAmount:'',signerId:'',reviewed:false}; }
 export function createContent(draft,{employees,company,today}) {
     if(!validDate(today)||!validDate(draft.issueDate)||draft.issueDate>today)throw new Error('วันที่ออกหนังสือต้องเป็นวันที่ถูกต้องและไม่เกินวันนี้');
     const e=employees.find(e=>e.id===draft.employeeId), signer=employees.find(e=>e.id===draft.signerId);
@@ -34,7 +34,7 @@ export function createContent(draft,{employees,company,today}) {
     if(!text(e.position))throw new Error('กรุณาเพิ่มตำแหน่งของพนักงานในฐานข้อมูล');
     if(!validDate(e.joinDate)||e.joinDate>draft.issueDate)throw new Error('กรุณาตรวจวันที่เริ่มงานในฐานข้อมูลพนักงาน');
     if(!eligibleSigner(signer))throw new Error('เลือกผู้รับรองตำแหน่ง กรรมการผู้จัดการ หรือ ผู้จัดการทั่วไป ที่ยังปฏิบัติงาน');
-    if(!Object.hasOwn(PAYMENT_METHODS,draft.paymentMethod))throw new Error('กรุณาเลือกรับเงินสดหรือโอนผ่านธนาคาร');
+    if(!Object.hasOwn(PAYMENT_METHODS,draft.paymentMethod))throw new Error('กรุณาเลือกช่องทางรับเงิน');
     if(!['month','day'].includes(draft.rateUnit))throw new Error('กรุณาเลือกอัตรารายเดือนหรือรายวัน');
     const purpose=text(draft.purpose,240); if(!purpose)throw new Error('กรุณาระบุวัตถุประสงค์');
     const c=companySnapshot(company); if(!c.nameTh||!c.addressTh)throw new Error('กรุณาบันทึกชื่อและที่อยู่บริษัทก่อนออกหนังสือ');
@@ -42,7 +42,18 @@ export function createContent(draft,{employees,company,today}) {
     if(!Array.isArray(draft.allowances)||draft.allowances.length>5)throw new Error('เพิ่มรายได้ประจำอื่นได้ไม่เกิน 5 รายการ');
     const allowances=draft.allowances.map(a=>{const label=text(a.label,80);const amountSatang=moneySatang(a.amount);if(!label)throw new Error('กรุณาระบุชื่อรายได้ประจำอื่น');return {label,amountSatang};});
     const totalSatang=allowances.reduce((s,a)=>s+a.amountSatang,baseSatang);
-    return {version:1,company:c,employee:{id:e.id,code:text(e.code,80),name:text(e.name),position:text(e.position),joinDate:e.joinDate},signer:{id:signer.id,name:text(signer.name),position:SIGNER_TITLES.find(t=>normalize(t)===normalize(signer.position))},issueDate:draft.issueDate,purpose,recipient:text(draft.recipient,200),rateUnit:draft.rateUnit,baseSatang,allowances,totalSatang,paymentMethod:draft.paymentMethod};
+    const content={version:1,company:c,employee:{id:e.id,code:text(e.code,80),name:text(e.name),position:text(e.position),joinDate:e.joinDate},signer:{id:signer.id,name:text(signer.name),position:SIGNER_TITLES.find(t=>normalize(t)===normalize(signer.position))},issueDate:draft.issueDate,purpose,recipient:text(draft.recipient,200),rateUnit:draft.rateUnit,baseSatang,allowances,totalSatang,paymentMethod:draft.paymentMethod};
+    if(draft.paymentMethod==='mixed') {
+        const read=(value,label)=>{try{const amount=moneySatang(value);if(amount<=0)throw new Error();return amount;}catch{throw new Error(`กรุณาระบุยอด${label}มากกว่า 0 บาท และไม่เกิน 2 ตำแหน่งทศนิยม`);}};
+        content.paymentSplit={cashSatang:read(draft.cashAmount,'รับเงินสด'),bankSatang:read(draft.bankAmount,'รับผ่านธนาคาร')};
+    }
+    return content;
+}
+export function paymentSplitFor(content) {
+    if(content.paymentMethod!=='mixed')return null;
+    const split=content.paymentSplit;
+    if(!split||![split.cashSatang,split.bankSatang].every(amount=>Number.isSafeInteger(amount)&&amount>0))throw new Error('ข้อมูลยอดรับเงินสดและผ่านธนาคารไม่ครบหรือไม่ถูกต้อง');
+    return {cashSatang:split.cashSatang,bankSatang:split.bankSatang};
 }
 export function sourceStamp({employees,company},draft) {
     const e=employees.find(e=>e.id===draft.employeeId),s=employees.find(e=>e.id===draft.signerId);

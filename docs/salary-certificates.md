@@ -7,7 +7,7 @@ ERP entry: **8) ทรัพยากรบุคคล (HR) → หนังส
 - Company identity and logo come from the existing company profile.
 - Employee name, position, start date and initial basic salary come from the employee database. Salary overrides affect the letter only.
 - Monthly and daily amounts are explicit; changing the unit clears amounts for re-entry. There is no assumed conversion between daily and monthly wages.
-- Up to five fixed income items remain separate from basic pay. Cash or bank transfer must be selected.
+- Up to five fixed income items remain separate from basic pay. Cash, bank transfer, or a split between both must be selected. Split receipts require a positive cash amount and bank amount, stored independently in satang and printed from the saved snapshot. They represent the stated amounts received through each channel and are not forced to equal gross income before deductions. Changing employee or daily/monthly units clears the split amounts for review.
 - Signatories are employees with an active/leave status and the exact normalized title กรรมการผู้จัดการ or ผู้จัดการทั่วไป. Missing signatories link to employee setup; no real names or signatures are fabricated.
 - Draft preview, review confirmation and final issue are separate. The employee still needs the selected signatory's actual signature on the printed document. Selecting a name is not authentication or digital approval by that person.
 - Native browser printing opens an isolated A4 document with selectable text and a Save as PDF option. Draft and demo documents are visibly marked.
