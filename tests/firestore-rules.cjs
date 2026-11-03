@@ -107,3 +107,27 @@ test('upload, OCR review, real database save, second session and monthly/yearly 
   await click('print');assert.match(printed,/สรุปรายปีปฏิทิน/);
  }finally{controller?.destroy();global.window=previous.window;global.document=previous.document;global.fetch=previous.fetch;global.setTimeout=previous.setTimeout;URL.createObjectURL=previous.create;URL.revokeObjectURL=previous.revoke;dom.window.close();}
 });
+
+test('salary letters persist snapshots across devices, allocate unique numbers and remain private to their account',async()=>{
+ const {createSalaryIssuer}=await import('../salary-certificate-firestore.mjs');
+ const {createContent,sourceStamp}=await import('../salary-certificate-core.mjs');
+ const {demoCompany,demoEmployees,demoDraft}=await import('../salary-certificate-demo-data.mjs');
+ const uid='salary-owner',db=env.authenticatedContext(uid).firestore(),root='artifacts/default-app-id/users/'+uid+'/';
+ const company=structuredClone(demoCompany),employees=structuredClone(demoEmployees),draft={...demoDraft('2026-11-02'),reviewed:true};
+ await setDoc(doc(db,root+'settings/companyProfile'),company);
+ for(const e of employees)await setDoc(doc(db,root+'employees/'+e.id),e);
+ const adapter={db,runTransaction,serverTimestamp,getUserId:()=>uid,userDoc:(c,i)=>doc(db,root+c+'/'+i),today:()=> '2026-11-02',getActor:()=>({name:'ผู้ทดสอบ'})};
+ const issue=createSalaryIssuer(adapter),sources={company,employees,today:'2026-11-02'};
+ const request=id=>({id,uid,draft,content:createContent(draft,sources),sourceStamp:sourceStamp(sources,draft)});
+ const [one,two]=await Promise.all([issue(request('salary-test-0001')),issue(request('salary-test-0002'))]);
+ assert.deepEqual([one.number,two.number].sort(),['NASC-2569-0001','NASC-2569-0002']);
+ assert.equal((await issue(request('salary-test-0001'))).number,one.number);
+ const second=env.authenticatedContext(uid).firestore(),other=env.authenticatedContext('salary-other').firestore();
+ const ref=doc(second,root+'hr_salary_certificates/salary-test-0001');
+ await setDoc(doc(db,root+'employees/'+employees[0].id),{...employees[0],salary:99999,name:'ข้อมูลใหม่'});
+ const saved=(await getDocFromServer(ref)).data();assert.equal(saved.content.baseSatang,3000000);assert.equal(saved.content.employee.name,'พนักงานตัวอย่าง A');
+ await assertFails(getDocFromServer(doc(other,ref.path)));await assertFails(setDoc(doc(other,ref.path),{changed:true}));
+ await assertFails(getDocFromServer(doc(env.unauthenticatedContext().firestore(),ref.path)));
+ await assert.rejects(issue(request('salary-test-0003')),/เปลี่ยนแล้ว/);
+ assert.equal((await getDocs(collection(db,root+'hr_salary_certificates'))).size,2);
+});
