@@ -835,14 +835,15 @@
                             <button type="submit" id="product-search-button" class="self-stretch px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm">ค้นหา</button>
                         </form>
                         <select id="product-category-filter" aria-label="หมวดรหัสสินค้า" class="border border-gray-300 rounded bg-white p-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="">ทั้งหมด</option><option value="manual">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option>
+                            <option value="">ทั้งหมด</option><option value="manual">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option><option value="B">B (สินค้าซื้อ)</option>
                         </select>
                         <select id="product-usage-filter" aria-label="กรองสินค้าขายหรือซื้อเข้า" class="border border-gray-300 rounded bg-white p-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500">
                             <option value="">ทุกประเภทการใช้งาน</option><option value="sale">ใช้ขาย (รวมซื้อและขาย)</option><option value="purchase">ใช้ซื้อ (รวมซื้อและขาย)</option><option value="both">สินค้าทั้งซื้อทั้งขาย</option><option value="unclassified">ยังไม่ระบุประเภท</option>
                         </select>
                         <span id="product-search-count" class="text-xs text-gray-500" role="status" aria-live="polite"></span>
                     </div>
-                    <p id="product-usage-help" class="text-sm text-gray-500 mb-4">แยกสินค้าขาย / สินค้าซื้อโดยใช้รหัสเดิม รายการเดิมที่ยังไม่ระบุประเภทเลือกออกเอกสารได้ทั้งสองฝั่ง เมื่อแก้ไขต้องระบุประเภทก่อนบันทึก</p>
+                    <p id="product-usage-help" class="text-sm text-gray-500 mb-2">รหัส B ใช้สำหรับสินค้าซื้ออย่างเดียว รายการซื้อและขายใช้รหัสเดิม</p>
+                    <button type="button" id="product-b-review" class="hidden mb-4 px-3 py-2 rounded border border-emerald-200 bg-emerald-50 text-sm font-semibold text-emerald-800"></button>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                         <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2"><i class="ph ph-currency-circle-dollar text-emerald-600 text-xl"></i> <span data-i18n="title_exchange_rate">ตั้งค่าอัตราแลกเปลี่ยน</span></h3></div>
                         <form id="exchange-rate-form" class="flex flex-wrap gap-4 items-end">
@@ -859,7 +860,8 @@
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod">เพิ่มสินค้าใหม่</h3>
                             <form id="add-product-form" class="space-y-4 text-[14px]">
                                 <div><label class="block text-[12px] text-gray-600 mb-1">รหัสสินค้า (Code) <span class="text-red-500">*</span></label>
-                                    <div class="flex gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="w-1/3 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option></select><input type="text" id="new-prod-code" required class="flex-1 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
+                                    <div class="flex flex-wrap gap-2"><select id="new-prod-prefix" class="min-w-0 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option><option value="B">B (สินค้าซื้อ)</option></select><input type="text" id="new-prod-code" required class="flex-1 min-w-0 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
+                                    <p id="product-original-code" class="mt-1 text-xs text-gray-500"></p>
                                 </div>
                                 <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
                                 <div><label for="new-prod-usage" id="new-prod-usage-label" class="block text-[12px] text-gray-600 mb-1">ประเภทใช้งาน *</label><select id="new-prod-usage" required aria-required="true" class="w-full border p-2 rounded"><option value="" selected disabled>โปรดระบุ</option><option value="sale">สินค้าขาย</option><option value="purchase">สินค้าซื้อ</option><option value="both">สินค้าทั้งซื้อทั้งขาย</option></select></div>
@@ -1109,6 +1111,16 @@
         <div class="flex gap-2">
             <button type="button" id="product-unit-cancel" autofocus class="flex-1 p-2 rounded border bg-gray-50 text-sm disabled:opacity-50">กลับไปแก้ไข</button>
             <button type="button" id="product-unit-confirm" class="flex-1 p-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm disabled:opacity-50">ยืนยันและบันทึก</button>
+        </div>
+    </dialog>
+
+    <dialog id="product-b-dialog" aria-labelledby="product-b-title" aria-describedby="product-b-description" style="width:calc(100% - 2rem);max-height:calc(100dvh - 2rem);overflow-y:auto" class="max-w-lg rounded-2xl border-0 p-6 shadow-2xl text-gray-800 no-print">
+        <h3 id="product-b-title" class="text-xl font-bold mb-2"></h3>
+        <p id="product-b-description" class="text-sm text-gray-600 mb-3"></p>
+        <ul id="product-b-list" class="divide-y max-h-[45vh] overflow-auto mb-4"></ul>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" id="product-b-cancel" autofocus class="flex-1 p-2 rounded border bg-gray-50 text-sm"></button>
+            <button type="button" id="product-b-confirm" class="flex-1 p-2 rounded bg-emerald-600 text-white text-sm"></button>
         </div>
     </dialog>
 
@@ -1422,6 +1434,7 @@
         let employees = [{ id: '1', code: 'E-0001', name: 'คุณสมรัก ยอดขาย', position: 'พนักงานขาย', email: 's@co.th', phone: '081', joinDate: '2023-01-15', status: 'active', resignDate: '', salary: 25000, basePct: '5', taxId: '1111111111111' }];
         let savedRemarks = [{ id: '1', text: 'ชำระเงินโอนเข้าบัญชี: กสิกรไทย 123-4-56789-0' }];
         let editingProductId = null, productSaveInProgress = false, pendingProductConfirmation = null;
+        let pendingPurchaseCodes = null, purchaseCodesSaving = false, purchaseHighWater = 0;
         let editingRemarkId = null, editingDocRemarkId = null;
         let remarkSaveInProgress = false, documentSaveInProgress = false, remarksLoaded = false, remarksDataUserId = null;
         const remarkEditorBaseline = { document: '', settings: '' };
@@ -1430,7 +1443,7 @@
         let selectedRemarksSequence = [];
 
         const initialUserData = JSON.parse(JSON.stringify({companyProfile,products,customers,employees,savedRemarks,exchangeRates}));
-        function resetUserData() { const defaults=JSON.parse(JSON.stringify(initialUserData)); companyProfile=defaults.companyProfile; products=defaults.products; customers=defaults.customers; employees=defaults.employees; savedRemarks=defaults.savedRemarks; exchangeRates=defaults.exchangeRates; }
+        function resetUserData() { const defaults=JSON.parse(JSON.stringify(initialUserData)); companyProfile=defaults.companyProfile; products=defaults.products; customers=defaults.customers; employees=defaults.employees; savedRemarks=defaults.savedRemarks; exchangeRates=defaults.exchangeRates; purchaseHighWater=0; }
 
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
@@ -1494,7 +1507,8 @@
                 qty: row.querySelector('.item-qty')?.value || '', unit: row.querySelector('.item-unit')?.value || '',
                 price: row.querySelector('.item-price')?.value ?? 0, basePrice: Number(row.querySelector('.item-base-price')?.value || row.querySelector('.item-price')?.value || 0),
                 discVal: row.querySelector('.item-disc-val')?.value || 0, discType: val('global-disc-type') || 'disc_%',
-                priceBasis: row.querySelector('.item-price-basis')?.value || 'INC'
+                priceBasis: row.querySelector('.item-price-basis')?.value || 'INC',
+                ...(row.dataset.vatExempt === 'true' ? { vatExempt: true } : {})
             })), val('doc-type'));
         }
         function printedItemBasis(item, doc) {
@@ -2074,15 +2088,15 @@
             const body = $('products-table-body');
             if (!body) return;
             body.innerHTML = filtered.length ? filtered.map(p => {
-                const code = String(p.code || ''), id = productHtml(encodeURIComponent(p.id));
+                const code = activeProductCode(p), originalCode = String(p.code || ''), id = productHtml(encodeURIComponent(p.id));
                 const badge = code.toUpperCase().startsWith('P') ? 'V' : code.toUpperCase().startsWith('K') ? 'V-KG' : code.toUpperCase().startsWith('G') ? 'Z' : '';
                 const editLabel = isEn ? 'Edit' : 'แก้ไข', deleteLabel = isEn ? 'Delete' : 'ลบ';
                 return `<tr>
-                    <td class="p-4">${productHtml(code)} ${badge ? `<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">${badge}</span>` : ''}</td>
+                    <td class="p-4">${productHtml(code)} ${badge ? `<span class="text-[10px] bg-gray-100 px-1 rounded ml-1">${badge}</span>` : ''}${code !== originalCode ? `<small class="block text-[11px] text-gray-500">${isEn ? 'Original: ' : 'รหัสเดิม: '}${productHtml(originalCode)}</small>` : ''}</td>
                     <td class="p-4">${productHtml(p.name)}</td>
                     <td class="p-4 text-center">${productUsageBadge(p)}</td>
                     <td class="p-4 text-center">${productHtml(p.unit)}</td>
-                    <td class="p-4 text-right">${formatMoney(p.price)}<small class="block text-[11px] text-gray-500">${priceBasisLabel(code.toUpperCase().startsWith('G') ? 'NONE' : productPriceBasis(p))}</small></td>
+                    <td class="p-4 text-right">${formatMoney(p.price)}<small class="block text-[11px] text-gray-500">${priceBasisLabel(originalCode.toUpperCase().startsWith('G') ? 'NONE' : productPriceBasis(p))}</small></td>
                     <td class="p-4 text-center">
                         <button type="button" data-product-edit="${id}" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="${editLabel}" aria-label="${editLabel} ${productHtml(p.name)}"><i class="ph ph-pencil"></i></button>
                         <button type="button" data-product-delete="${id}" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="${deleteLabel}" aria-label="${deleteLabel} ${productHtml(p.name)}"><i class="ph ph-trash"></i></button>
@@ -2124,33 +2138,126 @@
             if (field) for (const option of field.options) option.textContent = option.value ? productUsageLabel(option.value) : (isEn ? 'Please select' : 'โปรดระบุ');
             productText('new-prod-usage-label', isEn ? 'Item use *' : 'ประเภทใช้งาน *');
             productText('product-usage-column', isEn ? 'Item use' : 'ประเภทการใช้งาน');
-            productText('product-usage-help', isEn ? 'Use the same code for sales, purchases or both. Existing unclassified items remain selectable on both sides; choose an item use before saving edits.' : 'แยกสินค้าขาย / สินค้าซื้อโดยใช้รหัสเดิม รายการเดิมที่ยังไม่ระบุประเภทเลือกออกเอกสารได้ทั้งสองฝั่ง เมื่อแก้ไขต้องระบุประเภทก่อนบันทึก');
+            productText('product-usage-help', isEn ? 'B codes are for purchase-only items. Items bought and sold keep their existing codes. B does not determine VAT.' : 'รหัส B ใช้สำหรับสินค้าซื้ออย่างเดียว รายการซื้อและขายใช้รหัสเดิม รหัส B ไม่ได้กำหนด VAT');
+            if ($('new-prod-prefix')) for (const option of $('new-prod-prefix').options) option.textContent = productCategoryLabel(option.value || 'manual');
+            const remaining = products.filter(needsPurchaseCode).length;
+            show('product-b-review', remaining > 0);
+            productText('product-b-review', isEn ? `Assign B codes to existing purchase items (${remaining})` : `กำหนดรหัส B ให้สินค้าซื้อเดิม (${remaining} รายการ)`);
+            const current = products.find(p => p.id === editingProductId);
+            const hasAlias = !!current && activeProductCode(current) !== current.code;
+            productText('product-original-code', hasAlias ? (isEn ? 'B code on purchase documents: ' : 'รหัสที่ใช้ในเอกสารซื้อ: ') + activeProductCode(current) : '');
         }
         function normalizeProductSearch(value) {
             return String(value || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
         }
         function productCodeCategory(product) {
+            if (productUsage(product) === 'purchase') return 'B';
             const first = normalizeProductSearch(product.code).charAt(0).toUpperCase();
             return ['P', 'K', 'G'].includes(first) ? first : 'manual';
         }
+        const productCategories = ['manual', 'P', 'K', 'G', 'B'];
         function productCategoryLabel(category) {
-            return ({ '': currentLang === 'en' ? 'All categories' : 'ทั้งหมด', manual: currentLang === 'en' ? 'Custom code' : 'พิมพ์เอง', P: 'P (VAT)', K: 'K (VAT-KG)', G: 'G (No VAT)' })[category] || '';
+            return ({ '': currentLang === 'en' ? 'All categories' : 'ทั้งหมด', manual: currentLang === 'en' ? 'Custom code' : 'พิมพ์เอง', P: 'P (VAT)', K: 'K (VAT-KG)', G: 'G (No VAT)', B: currentLang === 'en' ? 'B (Purchase items)' : 'B (สินค้าซื้อ)' })[category] || '';
         }
         function productCategoryOptions(selected = '') {
-            return ['', 'manual', 'P', 'K', 'G'].map(category => `<option value="${category}"${category === selected ? ' selected' : ''}>${productCategoryLabel(category)}</option>`).join('');
+            return ['', ...productCategories].map(category => `<option value="${category}"${category === selected ? ' selected' : ''}>${productCategoryLabel(category)}</option>`).join('');
         }
         function updateProductCategoryFilter(id) {
             const select = $(id); if (!select) return;
-            const selected = ['', 'manual', 'P', 'K', 'G'].includes(select.value) ? select.value : '';
+            const selected = productCategories.includes(select.value) ? select.value : '';
             select.innerHTML = productCategoryOptions(selected);
             select.value = selected;
             select.setAttribute('aria-label', currentLang === 'en' ? 'Product code category' : 'หมวดรหัสสินค้า');
         }
         function filterProducts(list, query, category = '', usage = '') {
-            const key = normalizeProductSearch(query), order = { manual: 0, P: 1, K: 2, G: 3 };
-            return list.filter(p => productMatchesUsage(p, usage) && (!category || productCodeCategory(p) === category) && (normalizeProductSearch(p.name).includes(key) || normalizeProductSearch(p.code).includes(key)))
-                .sort((a, b) => order[productCodeCategory(a)] - order[productCodeCategory(b)] || String(a.code || '').localeCompare(String(b.code || ''), 'en', { numeric: true, sensitivity: 'base' }) || String(a.name || '').localeCompare(String(b.name || ''), 'th'));
+            const key = normalizeProductSearch(query);
+            return list.filter(p => productMatchesUsage(p, usage) && (!category || productCodeCategory(p) === category) && [p.name, p.code, p.purchaseCode].some(value => normalizeProductSearch(value).includes(key)))
+                .sort((a, b) => productCategories.indexOf(productCodeCategory(a)) - productCategories.indexOf(productCodeCategory(b)) || compareProductCodes(activeProductCode(a), activeProductCode(b)) || String(a.name || '').localeCompare(String(b.name || ''), 'th'));
         }
+        function purchaseNumber(code) {
+            const match = /^b-(\d{1,9})$/.exec(normalizeProductSearch(code));
+            return match ? Number(match[1]) : 0;
+        }
+        function activeProductCode(p) { return String(productUsage(p) === 'purchase' && purchaseNumber(p.purchaseCode) ? p.purchaseCode : p.code || ''); }
+        function needsPurchaseCode(p) { return productUsage(p) === 'purchase' && !purchaseNumber(activeProductCode(p)); }
+        function compareProductCodes(a, b) { return String(a || '').localeCompare(String(b || ''), 'en', { numeric: true, sensitivity: 'base' }); }
+        function purchaseCodeMax(list) { return list.reduce((max, p) => Math.max(max, purchaseNumber(p.code), purchaseNumber(p.purchaseCode)), 0); }
+        function purchaseCodeFor(number) { return 'B-' + String(number).padStart(4, '0'); }
+        function purchaseCodePlan(list, highWater = 0) {
+            let max = Math.max(highWater, purchaseCodeMax(list));
+            return list.filter(needsPurchaseCode).sort((a, b) => compareProductCodes(a.code, b.code) || compareProductCodes(a.id, b.id))
+                .slice(0, 300).map(p => ({ id: p.id, from: p.code || '', name: p.name || '', to: purchaseCodeFor(++max) }));
+        }
+        function purchaseSeriesNumber(snapshot) { return snapshot.exists() ? Number(snapshot.data().highWater) || 0 : 0; }
+        function purchaseCodeChanged(message) { return Object.assign(new Error(message), { code: 'purchase-code-changed' }); }
+        async function loadPurchaseSeries(uid) {
+            const ref = getUserDoc('settings', 'purchase-product-code-series');
+            const snapshot = await getDocFromServer(ref);
+            if (currentUser?.uid !== uid) throw purchaseCodeChanged();
+            const highWater = purchaseSeriesNumber(snapshot);
+            purchaseHighWater = Math.max(purchaseHighWater, highWater);
+            return { ref, highWater };
+        }
+        async function writePurchaseCodes(series, uid, entries) {
+            if (currentUser?.uid !== uid) throw purchaseCodeChanged();
+            const refs = entries.map(entry => getUserDoc('products', entry.id));
+            await runTransaction(db, async tx => {
+                const [counter, ...records] = await Promise.all([tx.get(series.ref), ...refs.map(ref => tx.get(ref))]);
+                if (currentUser?.uid !== uid || purchaseSeriesNumber(counter) !== series.highWater ||
+                    records.some((snap, i) => {
+                        const previous = entries[i].previous, actual = snap.exists() ? snap.data() : null;
+                        return previous ? !actual || ['code', 'name', 'tradeUsage', 'purchaseCode'].some(k => previous[k] !== actual[k]) : !!actual;
+                    })) throw purchaseCodeChanged();
+                entries.forEach((entry, i) => tx.set(refs[i], entry.data, { merge: true }));
+                tx.set(series.ref, { highWater: Math.max(series.highWater, ...entries.map(entry => purchaseNumber(entry.numberedCode))) }, { merge: true });
+            });
+        }
+        function openPurchaseCodeReview() {
+            if (!currentUser || productSaveInProgress || purchaseCodesSaving || $('product-unit-dialog').open) return;
+            const plan = purchaseCodePlan(products, purchaseHighWater), isEn = currentLang === 'en';
+            if (!plan.length) return;
+            pendingPurchaseCodes = { uid: currentUser.uid, plan };
+            productText('product-b-title', isEn ? 'Review B codes for purchase items' : 'ตรวจรหัส B ของสินค้าซื้อ');
+            productText('product-b-description', isEn ? `${plan.length} items. Previous codes, VAT settings and saved documents are kept.` : `${plan.length} รายการ ระบบเก็บรหัสเดิม เงื่อนไข VAT และเอกสารที่ออกไว้แล้ว`);
+            productText('product-b-cancel', isEn ? 'Cancel' : 'ยกเลิก');
+            productText('product-b-confirm', isEn ? 'Save B codes' : 'ยืนยันบันทึกรหัส B');
+            $('product-b-list').innerHTML = plan.map(row => `<li class="py-2 break-words"><strong>${productHtml(row.from || '—')} → ${productHtml(row.to)}</strong><p class="text-sm">${productHtml(row.name)}</p></li>`).join('');
+            $('product-b-dialog').showModal();
+        }
+        async function confirmPurchaseCodes() {
+            const pending = pendingPurchaseCodes, dialog = $('product-b-dialog'), isEn = currentLang === 'en';
+            if (!pending || !dialog.open || purchaseCodesSaving || currentUser?.uid !== pending.uid) return;
+            purchaseCodesSaving = true;
+            $('product-b-confirm').disabled = $('product-b-cancel').disabled = true;
+            try {
+                const series = await loadPurchaseSeries(pending.uid);
+                const snapshot = await getDocsFromServer(getUserCol('products'));
+                const latest = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+                const plan = purchaseCodePlan(latest, series.highWater);
+                if (JSON.stringify(plan) !== JSON.stringify(pending.plan)) throw purchaseCodeChanged();
+                const entries = plan.map(row => ({ id: row.id, previous: latest.find(p => p.id === row.id), numberedCode: row.to, data: { purchaseCode: row.to } }));
+                await writePurchaseCodes(series, pending.uid, entries);
+                if (currentUser?.uid !== pending.uid) return;
+                purchaseHighWater = Math.max(purchaseHighWater, ...plan.map(row => purchaseNumber(row.to)));
+                const mapped = new Map(plan.map(row => [row.id, row.to]));
+                products = products.map(p => mapped.has(p.id) ? { ...p, purchaseCode: mapped.get(p.id) } : p);
+                renderProducts(); renderProductDropdowns(); factoryController?.refreshCatalog();
+                showAlert(isEn ? `B codes saved for ${plan.length} items.` : `บันทึกรหัส B แล้ว ${plan.length} รายการ`);
+            } catch (error) {
+                if (currentUser?.uid === pending.uid) showAlert(error.code === 'purchase-code-changed' ?
+                    (isEn ? 'The catalog or series changed. Open the review again.' : 'ข้อมูลหรือเลขรหัสเปลี่ยนไป กรุณาเปิดตรวจรายการใหม่') :
+                    (isEn ? 'Unable to confirm the save. Refresh the catalog and check the codes.' : 'ยืนยันผลการบันทึกรหัส B ไม่ได้ กรุณาโหลดรายการสินค้าแล้วตรวจสอบอีกครั้ง'), { warning: true });
+            } finally {
+                purchaseCodesSaving = false;
+                $('product-b-confirm').disabled = $('product-b-cancel').disabled = false;
+                dialog.close();
+            }
+        }
+        $('product-b-review')?.addEventListener('click', openPurchaseCodeReview);
+        $('product-b-confirm')?.addEventListener('click', confirmPurchaseCodes);
+        $('product-b-cancel')?.addEventListener('click', () => $('product-b-dialog').close());
+        $('product-b-dialog')?.addEventListener('cancel', e => { if (purchaseCodesSaving) e.preventDefault(); });
+        $('product-b-dialog')?.addEventListener('close', () => { pendingPurchaseCodes = null; });
         function productHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
         }
@@ -2159,7 +2266,7 @@
             return { code: val('new-prod-code').trim().toUpperCase(), name: val('new-prod-name').trim(), tradeUsage: val('new-prod-usage'), unit: val('new-prod-unit').trim(), price: Number(val('new-prod-price')), priceBasis: val('new-prod-price-basis') === 'EXC' ? 'EXC' : 'INC' };
         }
         function duplicateProductCode(data, id, list = products) {
-            return list.some(p => p.id !== id && String(p.code || '').trim().toUpperCase() === data.code);
+            return list.some(p => p.id !== id && [p.code, p.purchaseCode].some(code => normalizeProductSearch(code) === normalizeProductSearch(data.code) || (purchaseNumber(data.code) && purchaseNumber(data.code) === purchaseNumber(code))));
         }
         function editProduct(id) {
             if (productSaveInProgress) return;
@@ -2192,6 +2299,12 @@
             if (!px) {
                 input.value = ''; input.placeholder = currentLang === 'en' ? 'Enter code' : 'ระบุรหัส'; input.readOnly = false;
                 input.classList.remove('bg-gray-100', 'text-gray-500');
+            } else if (px === 'B') {
+                $('new-prod-usage').value = 'purchase';
+                const current = products.find(p => p.id === editingProductId);
+                input.value = (purchaseNumber(current?.purchaseCode) && current.purchaseCode) || (purchaseNumber(current?.code) && current.code) || purchaseCodeFor(Math.max(purchaseCodeMax(products), purchaseHighWater) + 1);
+                input.readOnly = true;
+                input.classList.add('bg-gray-100', 'text-gray-500');
             } else {
                 let max = 0;
                 products.forEach(p => {
@@ -2203,6 +2316,7 @@
             }
             updateProductPricePreview();
         }
+        $('new-prod-prefix')?.addEventListener('change', handleProductPrefixChange);
         if ($('product-category-filter')) $('product-category-filter').addEventListener('change', renderProducts);
         if ($('product-usage-filter')) $('product-usage-filter').addEventListener('change', renderProducts);
         function warnMissingProductUsage() {
@@ -2210,6 +2324,12 @@
             showAlert(currentLang === 'en' ? 'Please select item use: sales, purchase, or buy and sell.' : 'โปรดระบุประเภทใช้งาน: สินค้าขาย สินค้าซื้อ หรือสินค้าทั้งซื้อทั้งขาย ก่อนบันทึก', { title: currentLang === 'en' ? 'Please select item use' : 'โปรดระบุประเภทใช้งาน', warning: true });
         }
         if ($('new-prod-usage')) $('new-prod-usage').addEventListener('invalid', event => { event.preventDefault(); warnMissingProductUsage(); });
+        $('new-prod-usage')?.addEventListener('change', () => {
+            if (editingProductId || productSaveInProgress) return;
+            const prefix = $('new-prod-prefix');
+            if (val('new-prod-usage') === 'purchase') { prefix.value = 'B'; handleProductPrefixChange(); }
+            else if (prefix.value === 'B') { prefix.value = ''; handleProductPrefixChange(); }
+        });
         if ($('product-search')) $('product-search').addEventListener('input', renderProducts);
         if ($('product-search-form')) $('product-search-form').addEventListener('submit', e => { e.preventDefault(); renderProducts(); });
         if ($('product-search-clear')) $('product-search-clear').addEventListener('click', () => { $('product-search').value = ''; renderProducts(); $('product-search').focus(); });
@@ -2222,20 +2342,29 @@
         if ($('add-product-form')) $('add-product-form').addEventListener('submit', e => {
             e.preventDefault();
             const dialog = $('product-unit-dialog'), isEn = currentLang === 'en';
-            if (productSaveInProgress || dialog.open) return;
+            if (productSaveInProgress || purchaseCodesSaving || dialog.open) return;
             if (!currentUser) return showAlert(isEn ? 'Please sign in before saving.' : 'กรุณาเข้าสู่ระบบก่อนบันทึก');
             const data = productFormValues();
-            const previousUsage = productUsage(products.find(p => p.id === editingProductId));
+            const previous = products.find(p => p.id === editingProductId), previousUsage = productUsage(previous);
             if (!['sale', 'purchase', 'both'].includes(data.tradeUsage)) return warnMissingProductUsage();
+            if (!editingProductId && data.tradeUsage === 'purchase' && !purchaseNumber(data.code)) {
+                $('new-prod-prefix').value = 'B'; handleProductPrefixChange();
+                return showAlert(isEn ? 'A B code has been assigned. Review it and save again.' : 'ระบบกำหนดรหัส B ให้แล้ว กรุณาตรวจสอบและกดบันทึกอีกครั้ง', { warning: true });
+            }
+            if (purchaseNumber(data.code) && data.tradeUsage !== 'purchase' && (data.code !== previous?.code || previousUsage === 'purchase'))
+                return showAlert(isEn ? 'B codes are for purchase-only items. Choose another code.' : 'รหัส B ใช้สำหรับสินค้าซื้ออย่างเดียว กรุณาเลือกรหัสอื่น', { warning: true });
+            if (purchaseNumber(previous?.purchaseCode) && ![previous.code, previous.purchaseCode].includes(data.code))
+                return showAlert(isEn ? 'Keep the linked codes so earlier documents and stock can still be found.' : 'รายการนี้มีรหัส B เชื่อมอยู่แล้ว กรุณาใช้รหัสเดิมเพื่อให้ค้นเอกสารและประวัติคลังได้', { warning: true });
             if (!$('add-product-form').reportValidity()) return;
             for (const field of ['code', 'name', 'unit']) {
                 if (!data[field]) { $('new-prod-' + field).focus(); return showAlert(isEn ? 'Please enter a product code, name and unit.' : 'กรุณาระบุรหัส ชื่อสินค้า และหน่วยให้ครบถ้วน'); }
             }
             if (!val('new-prod-price').trim() || !Number.isFinite(data.price) || data.price < 0 || data.price > 1000000000) return showAlert(isEn ? 'Please enter a valid price.' : 'กรุณาระบุราคาให้ถูกต้อง');
             if (duplicateProductCode(data, editingProductId)) return showAlert(isEn ? 'This product code already exists.' : 'รหัสนี้มีอยู่แล้ว');
-            pendingProductConfirmation = { uid: currentUser.uid, id: editingProductId, data, previousUsage };
+            pendingProductConfirmation = { uid: currentUser.uid, id: editingProductId, data, previousUsage, previousCode: previous?.code };
             productText('product-unit-title', isEn ? 'Confirm item use and unit' : 'ยืนยันประเภทใช้งานและหน่วยสินค้า');
-            productText('product-unit-description', (isEn ? 'Check item use, unit and price before every save: ' : 'ตรวจสอบประเภทใช้งาน หน่วย และราคาก่อนบันทึกทุกครั้ง: ') + formatMoney(data.price) + ' THB / ' + priceBasisLabel(data.code.startsWith('G') ? 'NONE' : data.priceBasis));
+            const originalCode = purchaseNumber(data.code) && previous?.code ? previous.code : data.code;
+            productText('product-unit-description', (isEn ? 'Check item use, unit and price before every save: ' : 'ตรวจสอบประเภทใช้งาน หน่วย และราคาก่อนบันทึกทุกครั้ง: ') + formatMoney(data.price) + ' THB / ' + priceBasisLabel(String(originalCode).toUpperCase().startsWith('G') ? 'NONE' : data.priceBasis));
             productText('product-unit-code', data.code);
             productText('product-unit-name', data.name);
             productText('product-unit-usage-label', isEn ? 'Item use' : 'ประเภทใช้งาน');
@@ -2264,6 +2393,8 @@
             productText('product-unit-confirm', isEn ? 'Saving...' : 'กำลังบันทึก...');
             let saved = false, message = '';
             try {
+                const bNumber = purchaseNumber(pending.data.code);
+                const series = bNumber && pending.data.tradeUsage === 'purchase' ? await loadPurchaseSeries(pending.uid) : null;
                 const snapshot = await getDocsFromServer(getUserCol('products'));
                 if (currentUser?.uid !== pending.uid) return;
                 if (!productConfirmationMatches(pending)) throw new Error('Product form changed before write');
@@ -2276,17 +2407,30 @@
                     message = isEn ? 'This product was removed. Please reload and check again.' : 'สินค้านี้ถูกลบไปแล้ว กรุณาโหลดข้อมูลใหม่และตรวจสอบอีกครั้ง';
                     return;
                 }
-                if (pending.id && productUsage(latest.find(p => p.id === pending.id)) !== pending.previousUsage) {
+                const current = latest.find(p => p.id === pending.id);
+                if (pending.id && (productUsage(current) !== pending.previousUsage || current.code !== pending.previousCode)) {
                     message = isEn ? 'Item use changed on another device. Reopen the product and review again.' : 'ประเภทการใช้งานเปลี่ยนจากอีกเครื่อง กรุณาเปิดสินค้าใหม่และตรวจสอบอีกครั้ง';
                     return;
                 }
                 const id = pending.id || `${Date.now()}-${crypto.randomUUID()}`;
-                await setDoc(getUserDoc('products', id), pending.id ? pending.data : { id, ...pending.data }, { merge: true });
+                if (series) {
+                    if (bNumber <= series.highWater && ![current?.code, current?.purchaseCode].some(code => purchaseNumber(code) === bNumber)) throw purchaseCodeChanged();
+                    const data = current && pending.data.code !== current.code ?
+                        { ...pending.data, code: current.code, purchaseCode: pending.data.code } : { id, ...pending.data };
+                    await writePurchaseCodes(series, pending.uid, [{ id, previous: current, numberedCode: pending.data.code, data }]);
+                    purchaseHighWater = Math.max(purchaseHighWater, bNumber);
+                } else {
+                    const data = pending.id ? pending.data : { id, ...pending.data };
+                    if (purchaseNumber(current?.code) && current.code !== data.code) data.purchaseCode = current.code;
+                    await setDoc(getUserDoc('products', id), data, { merge: true });
+                }
                 saved = true;
                 message = isEn ? (pending.id ? 'Product updated!' : 'Product saved!') : (pending.id ? 'อัปเดตข้อมูลสินค้าสำเร็จ!' : 'บันทึกสินค้าสำเร็จ!');
             } catch (error) {
                 console.error('Product save failed', error);
-                message = isEn ? 'Unable to save. Your entries are kept. Check your connection and try again.' : 'บันทึกไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง';
+                message = error.code === 'purchase-code-changed' ?
+                    (isEn ? 'The B code sequence changed. Select B again to refresh the code.' : 'เลขรหัส B เปลี่ยนจากอีกเครื่อง กรุณาเลือกรหัส B ใหม่แล้วบันทึกอีกครั้ง') :
+                    (isEn ? 'Unable to save. Your entries are kept. Check your connection and try again.' : 'บันทึกไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง');
             } finally {
                 productSaveInProgress = false;
                 controls.forEach(([el, disabled]) => { el.disabled = disabled; });
@@ -2555,11 +2699,11 @@
             const filtered = filterProducts(products.filter(productAllowedForDocument), val(`${rowId}-search-input`), val(`${rowId}-category-filter`));
             const rowKey = productHtml(rowId);
             let html = `<li><button type="button" data-product-clear data-product-row="${rowKey}" class="block w-full text-left p-2.5 hover:bg-gray-100 text-gray-500 text-sm border-b">${defText}</button></li>`;
-            ['manual', 'P', 'K', 'G'].forEach(category => {
+            productCategories.forEach(category => {
                 const group = filtered.filter(p => productCodeCategory(p) === category);
                 if (!group.length) return;
                 html += `<li class="px-2.5 py-1.5 bg-gray-50 text-[11px] font-semibold text-emerald-700 border-b" role="presentation">${productCategoryLabel(category)} (${group.length})</li>`;
-                html += group.map(p => `<li><button type="button" data-product-option="${productHtml(encodeURIComponent(p.id))}" data-product-row="${rowKey}" class="block w-full text-left p-2.5 hover:bg-gray-100 text-gray-800 text-sm border-b break-words">${productHtml(p.code)} : ${productHtml(p.name)} ${productUsageBadge(p)}</button></li>`).join('');
+                html += group.map(p => `<li><button type="button" data-product-option="${productHtml(encodeURIComponent(p.id))}" data-product-row="${rowKey}" class="block w-full text-left p-2.5 hover:bg-gray-100 text-gray-800 text-sm border-b break-words">${productHtml(activeProductCode(p))} : ${productHtml(p.name)} ${productUsageBadge(p)}</button></li>`).join('');
             });
             if (!filtered.length) html += `<li class="p-3 text-sm text-gray-500" role="status">${isEn ? 'No matching products. Try another category or search.' : 'ไม่พบสินค้า ลองเปลี่ยนหมวดหรือคำค้นหา'}</li>`;
             return html;
@@ -2591,8 +2735,11 @@
             } else {
                 const id = decodeURIComponent(button.getAttribute('data-product-option'));
                 const p = products.find(product => String(product.id) === id);
-                if (p && productAllowedForDocument(p)) selectProductItem(rowId, p.code, `${p.code} : ${p.name}`, p.name, p.unit, p.price, productPriceBasis(p));
-                else renderProductDropdowns();
+                if (p && productAllowedForDocument(p)) {
+                    const code = activeProductCode(p);
+                    const vatExempt = code !== p.code && String(p.code || '').toUpperCase().startsWith('G');
+                    selectProductItem(rowId, code, `${code} : ${p.name}`, p.name, p.unit, p.price, productPriceBasis(p), vatExempt);
+                } else renderProductDropdowns();
             }
         });
 
@@ -2679,11 +2826,12 @@
 
         function updateProductPricePreview() {
             const price = $('new-prod-price'), basis = $('new-prod-price-basis'); if (!price || !basis) return;
-            const noVat = val('new-prod-code').trim().toUpperCase().startsWith('G');
+            const draftCode = val('new-prod-code').trim().toUpperCase(), current = products.find(p => p.id === editingProductId);
+            const noVat = String((purchaseNumber(draftCode) && current?.code) || draftCode).toUpperCase().startsWith('G');
             basis.disabled = noVat || productSaveInProgress;
             try {
                 if (!price.value.trim()) { price.setCustomValidity(''); price.removeAttribute('aria-invalid'); productText('product-price-preview', ''); return; }
-                const result = calculateDocumentPricing([{code: val('new-prod-code'), price: price.value, qty: 1, discVal: 0, priceBasis: basis.value}], 'QT');
+                const result = calculateDocumentPricing([{code: draftCode, price: price.value, qty: 1, discVal: 0, priceBasis: noVat ? 'NONE' : basis.value}], 'QT');
                 price.setCustomValidity(''); price.removeAttribute('aria-invalid');
                 productText('product-price-preview', noVat ? priceBasisLabel('NONE') + ': ' + formatMoney(result.grandTotal) + ' THB' : (currentLang === 'en' ? 'Unit price including VAT 7%: ' : 'ราคาต่อหน่วยรวม VAT 7%: ') + formatMoney(result.grandTotal) + ' THB');
             } catch (error) { price.setCustomValidity(error.message); price.setAttribute('aria-invalid', 'true'); productText('product-price-preview', error.message); }
@@ -2700,7 +2848,7 @@
             const select = $('global-price-basis'); if (!select) return;
             let basis = ['INC', 'EXC'].includes(doc.documentPriceBasis) ? doc.documentPriceBasis : null;
             if (!basis) {
-                const bases = new Set((doc.items || []).filter(item => !String(item.code || '').toUpperCase().startsWith('G')).map(item => {
+                const bases = new Set((doc.items || []).filter(item => !item.vatExempt && !String(item.code || '').toUpperCase().startsWith('G')).map(item => {
                     if (item.priceBasis === 'NONE' || (item.pricingVersion === 1 && item.taxRate === 0) || (!item.pricingVersion && !item.priceBasis && noVatDocs.includes(doc.prefix))) return 'NONE';
                     return productPriceBasis(item);
                 }));
@@ -2729,12 +2877,12 @@
         $('create-doc-form')?.addEventListener('reset', resetDocumentPriceBasis);
         function updateLinePricingUi(row) {
             const metadata = row.querySelector('.item-price-basis'); if (!metadata) return;
-            const noVat = (row.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G');
+            const noVat = row.dataset.vatExempt === 'true' || (row.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G');
             const global = $('global-price-basis');
             if (noVat) metadata.value = 'NONE';
             else if (global?.dataset.mode === 'global' && ['INC', 'EXC'].includes(global.value)) metadata.value = global.value;
         }
-        function selectProductItem(rowId, code, displayText, name, unit, price, priceBasis = 'INC') {
+        function selectProductItem(rowId, code, displayText, name, unit, price, priceBasis = 'INC', vatExempt = false) {
             if ($(`${rowId}-code`)) $(`${rowId}-code`).value = code;
             productText(`${rowId}-display-text`, code || displayText);
             if ($(`${rowId}-display-text`)) $(`${rowId}-display-text`).className = `truncate ${code ? 'text-gray-900' : 'text-gray-500'} font-bold`;
@@ -2742,8 +2890,9 @@
             const row = $(`${rowId}-code`)?.closest('.item-row');
             if (row) {
                 const global = $('global-price-basis');
-                if (code && global?.dataset.mode === 'catalog' && !code.toUpperCase().startsWith('G')) {
-                    const otherRows = [...document.querySelectorAll('.item-row')].filter(item => item !== row && !(item.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G'));
+                row.dataset.vatExempt = String(vatExempt);
+                if (code && global?.dataset.mode === 'catalog' && !vatExempt && !code.toUpperCase().startsWith('G')) {
+                    const otherRows = [...document.querySelectorAll('.item-row')].filter(item => item !== row && item.dataset.vatExempt !== 'true' && !(item.querySelector('.item-code')?.value || '').toUpperCase().startsWith('G'));
                     const hasOtherItems = otherRows.some(item => item.querySelector('.item-code')?.value || item.querySelector('.item-name')?.value || Number(item.querySelector('.item-price')?.value));
                     if (!hasOtherItems) global.value = priceBasis === 'EXC' ? 'EXC' : 'INC';
                     global.dataset.mode = 'global';
@@ -2753,13 +2902,14 @@
                 row.querySelector('.item-unit').value = code ? unit || 'PCS' : 'PCS';
                 row.querySelector('.item-base-price').value = amount;
                 row.querySelector('.item-price').value = convertPriceFromTHB(amount).toFixed(2);
-                row.querySelector('.item-price-basis').value = code.toUpperCase().startsWith('G') ? 'NONE' : priceBasis === 'EXC' ? 'EXC' : 'INC';
+                row.querySelector('.item-price-basis').value = vatExempt || code.toUpperCase().startsWith('G') ? 'NONE' : priceBasis === 'EXC' ? 'EXC' : 'INC';
             }
             calculateLiveTotal();
         }
         function addLineItem(data = null) {
             if (!$('items-container')) return;
             const nr = document.createElement('div'); nr.className = 'item-grid item-row border-b border-gray-100 pb-2';
+            if (data?.vatExempt) nr.dataset.vatExempt = 'true';
             const id = 'item-' + crypto.randomUUID(), esc = productHtml;
             const bp = data?.basePrice ?? data?.price ?? '', cd = String(data?.code ?? '');
             const dt = cd || (currentLang === 'en' ? '-- Select --' : '-- เลือก --'), tc = cd ? 'text-gray-900' : 'text-gray-500';
@@ -3409,11 +3559,12 @@
             } 
         }
 
-        function renderStockCardDropdown() { if($('stc-product-select')) $('stc-product-select').innerHTML = '<option value="">-- เลือกสินค้า --</option>' + products.map(p => `<option value="${p.code}">${p.code} : ${p.name}</option>`).join(''); }
+        function renderStockCardDropdown() { if($('stc-product-select')) $('stc-product-select').innerHTML = '<option value="">-- เลือกสินค้า --</option>' + products.map(p => `<option value="${productHtml(p.code)}">${productHtml(activeProductCode(p))} : ${productHtml(p.name)}</option>`).join(''); }
         function generateStockCard() {
             const pc = val('stc-product-select'); if(!pc || !$('stc-table-body')) return; const pObj = products.find(p => p.code === pc); txt('stc-title-item', pObj ? pObj.name : pc);
             let h = [], bal = 0, i = 1; const iT = ['STI','GRN','FGR','MR'], oT = ['STO','DO','ABB','MI','PL'];
-            database.forEach(d => d.items.forEach(it => { if(it.code === pc || it.name === pObj?.name) h.push({ d: documentTimestamp(d.rawDate) || documentTimestamp(d.createdAt), ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
+            const codes = new Set([pc, pObj?.purchaseCode].map(normalizeProductSearch).filter(Boolean));
+            database.forEach(d => d.items.forEach(it => { if(codes.has(normalizeProductSearch(it.code)) || it.name === pObj?.name) h.push({ d: documentTimestamp(d.rawDate) || documentTimestamp(d.createdAt), ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
             h.sort((a,b) => a.d - b.d);
             $('stc-table-body').innerHTML = h.length ? h.map(r => { let iq = 0, oq = 0; if(iT.includes(r.t)){ iq=r.q; bal+=r.q; }else if(oT.includes(r.t)){ oq=r.q; bal-=r.q; }else return ''; return `<tr class="border-b"><td class="p-3 text-center border-r">${i++}</td><td class="p-3 border-r">${r.ds}</td><td class="p-3 border-r font-bold text-blue-600">${r.no}</td><td class="p-3 border-r">${docTypeNames[r.t] || r.t}</td><td class="p-3 text-center bg-green-50 text-green-700 font-bold border-r">${iq||'-'}</td><td class="p-3 text-center bg-red-50 text-red-700 font-bold border-r">${oq||'-'}</td><td class="p-3 text-center font-bold bg-gray-50 text-lg">${bal}</td></tr>`; }).join('') : '<tr><td colspan="7" class="p-8 text-center text-gray-500">ไม่มีการเคลื่อนไหว</td></tr>';
         }

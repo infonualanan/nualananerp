@@ -21,6 +21,15 @@
 #factory-workspace .fx-box{padding:18px;background:#fff;border:1px solid #dce6df;border-radius:9px;margin-bottom:18px}
 #factory-workspace .fx-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 #factory-workspace .fx-wide{grid-column:1/-1}
+#factory-workspace .fx-catalog{position:relative;min-width:0}
+#factory-workspace .fx-catalog-popup{position:absolute;top:100%;left:0;right:0;z-index:5;border:1px solid #81b092;border-radius:7px;background:#fff;box-shadow:0 6px 16px #243b3026}
+#factory-workspace #fx-catalog-options{max-height:min(260px,40vh);overflow:auto;overscroll-behavior:contain}
+#factory-workspace [data-fx-catalog-index]{padding:10px 12px;min-height:44px;cursor:pointer;overflow-wrap:anywhere}
+#factory-workspace [data-fx-catalog-index]:hover,#factory-workspace [data-fx-catalog-index][aria-selected=true]{background:#e4f3e9;color:#135336}
+#factory-workspace #fx-catalog-status{margin:0;padding:8px 12px;background:#f3f7f4;border-radius:0 0 7px 7px;color:#52675b;font-size:12px}
+#factory-workspace .fx-row-actions{display:flex;gap:6px;flex-wrap:wrap}
+#factory-workspace .fx-danger{color:#9c2d25;border-color:#edc9c4}
+#factory-workspace #fx-item-form,#factory-workspace #fx-review{scroll-margin-top:90px}
 #factory-workspace .fx-check{display:flex;align-items:center;gap:8px;min-height:40px;font-size:13px}
 #factory-workspace .fx-check input{width:18px;height:18px;min-height:18px;flex:none}
 #factory-workspace .fx-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
@@ -47,6 +56,7 @@
  #factory-workspace .fx-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 0;border-bottom:1px solid #dce6df}
  #factory-workspace .fx-table td{display:block;border:0;padding:0;text-align:left!important}
  #factory-workspace .fx-table td:first-child{grid-column:1/-1}
+ #factory-workspace .fx-table td[data-label="จัดการ"]{grid-column:1/-1}
  #factory-workspace .fx-table td:before{content:attr(data-label);display:block;font-size:11px;color:#52675b}
  #factory-workspace .fx-paper{padding:12px}
  #factory-workspace .fx-paper .fx-table tr{border:1px solid #dce6df;padding:10px;margin:6px 0}

@@ -14,10 +14,16 @@ async function setup(t,initial=seed){
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
  w.eval(html.match(/<script id="erp-responsive-behavior">([\s\S]*?)<\/script>/)[1]);
  w.fakeSet=async(ref,value,options)=>{if(fail)throw new Error('test connection failure');const data=JSON.parse(JSON.stringify(value));writes.push({ref,data});records.set(ref,options?.merge?{...records.get(ref),...data}:data);};
+ w.fakeGet=async ref=>{const value=records.get(ref);return {exists:()=>value!==undefined,data:()=>structuredClone(value)};};
+ w.fakeTransaction=async(_db,action)=>{
+  const pending=[];await action({get:ref=>w.fakeGet(ref),set:(...args)=>pending.push(args)});
+  if(fail)throw new Error('test connection failure');
+  for(const args of pending)await w.fakeSet(...args);
+ };
  w.fakeAll=async name=>({docs:[...records].filter(([key])=>key.startsWith(name+'/')).map(([key,value])=>({id:key.slice(name.length+1),data:()=>structuredClone(value)}))});
  let source=html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^\s*import .*?;\s*$/gm,'');
  const start=source.indexOf('        // --- Firebase Configuration & Initialization ---'),end=source.indexOf('        // Login Feature',start);
- source=source.slice(0,start)+`const auth={},db={},appId='test';let currentUser={uid:'test-owner'},firebaseUnsubscribers=[];const getUserCol=name=>name,getUserDoc=(name,id)=>name+'/'+id;const setDoc=window.fakeSet,getDocsFromServer=window.fakeAll,deleteDoc=async()=>{},serverTimestamp=()=>null;`+source.slice(end);
+ source=source.slice(0,start)+`const auth={},db={},appId='test';let currentUser={uid:'test-owner'},firebaseUnsubscribers=[];const getUserCol=name=>name,getUserDoc=(name,id)=>name+'/'+id;const setDoc=window.fakeSet,getDocsFromServer=window.fakeAll,getDocFromServer=window.fakeGet,runTransaction=window.fakeTransaction,deleteDoc=async()=>{},serverTimestamp=()=>null;`+source.slice(end);
  w.eval(source+`\nproducts=${JSON.stringify(initial)};customers=[{id:'test-party',code:'C001',name:'คู่ค้าทดสอบ'}];savedRemarks=[];remarksLoaded=true;remarksDataUserId='test-owner';companyProfile={nameTh:'บริษัททดสอบ',taxId:'0000000000000',addressTh:'ที่อยู่',phone:''};$('login-screen').style.display='none';$('main-app').style.display='flex';renderProducts();renderCustomerDropdown(false);window.catalogTest={replace:(list,refresh=true)=>{products=list;if(refresh){renderProducts();renderProductDropdowns();}},setDocs:list=>database=list,getDocs:()=>database};`);
  const change=(el,value)=>{el.value=value;el.dispatchEvent(new w.Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};
  const submit=()=>{$('add-product-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));};
@@ -30,7 +36,7 @@ async function setup(t,initial=seed){
 test('catalog filters combine item use, code category and search while legacy items remain explicitly unclassified',async t=>{
  const e=await setup(t),{w,$,change,listed}=e;assert.equal(listed().length,4);assert.equal($('new-prod-usage').value,'');assert.equal($('new-prod-usage').selectedOptions[0].textContent,'โปรดระบุ');
  assert.match($('products-table-body').textContent,/ยังไม่ระบุประเภท/);change($('product-usage-filter'),'sale');assert.deepEqual(listed().sort(),['both','sale']);
- change($('product-usage-filter'),'purchase');assert.deepEqual(listed().sort(),['both','purchase']);change($('product-category-filter'),'P');assert.deepEqual(listed(),['purchase']);
+ change($('product-usage-filter'),'purchase');assert.deepEqual(listed().sort(),['both','purchase']);change($('product-category-filter'),'B');assert.deepEqual(listed(),['purchase']);
  change($('product-search'),'ซองบรรจุ');assert.deepEqual(listed(),['purchase']);change($('product-search'),'ไม่พบ');assert.equal(listed().length,0);assert.equal($('products-table-body').querySelector('td').colSpan,6);
  change($('product-search'),'');change($('product-category-filter'),'');change($('product-usage-filter'),'unclassified');assert.deepEqual(listed(),['legacy']);
  change($('product-usage-filter'),'both');assert.deepEqual(listed(),['both']);w.toggleLanguage();assert.equal($('product-usage-filter').value,'both');assert.match($('products-table-body').textContent,/Buy and sell/);
@@ -42,7 +48,8 @@ test('purchase classification saves with unit and VAT confirmation and reopens f
  const second=await setup(t,[...e.records.values()]);second.w.editProduct('sale');assert.equal(second.$('new-prod-usage').value,'purchase');
  second.w.cancelEditProduct();assert.equal(second.$('new-prod-usage').value,'');
  change($('new-prod-code'),'RAW-NEW');change($('new-prod-name'),'ขิงซื้อเข้าใหม่');change($('new-prod-unit'),'KG');change($('new-prod-price'),'12.50');change($('new-prod-usage'),'purchase');e.submit();await e.confirm();
- assert.equal(e.writes.at(-1).data.tradeUsage,'purchase');assert.equal(e.writes.at(-1).data.price,12.5);assert.notEqual(e.writes.at(-1).data.id,'sale');
+ const added=e.writes.filter(x=>x.ref.startsWith('products/')).at(-1).data;
+ assert.equal(added.tradeUsage,'purchase');assert.equal(added.price,12.5);assert.equal(added.code,'B-0001');assert.notEqual(added.id,'sale');
 });
 test('sales and purchase document choices use the matching catalog plus shared and legacy items, preserving draft rows on a type switch',async t=>{
  const e=await setup(t),{w,$,change,choices}=e;w.switchTab('create-doc');$('items-container').innerHTML='';w.addLineItem();
@@ -79,11 +86,61 @@ test('new and legacy records require an explicit item use and a missing choice p
 });
 test('each save shows a dedicated item-use confirmation and the next new record resets to Please select',async t=>{
  const e=await setup(t),{w,$,change}=e;
+ const productWrites=()=>e.writes.filter(x=>x.ref.startsWith('products/'));
  for(const [i,usage,label]of [[1,'sale','สินค้าขาย'],[2,'purchase','สินค้าซื้อ'],[3,'both','สินค้าทั้งซื้อทั้งขาย']]){
   assert.equal($('new-prod-usage').value,'');change($('new-prod-code'),'TEST-CONFIRM-'+i);change($('new-prod-name'),'สินค้าทดสอบ '+i);change($('new-prod-price'),'25');change($('new-prod-usage'),usage);
-  e.submit();assert.ok($('product-unit-dialog').open);assert.equal($('product-unit-usage-value').textContent,label);assert.match($('product-unit-title').textContent,/ประเภทใช้งาน/);assert.equal(e.writes.length,i-1);
-  $('product-unit-cancel').click();assert.equal(e.writes.length,i-1);assert.equal($('new-prod-usage').value,usage);
-  e.submit();assert.ok($('product-unit-dialog').open);await e.confirm();assert.equal(e.writes.length,i);assert.equal(e.writes.at(-1).data.tradeUsage,usage);assert.equal($('new-prod-usage').value,'');assert.equal($('new-prod-usage').selectedOptions[0].textContent,'โปรดระบุ');
+  e.submit();assert.ok($('product-unit-dialog').open);assert.equal($('product-unit-usage-value').textContent,label);assert.match($('product-unit-title').textContent,/ประเภทใช้งาน/);assert.equal(productWrites().length,i-1);
+  $('product-unit-cancel').click();assert.equal(productWrites().length,i-1);assert.equal($('new-prod-usage').value,usage);
+  e.submit();assert.ok($('product-unit-dialog').open);await e.confirm();assert.equal(productWrites().length,i);assert.equal(productWrites().at(-1).data.tradeUsage,usage);assert.equal($('new-prod-usage').value,'');assert.equal($('new-prod-usage').selectedOptions[0].textContent,'โปรดระบุ');
  }
- w.editProduct('sale');e.submit();assert.ok($('product-unit-dialog').open);assert.equal($('product-unit-usage-value').textContent,'สินค้าขาย');assert.equal(e.writes.length,3);$('product-unit-cancel').click();assert.equal(e.writes.length,3);
+ w.editProduct('sale');e.submit();assert.ok($('product-unit-dialog').open);assert.equal($('product-unit-usage-value').textContent,'สินค้าขาย');assert.equal(productWrites().length,3);$('product-unit-cancel').click();assert.equal(productWrites().length,3);
+});
+test('choosing the B prefix immediately selects purchase use and saves after the normal confirmation',async t=>{
+ const e=await setup(t),{$,change}=e;
+ change($('new-prod-prefix'),'P');
+ assert.equal($('new-prod-usage').value,'');
+ change($('new-prod-usage'),'both');
+ change($('new-prod-name'),'ซองซื้อเข้าใหม่');
+ change($('new-prod-price'),'25');
+ change($('new-prod-prefix'),'B');
+ assert.equal($('new-prod-code').value,'B-0001');
+ assert.equal($('new-prod-usage').value,'purchase');
+ assert.equal($('new-prod-usage').selectedOptions[0].textContent,'สินค้าซื้อ');
+ assert.equal($('new-prod-name').value,'ซองซื้อเข้าใหม่');
+ assert.equal(e.writes.length,0);
+ e.submit();assert.ok($('product-unit-dialog').open);
+ assert.equal($('product-unit-usage-value').textContent,'สินค้าซื้อ');
+ await e.confirm();
+ const saved=e.writes.find(x=>x.ref.startsWith('products/')).data;
+ assert.equal(saved.code,'B-0001');assert.equal(saved.tradeUsage,'purchase');assert.equal(saved.price,25);
+ assert.equal($('new-prod-prefix').value,'');assert.equal($('new-prod-usage').value,'');
+});
+test('existing purchase items get B codes after review; original references and VAT rules are preserved',async t=>{
+ const e=await setup(t,[...seed,{id:'purchase-g',code:'G-022',name:'วัตถุดิบซื้อเดิมไม่คิด VAT',tradeUsage:'purchase',unit:'KG',price:25,priceBasis:'EXC'}]);
+ const {w,$,change}=e;
+ $('product-b-review').click();assert.ok($('product-b-dialog').open);assert.match($('product-b-list').textContent,/G-022 → B-0001/);assert.match($('product-b-list').textContent,/P-002 → B-0002/);
+ $('product-b-cancel').click();assert.equal(e.writes.length,0);
+ $('product-b-review').click();$('product-b-confirm').click();await tick();await tick();
+ const saved=e.records.get('products/purchase-g');assert.equal(saved.code,'G-022');assert.equal(saved.purchaseCode,'B-0001');assert.equal(saved.priceBasis,'EXC');
+ assert.equal(e.records.get('products/both').purchaseCode,undefined);
+ assert.equal(e.records.get('products/purchase').purchaseCode,'B-0002');assert.equal(e.records.get('settings/purchase-product-code-series').highWater,2);
+ assert.ok($('product-b-review').classList.contains('hidden'));
+ change($('product-search'),'G-022');assert.deepEqual(e.listed(),['purchase-g']);
+ change($('product-search'),'B-0001');assert.deepEqual(e.listed(),['purchase-g']);assert.match($('products-table-body').textContent,/รหัสเดิม: G-022/);
+ w.switchTab('create-doc');change($('doc-type'),'PO');w.checkDocType();$('items-container').innerHTML='';w.addLineItem();
+ $('items-container').querySelector('[data-product-option="purchase-g"]').click();
+ assert.equal($('items-container').querySelector('.item-code').value,'B-0001');
+ change($('global-price-basis'),'EXC');w.applyDocumentPriceBasis();
+ assert.equal($('live-vat').textContent,'0.00');assert.equal($('live-grand').textContent,'25.00');
+ $('items-container').querySelector('[data-product-option="purchase"]').click();
+ assert.equal($('items-container').querySelector('.item-code').value,'B-0002');
+ assert.equal($('live-vat').textContent,'0.14');assert.equal($('live-grand').textContent,'2.14');
+});
+test('the B review refuses a stale plan instead of writing a partial mapping',async t=>{
+ const e=await setup(t),{$}=e;
+ $('product-b-review').click();
+ e.records.get('products/purchase').tradeUsage='both';
+ $('product-b-confirm').click();await tick();await tick();
+ assert.equal(e.writes.length,0);assert.equal(e.records.get('products/purchase').purchaseCode,undefined);
+ assert.match($('custom-alert-msg').textContent,/ตรวจรายการใหม่/);
 });
