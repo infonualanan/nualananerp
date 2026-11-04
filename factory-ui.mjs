@@ -1,5 +1,5 @@
 import {createFactoryStore} from './factory-firestore.mjs';
-import {emptyFactoryData,FACTORY_COLLECTIONS,PROCESS_FIELDS,VEHICLE_FIELDS,quantity,mills,day,available,allocateMaterials,applyFactoryAction,ensure} from './factory-core.mjs';
+import {emptyFactoryData,FACTORY_COLLECTIONS,PROCESS_FIELDS,VEHICLE_FIELDS,quantity,mills,day,available,stockTotals,unitLabel,inspectionUnits,allocateMaterials,applyFactoryAction,ensure} from './factory-core.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const thDate=d=>d?new Date(d.slice(0,10)+'T12:00:00+07:00').toLocaleDateString('th-TH',{timeZone:'Asia/Bangkok'}):'';
 const qInput=n=>String(n/1000);
@@ -13,11 +13,12 @@ export function createFactoryController(host,api){
  const $=id=>host.querySelector('#'+id),today=()=>api.today(),job=()=>data.jobs.find(j=>j.id===jobId),lot=()=>data.lots.find(l=>l.id===lotId);
  const by=(c,id)=>data[c].find(r=>r.id===id),item=id=>by('items',id);
  const prefix='fx-';
+ const codeFields=new Set(['item-code','recipe-revision','receive-ref','receive-lot','receive-supplierlot','produce-lot','ship-ref']);
  host.innerHTML='<div class="fx-header"><div><h2>งานผลิต คลัง และ QA</h2><p>ข้อมูลบัญชี ERP ปัจจุบัน · LOT และรายการรับ–จ่ายชุดเดียวกัน</p></div><button type="button" id="fx-reload">อัปเดตข้อมูล</button></div><nav class="fx-nav" aria-label="เมนูงานโรงงาน"></nav><p id="fx-message" role="status" aria-live="polite"></p><div class="fx-selection"><label>งานผลิต<select id="fx-job"></select></label><div id="fx-job-summary"></div></div><section id="fx-review" class="fx-review" hidden></section><div id="fx-page"></div>';
  const pages={setup:'รายการคลัง',recipes:'สูตรผลิต',receive:'รับเข้า / ยอดยกมา',stock:'สต๊อก / ประวัติ LOT',order:'ใบสั่งผลิต',issue:'เบิก / ชั่ง',actual:'บันทึกผลิต',incoming:'QA ตรวจรับ',quality:'QA สินค้าสำเร็จรูป',shipping:'ขนส่ง',forms:'ฟอร์มบริษัท'};
  function message(text,error=false){if(!alive)return;$('fx-message').textContent=text;$('fx-message').classList.toggle('fx-error',error);}
  const opts=(list,label,selected='')=>'<option value="">— เลือก —</option>'+list.map(r=>'<option value="'+esc(r.id)+'"'+(r.id===selected?' selected':'')+'>'+esc(label(r))+'</option>').join('');
- function input(id,label,type='text',value='',extra=''){return '<label class="fx-label">'+esc(label)+'<input id="'+prefix+id+'" type="'+type+'" value="'+esc(value)+'" '+(type==='number'?'step="any" min="0" inputmode="decimal"':'')+' '+(type==='text'?'maxlength="240"':'')+' '+extra+'></label>';}
+ function input(id,label,type='text',value='',extra=''){return '<label class="fx-label">'+esc(label)+'<input id="'+prefix+id+'" type="'+type+'" value="'+esc(value)+'" '+(type==='number'?'step="any" min="0" inputmode="decimal"':'')+' '+(type==='text'&&!codeFields.has(id)?'maxlength="240"':'')+' '+extra+'></label>';}
  function select(id,label,options){return '<label class="fx-label">'+esc(label)+'<select id="'+prefix+id+'">'+options+'</select></label>';}
  const choices=arr=>arr.map(([v,l])=>'<option value="'+esc(v)+'">'+esc(l)+'</option>').join('');
  const check=(id,label)=>'<label class="fx-check"><input type="checkbox" id="'+prefix+id+'"><span>'+esc(label)+'</span></label>';
@@ -39,15 +40,30 @@ export function createFactoryController(host,api){
   host.querySelector('.fx-nav').innerHTML=Object.entries(pages).map(([id,name])=>'<button type="button" data-fx-route="'+id+'" aria-pressed="'+String(route===id)+'">'+name+'</button>').join('');
   if(!loaded){$('fx-page').innerHTML='<p class="fx-empty">กำลังโหลดข้อมูลโรงงานจาก Firebase…</p>';buttons();return;}
   const renderers={setup:setupPage,recipes:recipePage,receive:receivePage,stock:stockPage,order:orderPage,issue:issuePage,actual:actualPage,incoming:()=>inspectionPage(false),quality:()=>inspectionPage(true),shipping:shippingPage,forms:formsPage};
-  $('fx-page').innerHTML=renderers[route]();restore();if(['incoming','quality'].includes(route)&&$('fx-inspect-lot'))$('fx-inspect-lot').value=lotId;if(route==='forms'){$('fx-form-type').value=docType;updateFormItems();try{generatePaper();}catch(error){$('fx-paper-host').textContent=error.message;paperReady=false;}}renderReview();buttons();
+  $('fx-page').innerHTML=renderers[route]();restore();if(route==='setup')updateCatalog();if(['incoming','quality'].includes(route)&&$('fx-inspect-lot'))$('fx-inspect-lot').value=lotId;if(route==='forms'){$('fx-form-type').value=docType;updateFormItems();try{generatePaper();}catch(error){$('fx-paper-host').textContent=error.message;paperReady=false;}}renderReview();buttons();
  }
  function empty(text,view,label){return '<div class="fx-empty"><p>'+esc(text)+'</p>'+go(view,label)+'</div>';}
+ const searchText=v=>String(v??'').normalize('NFKC').toLowerCase().trim();
+ function updateCatalog(){
+  const picker=$('fx-catalog');if(!picker)return;
+  const selected=picker.value,terms=searchText(val('catalog-search')).split(/\s+/).filter(Boolean);
+  const products=api.getProducts(),matches=products.filter(p=>terms.every(term=>searchText([p.code,p.name,p.unit,unitLabel(p.unit)].join(' ')).includes(term)));
+  const current=products.find(p=>p.id===selected),options=current&&!matches.includes(current)?[current,...matches]:matches;
+  picker.innerHTML=opts(options,p=>p.code+' · '+p.name+' ('+(p.unit||'ไม่ระบุหน่วย')+')',selected);
+  $('fx-catalog-status').textContent=matches.length?'พบ '+matches.length+' รายการ':'ไม่พบสินค้า สามารถกรอกรายการคลังเองได้';
+ }
+ function suggestPrecision(){
+  const unit=unitLabel(val('item-unit'));
+  if(unit==='กิโลกรัม'||unit==='ชิ้น')$('fx-item-precision').value=unit==='กิโลกรัม'?'3':'0';
+ }
  function setupPage(){
   let h=form('item-form','เพิ่มรายการคลัง / เชื่อมรหัสสินค้าเดิม',
+   input('catalog-search','พิมพ์ค้นสินค้าจากฐานข้อมูล','search','','placeholder="รหัส ชื่อ หรือหน่วยสินค้า" aria-controls="fx-catalog"')+
    select('catalog','ดึงชื่อ รหัส และหน่วยจากฐานข้อมูลสินค้า (ถ้ามี)',opts(api.getProducts(),p=>p.code+' · '+p.name))+
+   '<p id="fx-catalog-status" class="fx-hint fx-wide" role="status"></p>'+
    input('item-code','รหัสรายการคลัง')+input('item-name','ชื่อรายการ')+select('item-kind','ประเภท',choices([['RAW','วัตถุดิบ'],['PACK','บรรจุภัณฑ์'],['FG','สินค้าสำเร็จรูป']]))+
-   input('item-unit','หน่วยคลังหลัก')+select('item-precision','ทศนิยมของหน่วย',choices([['0','จำนวนเต็ม'],['3','ทศนิยมไม่เกิน 3 ตำแหน่ง']]))+
-   select('item-inspection','แบบตรวจรับ',choices([['material','วัตถุดิบ / บรรจุภัณฑ์'],['fresh','วัตถุดิบสด']]))+check('item-analysis','รายการนี้ต้องมีผลวิเคราะห์ / COA อ้างอิง'),
+   input('item-unit','หน่วยคลังหลัก','text','','list="fx-stock-units" placeholder="เช่น กิโลกรัม หรือ ชิ้น"')+'<datalist id="fx-stock-units"><option value="กิโลกรัม"></option><option value="ชิ้น"></option></datalist>'+select('item-precision','ทศนิยมของหน่วย',choices([['0','จำนวนเต็ม'],['3','ทศนิยมไม่เกิน 3 ตำแหน่ง']]))+
+   select('item-inspection','แบบตรวจรับ',choices([['material','วัตถุดิบ / บรรจุภัณฑ์'],['fresh','วัตถุดิบสด']]))+check('item-analysis','รายการนี้ต้องมีผลวิเคราะห์ / COA อ้างอิง')+'<p class="fx-hint fx-wide">แบบตรวจรับรองรับจำนวนตรวจเป็นกิโลกรัม ชิ้น หรือหน่วยคลังของรายการ</p>',
    'บันทึกรายการคลัง');
   h+='<p class="fx-hint">แต่ละรหัสใช้หน่วยคลังเดียว ยอดเก่าไม่ถูกนำมาตัดสต๊อกอัตโนมัติ เริ่มจากรับเข้าจริงหรือยอดยกมาที่ตรวจนับแล้ว</p>';
   return h+table(['รหัส','รายการ','ประเภท','หน่วย'],data.items.map(i=>[esc(i.code),esc(i.name),KIND[i.kind],esc(i.unit)]));
@@ -60,11 +76,13 @@ export function createFactoryController(host,api){
  }
  function receivePage(){
   if(!data.items.length)return empty('ยังไม่มีรายการคลัง เริ่มจากเลือกสินค้าจริงและหน่วยก่อน','setup','เพิ่มรายการคลัง');
-  return form('receive-form','รับเข้า / ตั้งยอดยกมาจากการตรวจนับ',select('receive-item','รายการ',opts(data.items,i=>i.code+' · '+i.name+' ('+i.unit+')'))+input('receive-ref','เลขใบรับภายใน (ไม่ซ้ำ)')+input('receive-lot','LOT ภายใน / รหัสติดตามรับเข้า')+input('receive-supplierlot','LOT ผู้ขาย (ถ้ามี)')+input('receive-supplier','ผู้ขาย / ที่มาของยอดยกมา')+input('receive-date','วันที่รับ / ตรวจนับ','date',today())+input('receive-qty','จำนวนจริงในหน่วยคลัง','number')+input('receive-mfg','MFG (ถ้ามี)','date')+input('receive-exp','EXP (สินค้าสำเร็จรูปต้องระบุ)','date')+check('receive-opening','รายการนี้เป็นยอดยกมาที่ตรวจนับแล้ว')+check('receive-verified','ยืนยันรับของจริง / ตรวจนับจำนวนจริงแล้ว'),'บันทึกรับเข้ากักรอ QA')+'<p class="fx-hint">รับเข้าแล้วเป็นของกัก QA ก่อนอนุมัติใช้หรือจัดส่ง LOT ผู้ขายเก็บแยกจากรหัสติดตามภายใน</p>';
+  return form('receive-form','รับเข้า / ตั้งยอดยกมาจากการตรวจนับ',select('receive-item','รายการ',opts(data.items,i=>i.code+' · '+i.name+' ('+i.unit+')'))+input('receive-ref','เลขใบรับภายใน (เว้นว่างให้ระบบออกให้)')+input('receive-lot','LOT ภายใน (เว้นว่างให้ระบบออกให้)')+input('receive-supplierlot','LOT ผู้ขาย (ถ้ามี)')+input('receive-supplier','ผู้ขาย / ที่มาของยอดยกมา')+input('receive-date','วันที่รับ / ตรวจนับ','date',today())+input('receive-qty','จำนวนจริงในหน่วยคลัง','number')+input('receive-mfg','MFG (ถ้ามี)','date')+input('receive-exp','EXP (สินค้าสำเร็จรูปต้องระบุ)','date')+check('receive-opening','รายการนี้เป็นยอดยกมาที่ตรวจนับแล้ว')+check('receive-verified','ยืนยันรับของจริง / ตรวจนับจำนวนจริงแล้ว'),'บันทึกรับเข้ากักรอ QA')+'<p class="fx-hint">บันทึกรับตามวันที่จริงได้โดยไม่ต้องไล่เลขหรือวันที่ แต่ละรอบจะบวกเข้ายอดคงเหลือของรายการและแยกกัก QA หากรับ LOT ผู้ขายเดิมหลายรอบ ให้ใส่เลขเดิมในช่อง LOT ผู้ขาย</p>';
  }
  function lotOptions(fgOnly=null){return opts(data.lots.filter(l=>fgOnly===null||((l.item.kind==='FG')===fgOnly)),l=>l.code+' · '+l.item.name+' · '+quantity(l.qtyMills)+' '+l.item.unit);}
  function stockPage(){
-  let h=table(['รายการ / หน่วย','LOT','คงเหลือจริง','จองแล้ว','ใช้ / ส่งได้','QA'],data.lots.map(l=>[esc(l.item.name)+'<br>'+esc(l.item.unit),esc(l.code),quantity(l.qtyMills),quantity(l.reservedMills),quantity(available(l,today())),esc(l.exp&&l.exp<today()?'หมดอายุ':QA[l.qa])+'<br><button type="button" data-fx-lot="'+esc(l.id)+'">'+(l.item.kind==='FG'?'ตรวจสินค้าสำเร็จ':'ตรวจรับ')+'</button>']));
+  const totals=stockTotals(data.lots,today());
+  let h=data.lots.length?'<h3>ยอดรวมคงเหลือตามรายการ</h3>'+table(['รหัส / รายการ','หน่วย','คงเหลือจริงรวม','จองแล้ว','ใช้ / ส่งได้'],data.items.filter(i=>totals.has(i.id)).map(i=>{const t=totals.get(i.id);return [esc(i.code)+' · '+esc(i.name),esc(i.unit),quantity(t.qtyMills),quantity(t.reservedMills),quantity(t.availableMills)];}))+'<h3>คงเหลือแยก LOT</h3>':'';
+  h+=table(['รายการ / หน่วย','LOT','คงเหลือจริง','จองแล้ว','ใช้ / ส่งได้','QA'],data.lots.map(l=>[esc(l.item.name)+'<br>'+esc(l.item.unit),esc(l.code),quantity(l.qtyMills),quantity(l.reservedMills),quantity(available(l,today())),esc(l.exp&&l.exp<today()?'หมดอายุ':QA[l.qa])+'<br><button type="button" data-fx-lot="'+esc(l.id)+'">'+(l.item.kind==='FG'?'ตรวจสินค้าสำเร็จ':'ตรวจรับ')+'</button>']));
   if(!data.lots.length)return h+empty('ยังไม่มีข้อมูลรับเข้าจริง / ยอดยกมา','receive','ไปบันทึกรับเข้า');
   h+=form('adjust-form','ปรับยอดตรวจนับ / จ่ายออกพร้อมหลักฐาน',select('adjust-lot','LOT',lotOptions())+select('adjust-kind','ประเภทรายการ',choices([['adjust','ปรับเป็นยอดตรวจนับจริง'],['stockOut','จ่ายออก / คืนผู้ขาย / ทำลาย'],['quarantine','กักกัน LOT / หยุดใช้และจัดส่ง']]))+input('adjust-qty','ยอดนับใหม่ / จำนวนจ่ายออก (กักกันไม่ต้องกรอก)','number')+note('adjust-note','เหตุผลและหลักฐานอ้างอิง')+check('adjust-verified','ยืนยันตรวจนับ / จ่ายของจริงแล้ว'),'ตรวจสอบรายการ');
   if(data.shipments.length)h+=form('return-form','รับคืนจากลูกค้า',select('return-shipment','ใบส่งของ',opts(data.shipments,s=>s.reference+' · '+s.customer))+select('return-lot','LOT ที่เคยส่ง',opts(data.shipments.flatMap(s=>s.lines.map(l=>({...l,id:s.id+'|'+l.lotId}))),l=>l.code+' · คืนได้ '+quantity(l.qtyMills-l.returnedMills)+' '+l.item.unit))+input('return-date','วันที่รับคืน','date',today())+input('return-qty','จำนวนรับคืนจริง','number')+note('return-note','เหตุผลรับคืน')+check('return-verified','ยืนยันรับคืนจริงแล้ว'),'รับคืนเข้ากักรอ QA');
@@ -102,10 +120,10 @@ export function createFactoryController(host,api){
   if(!lots.length)return '<p class="fx-empty">ยังไม่มี LOT '+(fg?'สินค้าสำเร็จรูป':'วัตถุดิบ / บรรจุภัณฑ์')+' รอ QA</p>';
   let selected=lots.find(l=>l.id===lotId)||lots[0];lotId=selected.id;
   let body=select('inspect-lot','LOT รอตรวจ',opts(lots,l=>l.code+' · '+l.item.name,lotId))+input('inspect-date','วันที่ตรวจจริง','date',today())+select('inspect-decision','ผลพิจารณา',choices([['held','กักไว้ / รอแก้ไข'],['released','ผ่าน / อนุมัติใช้หรือจัดส่ง'],['rejected','ไม่ผ่าน / กักไว้']]));
-  if(fg)body+=check('inspect-package','บรรจุภัณฑ์ผ่านสเปก')+check('inspect-label','ฉลากถูกต้อง')+check('inspect-code','MFG / EXP / LOT ถูกต้อง')+input('inspect-sample','จำนวนสุ่มซีลจริง (จำนวนเต็ม)','number')+select('inspect-seal','ผลซีลตามเกณฑ์ที่อนุมัติ',choices([['','ยังไม่ตรวจ'],['pass','ผ่าน'],['fail','ไม่ผ่าน']]))+input('inspect-plan','อ้างอิงแผนสุ่มที่ QA อนุมัติ');
-  else body+=check('inspect-clean','ความสะอาดผ่านเกณฑ์')+check('inspect-foreign','สิ่งปลอมปนผ่านเกณฑ์')+check('inspect-spec','ข้อกำหนดอื่นตามสเปกผ่าน')+check('inspect-avl','ตรวจสอบผู้ขายตาม AVL แล้ว (วัตถุดิบสด)')+input('inspect-analysis','เอกสารผลวิเคราะห์ / COA อ้างอิง');
+  if(fg)body+=check('inspect-package','บรรจุภัณฑ์ผ่านสเปก')+check('inspect-label','ฉลากถูกต้อง')+check('inspect-code','MFG / EXP / LOT ถูกต้อง')+input('inspect-sample','จำนวนสุ่มซีลจริง (ชิ้น)','number')+select('inspect-seal','ผลซีลตามเกณฑ์ที่อนุมัติ',choices([['','ยังไม่ตรวจ'],['pass','ผ่าน'],['fail','ไม่ผ่าน']]))+input('inspect-plan','อ้างอิงแผนสุ่มที่ QA อนุมัติ');
+  else body+=input('inspect-sample','จำนวนที่ตรวจ (ถ้าบันทึก)','number')+select('inspect-unit','หน่วยที่ตรวจรับ',choices(inspectionUnits(selected.item).map(u=>[u,u])))+check('inspect-clean','ความสะอาดผ่านเกณฑ์')+check('inspect-foreign','สิ่งปลอมปนผ่านเกณฑ์')+check('inspect-spec','ข้อกำหนดอื่นตามสเปกผ่าน')+check('inspect-avl','ตรวจสอบผู้ขายตาม AVL แล้ว (วัตถุดิบสด)')+input('inspect-analysis','เอกสารผลวิเคราะห์ / COA อ้างอิง');
   body+=note('inspect-note','ผลตรวจ / การแก้ไข / เหตุผล')+check('inspect-verified','ยืนยันตรวจและพิจารณาผลจริงแล้ว');
-  return '<p class="fx-hint">'+esc(selected.item.name)+' · คงเหลือ '+quantity(selected.qtyMills)+' '+esc(selected.item.unit)+' · '+esc(selected.exp&&selected.exp<today()?'หมดอายุ':QA[selected.qa])+'</p>'+form('inspect-form','บันทึกผลตรวจและอนุมัติ LOT',body,'ตรวจผลก่อนยืนยัน')+table(['วันที่','LOT / ผลพิจารณา','ผลตรวจ / ผู้บันทึก'],data.inspections.filter(r=>(r.item.kind==='FG')===fg).slice().reverse().map(r=>[thDate(r.date),esc(r.lotCode)+' / '+QA[r.decision],esc(r.note)+'<br>'+esc(r.actor.name)]));
+  return '<p class="fx-hint">'+esc(selected.item.code+' · '+selected.item.name)+' · คงเหลือ '+quantity(selected.qtyMills)+' '+esc(unitLabel(selected.item.unit))+' · '+esc(selected.exp&&selected.exp<today()?'หมดอายุ':QA[selected.qa])+'</p>'+form('inspect-form','บันทึกผลตรวจและอนุมัติ LOT',body,'ตรวจผลก่อนยืนยัน')+table(['วันที่','LOT / ผลพิจารณา','จำนวนตรวจ / หน่วย','ผลตรวจ / ผู้บันทึก'],data.inspections.filter(r=>(r.item.kind==='FG')===fg).slice().reverse().map(r=>[thDate(r.date),esc(r.lotCode)+' / '+QA[r.decision],sampleText(r),esc(r.note)+'<br>'+esc(r.actor.name)]));
  }
  function shippingPage(){
   const j=job();if(!j)return needJob();
@@ -116,6 +134,7 @@ export function createFactoryController(host,api){
   body+='<h3 class="fx-wide">ตรวจเช็ครถก่อนขนส่ง</h3>'+VEHICLE_FIELDS.map(f=>select('ship-check-'+f.id,f.label,choices([['','ยังไม่ตรวจ'],['pass','ผ่าน'],['fail','ไม่ผ่าน'],['fixed','แก้ไขแล้ว / ผ่านตรวจซ้ำ']]))).join('')+note('ship-note','หมายเหตุ / รายละเอียดแก้ไข')+check('ship-verified','ยืนยันตรวจรถครบ และจ่ายสินค้าจริงตามจำนวน');
   return form('ship-form','จัดส่งจาก '+j.docNo+' / '+j.customer,body,'ตรวจและยืนยันจ่ายสินค้า')+shipmentTable(j);
  }
+ const sampleText=r=>r.sampleCount>0?esc(r.sampleCount+' '+(r.sampleUnit||(r.item.kind==='FG'?'ชิ้น':unitLabel(r.item.unit)))):'—';
  const shipmentTable=j=>table(['ใบส่งของ','วันที่','จำนวน / LOT'],data.shipments.filter(s=>s.jobId===j.id).map(s=>[esc(s.reference),thDate(s.date),s.lines.map(l=>quantity(l.qtyMills)+' '+esc(l.item.unit)+' / '+esc(l.code)).join('<br>')]));
  const formOptions=[['PC03','FM-PC-03 · ใบสั่งผลิต'],['PC04','FM-PC-04 · ชั่งวัตถุดิบ'],['PC02','FM-PC-02 · รับ–จ่ายสินค้าสำเร็จรูป'],['RM03','FM-RM-03 · รับ–จ่ายวัตถุดิบ / บรรจุภัณฑ์'],['PC09','FM-PC-09 · ล้าง / เตรียม'],['PC10','FM-PC-10 · อบ'],['PC11','FM-PC-11 · เชื่อม / คลุก'],['TS01','FM-TS-01 · ขนส่ง'],['QA','ทะเบียนผลตรวจ QA']];
  function formsPage(){
@@ -147,12 +166,17 @@ export function createFactoryController(host,api){
    const second='<h3>รายการที่จัดส่งสินค้า</h3>'+table(['สถานที่ส่ง','รายการ','จำนวน','เลข LOT สินค้า','เลข INV','หมายเหตุ','พนักงาน'],ss.flatMap(s=>s.lines.map(l=>[esc(s.destination),esc(l.item.name),quantity(l.qtyMills)+' '+esc(l.item.unit),esc(l.code),esc(s.invoice),esc(s.note),esc(s.driver)])));
    return h.replace('<p class="fx-sign">',second+'<p class="fx-sign">');}).join('');
   }
-  return paper('ทะเบียนผลตรวจ QA',['วันที่','รายการ / LOT','ผลพิจารณา','ผลตรวจ / หลักฐาน','ผู้ตรวจ'],data.inspections.filter(r=>!j||r.sourceJob===j.id).map(r=>[thDate(r.date),esc(r.item.name)+' / '+esc(r.lotCode),QA[r.decision],esc(r.note)+'<br>'+esc(r.analysisRef||r.samplingPlan),esc(r.actor.name)]),'ทะเบียนแนบผลตรวจ · รอ QA ยืนยันแม่แบบและรหัสเอกสาร',j?.docNo||'',true);
+  return paper('ทะเบียนผลตรวจ QA',['วันที่','รายการ / LOT','จำนวนตรวจ / หน่วย','ผลพิจารณา','ผลตรวจ / หลักฐาน','ผู้ตรวจ'],data.inspections.filter(r=>!j||r.sourceJob===j.id).map(r=>[thDate(r.date),esc(r.item.name)+' / '+esc(r.lotCode),sampleText(r),QA[r.decision],esc(r.note)+'<br>'+esc(r.analysisRef||r.samplingPlan),esc(r.actor.name)]),'ทะเบียนแนบผลตรวจ · รอ QA ยืนยันแม่แบบและรหัสเอกสาร',j?.docNo||'',true);
  }
  function renderReview(){
   const box=$('fx-review');box.hidden=!pending;if(!pending)return;
   const event=pending.preview.event,changes=pending.preview.writes.filter(w=>w.collection==='lots');
-  box.innerHTML='<h3>ตรวจสอบก่อนบันทึกจริง</h3><p>'+esc(event.description)+'</p>'+table(['LOT','คงเหลือหลังรายการ','จองหลังรายการ','สถานะ QA'],changes.map(w=>[esc(w.data.code),quantity(w.data.qtyMills)+' '+esc(w.data.item.unit),quantity(w.data.reservedMills),QA[w.data.qa]]))+'<div class="fx-actions"><button type="button" id="fx-review-cancel">กลับไปแก้ไข</button><button type="button" class="fx-primary" id="fx-review-confirm">ยืนยันบันทึกจริง</button></div>';
+  let cumulative='';
+  if(pending.action.kind==='receive'){
+   const l=changes[0]?.data;if(l){const before=stockTotals(data.lots,today()).get(l.itemId)?.qtyMills||0;const unit=esc(l.item.unit);
+   cumulative='<p class="fx-hint">ยอดรวม '+esc(l.item.name)+' ก่อนรับ '+quantity(before)+' '+unit+' + รับครั้งนี้ '+quantity(l.qtyMills)+' '+unit+' = <strong>คงเหลือรวม '+quantity(before+l.qtyMills)+' '+unit+'</strong></p>';}
+  }
+  box.innerHTML='<h3>ตรวจสอบก่อนบันทึกจริง</h3><p>'+esc(event.description)+'</p>'+cumulative+table(['LOT','คงเหลือหลังรายการ','จองหลังรายการ','สถานะ QA'],changes.map(w=>[esc(w.data.code),quantity(w.data.qtyMills)+' '+esc(w.data.item.unit),quantity(w.data.reservedMills),QA[w.data.qa]]))+'<div class="fx-actions"><button type="button" id="fx-review-cancel">กลับไปแก้ไข</button><button type="button" class="fx-primary" id="fx-review-confirm">ยืนยันบันทึกจริง</button></div>';
  }
  function collect(formId){
   const j=job(),input={},kind=formId.replace(/^fx-/,'').replace(/-form$/,'');let op=kind;
@@ -166,7 +190,7 @@ export function createFactoryController(host,api){
   if(kind==='produce')Object.assign(input,{jobId:j.id,lotCode:val('produce-lot'),qty:val('produce-qty'),date:val('produce-date'),mfg:val('produce-mfg'),exp:val('produce-exp'),varianceNote:val('produce-note'),verified:checked('produce-verified')});
   if(kind==='cancel')Object.assign(input,{jobId:j.id,note:val('cancel-note')});
   if(kind==='close')Object.assign(input,{jobId:j.id,date:val('close-date'),note:val('close-note'),verified:checked('close-verified'),lines:j.issues.map((i,n)=>({lotId:i.lotId,used:val('close-used-'+n),returned:val('close-return-'+n),scrap:val('close-scrap-'+n)}))});
-  if(kind==='inspect')Object.assign(input,{lotId:val('inspect-lot'),date:val('inspect-date'),decision:val('inspect-decision'),note:val('inspect-note'),sampleQty:val('inspect-sample'),samplingPlan:val('inspect-plan'),analysisRef:val('inspect-analysis'),verified:checked('inspect-verified'),values:{clean:checked('inspect-clean'),foreign:checked('inspect-foreign'),spec:checked('inspect-spec'),avl:checked('inspect-avl'),package:checked('inspect-package'),label:checked('inspect-label'),code:checked('inspect-code'),seal:val('inspect-seal')}});
+  if(kind==='inspect')Object.assign(input,{lotId:val('inspect-lot'),date:val('inspect-date'),decision:val('inspect-decision'),note:val('inspect-note'),sampleQty:val('inspect-sample'),sampleUnit:val('inspect-unit'),samplingPlan:val('inspect-plan'),analysisRef:val('inspect-analysis'),verified:checked('inspect-verified'),values:{clean:checked('inspect-clean'),foreign:checked('inspect-foreign'),spec:checked('inspect-spec'),avl:checked('inspect-avl'),package:checked('inspect-package'),label:checked('inspect-label'),code:checked('inspect-code'),seal:val('inspect-seal')}});
   if(kind==='ship'){const lots=data.lots.filter(l=>l.sourceJob===j.id&&l.item.kind==='FG'&&l.qtyMills>0);Object.assign(input,{jobId:j.id,customer:val('ship-customer'),reference:val('ship-ref'),date:val('ship-date'),time:val('ship-time'),destination:val('ship-destination'),vehicle:val('ship-vehicle'),driver:val('ship-driver'),invoice:val('ship-invoice'),note:val('ship-note'),verified:checked('ship-verified'),checks:Object.fromEntries(VEHICLE_FIELDS.map(f=>[f.id,val('ship-check-'+f.id)])),lines:lots.map((l,n)=>({lotId:l.id,qty:val('ship-line-'+l.id)})).filter(l=>l.qty&&Number(l.qty)!==0)});}
   if(kind==='adjust'){op=val('adjust-kind');Object.assign(input,{lotId:val('adjust-lot'),qty:val('adjust-qty'),note:val('adjust-note'),verified:checked('adjust-verified')});}
   if(kind==='return'){const parts=val('return-lot').split('|');ensure(parts[0]===val('return-shipment'),'LOT ต้องตรงกับใบส่งของที่เลือก');Object.assign(input,{shipmentId:parts[0],lotId:parts[1],qty:val('return-qty'),date:val('return-date'),note:val('return-note'),verified:checked('return-verified')});}
@@ -221,9 +245,10 @@ export function createFactoryController(host,api){
   if(e.target.id==='fx-form-type'){docType=e.target.value;updateFormItems();paperReady=false;buttons();message('แบบฟอร์มเปลี่ยนแล้ว กดดึงข้อมูลลงฟอร์มก่อนพิมพ์');return;}
   if(['fx-form-item','fx-form-start','fx-form-end'].includes(e.target.id)){paperReady=false;buttons();return;}
   if(e.target.id==='fx-order-source'){const source=api.getDocuments().find(d=>d.docNo===e.target.value);if(source){$('fx-order-reference').value=source.docNo;$('fx-order-customer').value=source.customerName||'';}return;}
-  if(e.target.id==='fx-catalog'){const product=api.getProducts().find(p=>p.id===e.target.value);if(product){$('fx-item-code').value=product.code;$('fx-item-name').value=product.name;$('fx-item-unit').value=product.unit;$('fx-item-kind').value='FG';}}
+  if(e.target.id==='fx-item-unit'){suggestPrecision();return;}
+  if(e.target.id==='fx-catalog'){const product=api.getProducts().find(p=>p.id===e.target.value);if(product){$('fx-item-code').value=product.code;$('fx-item-name').value=product.name;$('fx-item-unit').value=product.unit||'';suggestPrecision();$('fx-item-kind').value='FG';}}
  };
- const inputHandler=e=>{if(['fx-form-start','fx-form-end'].includes(e.target.id)){paperReady=false;buttons();message('ช่วงวันที่เปลี่ยนแล้ว กดดึงข้อมูลลงฟอร์มก่อนพิมพ์');}};
+ const inputHandler=e=>{if(e.target.id==='fx-catalog-search')updateCatalog();if(['fx-form-start','fx-form-end'].includes(e.target.id)){paperReady=false;buttons();message('ช่วงวันที่เปลี่ยนแล้ว กดดึงข้อมูลลงฟอร์มก่อนพิมพ์');}};
  host.addEventListener('click',click);host.addEventListener('submit',submitHandler);host.addEventListener('change',change);
  host.addEventListener('input',inputHandler);
  if(api.watchMeta)stopMeta=api.watchMeta(r=>{if(!alive||!loaded)return;if((r?.revision||0)>(meta.revision||0)){stale=true;buttons();message('มีข้อมูลใหม่จากอีกเครื่อง กดอัปเดตข้อมูลก่อนทำรายการ');}},e=>message(e.message,true));

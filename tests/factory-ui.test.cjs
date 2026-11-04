@@ -62,3 +62,32 @@ test('report filters disable stale printing and restored periods match the regen
  await e.open('stock');await e.open('forms');assert.equal(e.$('form-start').value,'2026-10-30');rows=[...e.d.querySelectorAll('#fx-paper-host tbody tr')].map(r=>[...r.cells].map(c=>c.textContent));assert.equal(rows.length,1);assert.equal(rows[0][4],'50');
  e.set('form-type','PC02','change');assert.equal(e.$('form-item').querySelectorAll('option').length,2);assert.equal(e.$('form-item').querySelector('option[value="'+e.seed.fg+'"]').textContent.includes('P001'),true);
 });
+test('catalog search accepts code, name and unit, then fills the selected record without changing its unit',async t=>{
+ const e=await setup(t);
+ e.f.api.getProducts=()=>[{id:'raw1',code:'R-'+('AB'.repeat(40)),name:'ขิงสดทดลอง',unit:'KG'},{id:'other',code:'P2',name:'ถุงทดสอบ',unit:'ชิ้น'}];
+ e.controller.refreshCatalog();
+ e.set('catalog-search','ขิงสด กิโลกรัม');
+ assert.equal(e.$('catalog').options.length,2);
+ e.set('catalog','raw1','change');
+ assert.equal(e.$('item-code').value,'R-'+('AB'.repeat(40)));
+ assert.equal(e.$('item-name').value,'ขิงสดทดลอง');
+ assert.equal(e.$('item-unit').value,'KG');
+ assert.equal(e.$('item-precision').value,'3');
+ e.set('catalog-search','ไม่พบรายการนี้');
+ assert.match(e.$('catalog-status').textContent,/ไม่พบสินค้า/);
+ assert.equal(e.$('catalog').value,'raw1');
+});
+test('backdated receipt review, warehouse total and stock card agree, with QA units shown per record',async t=>{
+ const e=await setup(t,true),raw=e.seed.raw;
+ await e.open('receive');
+ e.set('receive-item',raw);e.set('receive-supplier','ผู้ขายทดสอบ');e.set('receive-date','2026-10-28');e.set('receive-qty','7.25');e.tick('receive-verified');
+ e.submit('receive-form');assert.match(e.$('review').textContent,/ก่อนรับ 50 กก\. \+ รับครั้งนี้ 7\.25 กก\. = คงเหลือรวม 57\.25 กก\./);
+ await e.confirm();const lotId=e.controller.lastResult.id;
+ await e.open('stock');const totalRow=e.$('page').querySelector('tbody tr');assert.match(totalRow.textContent,/57\.25/);
+ await e.open('forms');e.set('form-type','RM03','change');e.set('form-item',raw,'change');e.$('generate-form').click();
+ const rows=[...e.$('paper-host').querySelectorAll('tbody tr')];assert.equal(rows.at(-1).cells[4].textContent,'57.25');
+ await e.open('incoming');e.set('inspect-lot',lotId,'change');
+ assert.deepEqual([...e.$('inspect-unit').options].map(o=>o.value),['กิโลกรัม','ชิ้น']);
+ e.set('inspect-unit','ชิ้น');e.set('inspect-sample','2');e.set('inspect-note','ตรวจตัวอย่าง');e.submit('inspect-form');await e.confirm();
+ assert.match(e.$('page').textContent,/2 ชิ้น/);
+});

@@ -3,9 +3,14 @@ export const FACTORY_COLLECTIONS=['items','recipes','lots','jobs','processes','i
 export const emptyFactoryData=()=>Object.fromEntries(FACTORY_COLLECTIONS.map(k=>[k,[]]));
 export const ensure=(ok,message)=>{if(!ok)throw new Error(message);};
 export const clean=(v,label,max=120)=>{const s=String(v??'').normalize('NFKC').trim();ensure(s&&s.length<=max,'กรอก'+label+'ไม่เกิน '+max+' ตัวอักษร');return s;};
-export const code=v=>clean(v,'รหัส',60).toUpperCase();
-export const entityId=v=>encodeURIComponent(code(v));
-export const keyId=(...parts)=>{const s=parts.map(x=>encodeURIComponent(String(x))).join(':');ensure(new TextEncoder().encode(s).length<1400,'เลขอ้างอิงยาวเกินไป');return s;};
+const trimmed=v=>String(v??'').normalize('NFKC').trim();
+export const code=(v,label='รหัส')=>{const s=trimmed(v);ensure(s,'กรุณากรอก'+label);return s.toUpperCase();};
+const checkedId=(id,label)=>{ensure(new TextEncoder().encode(id).length<1500,label+'ยาวเกินขนาดรหัสที่ฐานข้อมูลรองรับ');return id;};
+export const entityId=v=>checkedId(encodeURIComponent(code(v,'รหัสรายการคลัง')),'รหัสรายการคลัง');
+export const keyId=(...parts)=>checkedId(parts.map(x=>encodeURIComponent(String(x))).join(':'),'เลขอ้างอิง / LOT');
+const receiptCodes=(x,id)=>({reference:code(trimmed(x.reference)||'GRN-'+id),lotCode:code(trimmed(x.lotCode)||'LOT-'+id)});
+export const unitLabel=v=>{const s=trimmed(v);const k=s.toLowerCase();return ['กก.','กก','kg','kgs','กิโลกรัม'].includes(k)?'กิโลกรัม':['ชิ้น','pc','pcs','piece','pieces'].includes(k)?'ชิ้น':s;};
+export const inspectionUnits=item=>[...new Set([unitLabel(item.unit),'กิโลกรัม','ชิ้น'].filter(Boolean))];
 export const day=(v,label='วันที่')=>{const s=String(v||'');ensure(/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s,'กรอก'+label+'ให้ถูกต้อง');return s;};
 export function mills(value,precision=3,allowZero=false){
  const s=String(value??'').trim();ensure(/^\d+(\.\d{1,3})?$/.test(s),'จำนวนต้องเป็นเลขบวก รองรับทศนิยมไม่เกิน 3 ตำแหน่ง');
@@ -15,6 +20,11 @@ export function mills(value,precision=3,allowZero=false){
 export const quantity=n=>(n/1000).toLocaleString('th-TH',{maximumFractionDigits:3});
 export const released=(l,today)=>l.qa==='released'&&(!l.exp||l.exp>=today);
 export const available=(l,today)=>released(l,today)?l.qtyMills-l.reservedMills:0;
+export function stockTotals(lots,today){
+ const totals=new Map();
+ for(const l of lots){const t=totals.get(l.itemId)||{qtyMills:0,reservedMills:0,availableMills:0};t.qtyMills+=l.qtyMills;t.reservedMills+=l.reservedMills;t.availableMills+=available(l,today);totals.set(l.itemId,t);}
+ return totals;
+}
 export const labelActor=a=>a.name||a.uid;
 const find=(ctx,c,id)=>ctx[c]?.[id]||null;
 const need=(ctx,c,id,label)=>{const x=find(ctx,c,id);ensure(x,label||'ไม่พบข้อมูล '+c);return x;};
@@ -39,19 +49,19 @@ export function readRefs(action,ctx={},phase=0){
  const x=action.input||{},refs=[],add=(c,id)=>{if(id&&!refs.some(r=>r[0]===c&&r[1]===id))refs.push([c,String(id)]);};
  if(phase===0){
   if(action.kind==='item')add('items',entityId(x.code));
-  if(action.kind==='recipe'){add('items',x.productItemId);(x.materials||[]).forEach(m=>add('items',m.itemId));add('keys',keyId('recipe',x.productItemId,code(x.revision)));}
-  if(action.kind==='receive'){add('items',x.itemId);add('keys',keyId('receipt',code(x.reference)));add('keys',keyId('lot',x.itemId,code(x.lotCode)));}
+  if(action.kind==='recipe'){add('items',x.productItemId);(x.materials||[]).forEach(m=>add('items',m.itemId));add('keys',keyId('recipe',x.productItemId,code(x.revision,' Revision สูตร')));}
+  if(action.kind==='receive'){const {reference,lotCode}=receiptCodes(x,action.requestId);add('items',x.itemId);add('keys',keyId('receipt',reference));add('keys',keyId('lot',x.itemId,lotCode));}
   if(action.kind==='plan'){add('recipes',x.recipeId);(x.candidateLotIds||[]).forEach(id=>add('lots',id));}
   if(['issue','process','produce','cancel','close'].includes(action.kind))add('jobs',x.jobId);
   if(['inspect','adjust','stockOut','quarantine'].includes(action.kind))add('lots',x.lotId);
-  if(action.kind==='ship'){add('jobs',x.jobId);(x.lines||[]).forEach(r=>add('lots',r.lotId));add('keys',keyId('shipment',code(x.reference)));}
+  if(action.kind==='ship'){add('jobs',x.jobId);(x.lines||[]).forEach(r=>add('lots',r.lotId));add('keys',keyId('shipment',code(x.reference,'เลขใบส่งของ / เลขจ่ายภายใน')));}
   if(action.kind==='return')add('shipments',x.shipmentId);
  }
  if(phase===1){
   const job=find(ctx,'jobs',x.jobId),l=find(ctx,'lots',x.lotId);
   if(action.kind==='plan'){const r=find(ctx,'recipes',x.recipeId);if(r){add('items',r.productItemId);r.materials.forEach(m=>add('items',m.itemId));}}
   if(['issue','cancel'].includes(action.kind)&&job)job.allocations.forEach(a=>add('lots',a.lotId));
-  if(action.kind==='produce'&&job)add('keys',keyId('lot',job.product.id,code(x.lotCode)));
+  if(action.kind==='produce'&&job)add('keys',keyId('lot',job.product.id,code(x.lotCode,' LOT ผลผลิต')));
   if(action.kind==='inspect'&&l){add('items',l.itemId);if(l.sourceJob)add('jobs',l.sourceJob);}
   if(action.kind==='close'&&job)job.issues.forEach(i=>add('lots',i.lotId));
  }
@@ -69,24 +79,24 @@ export function applyFactoryAction(action,ctx,meta,actor,today){
  const actualDate=value=>{const d=day(value);ensure(d<=today,'วันที่ทำรายการจริงต้องไม่อยู่ในอนาคต');return d;};
  let result={},description='',physical=[];
  if(action.kind==='item'){
-  const c=code(x.code),key=entityId(c);ensure(!find(ctx,'items',key),'รหัสรายการคลังนี้มีอยู่แล้ว');ensure(['RAW','PACK','FG'].includes(x.kind),'เลือกประเภทสินค้า');
+  const c=code(x.code,'รหัสรายการคลัง'),key=entityId(c);ensure(!find(ctx,'items',key),'รหัสรายการคลังนี้มีอยู่แล้ว');ensure(['RAW','PACK','FG'].includes(x.kind),'เลือกประเภทสินค้า');
   const precision=Number(x.precision);ensure(Number.isInteger(precision)&&precision>=0&&precision<=3,'ทศนิยมต้องเป็น 0–3');
-  const r={id:key,code:c,name:clean(x.name,'ชื่อรายการ'),unit:clean(x.unit,'หน่วย',25),kind:x.kind,precision,productCode:String(x.productCode||'').slice(0,60),needsAnalysis:!!x.needsAnalysis||x.inspection==='fresh',inspection:x.inspection==='fresh'?'fresh':'material',createdBy:who,createdAt:now};
+  const r={id:key,code:c,name:clean(x.name,'ชื่อรายการ'),unit:clean(x.unit,'หน่วย',25),kind:x.kind,precision,productCode:trimmed(x.productCode),needsAnalysis:!!x.needsAnalysis||x.inspection==='fresh',inspection:x.inspection==='fresh'?'fresh':'material',createdBy:who,createdAt:now};
   save('items',r);result={id:key};description='เพิ่มรายการคลัง '+c+' / '+r.unit;
  }else if(action.kind==='recipe'){
   const product=get('items',x.productItemId);ensure(product.kind==='FG','สูตรต้องอ้างอิงสินค้าสำเร็จรูป');ensure(x.approved===true,'ยืนยันสูตรที่ได้รับอนุมัติก่อนบันทึก');
   ensure(Array.isArray(x.materials)&&x.materials.length>0&&x.materials.length<=30,'ระบุวัตถุดิบ / บรรจุภัณฑ์ 1–30 รายการ');
   const seen=new Set(),materials=x.materials.map(m=>{ensure(!seen.has(m.itemId),'วัสดุซ้ำในสูตร');seen.add(m.itemId);const item=get('items',m.itemId);ensure(item.kind!=='FG','เลือกวัสดุจากประเภทวัตถุดิบ / บรรจุภัณฑ์');return {itemId:item.id,item:itemSnap(item),qtyMills:mills(m.qty,item.precision)};});
-  const revision=code(x.revision);putKey(keyId('recipe',product.id,revision),id);
+  const revision=code(x.revision,' Revision สูตร');putKey(keyId('recipe',product.id,revision),id);
   const requiredForms=[...new Set(x.requiredForms||[])];ensure(requiredForms.every(s=>['PC09','PC10','PC11'].includes(s)),'ขั้นตอนการผลิตไม่ถูกต้อง');
   save('recipes',{id,productItemId:product.id,product:itemSnap(product),revision,outputMills:mills(x.outputQty,product.precision),materials,requiredForms,approvalReference:clean(x.approvalReference,'เอกสารอนุมัติสูตร',160),createdBy:who,createdAt:now});
   result={id};description='บันทึกสูตร '+product.code+' Rev.'+revision;
  }else if(action.kind==='receive'){
-  const item=get('items',x.itemId),qty=mills(x.qty,item.precision),reference=code(x.reference),lotCode=code(x.lotCode),received=actualDate(x.date),exp=x.exp?day(x.exp,'EXP'):'',mfg=x.mfg?day(x.mfg,'MFG'):'';
+  const item=get('items',x.itemId),qty=mills(x.qty,item.precision),{reference,lotCode}=receiptCodes(x,id),received=actualDate(x.date),exp=x.exp?day(x.exp,'EXP'):'',mfg=x.mfg?day(x.mfg,'MFG'):'';
   ensure(!mfg||mfg<=received,'MFG ต้องไม่หลังวันรับ');ensure(!exp||!mfg||exp>=mfg,'EXP ต้องไม่ก่อน MFG');if(item.kind==='FG')ensure(exp,'ระบุ EXP ตามสเปกสินค้า');
   ensure(x.verified===true,'ยืนยันรับของจริง / ตรวจนับยอดยกมาแล้ว');
   putKey(keyId('receipt',reference),id);putKey(keyId('lot',item.id,lotCode),id);
-  const r={id,itemId:item.id,item:itemSnap(item),code:lotCode,supplierLot:String(x.supplierLot||'').trim().slice(0,80),supplier:clean(x.supplier,'ผู้ขาย / ที่มายอดยกมา',160),reference,received,mfg,exp,qtyMills:qty,reservedMills:0,qa:'held',source:x.opening?'opening':'receive',createdBy:who,createdAt:now};
+  const r={id,itemId:item.id,item:itemSnap(item),code:lotCode,supplierLot:trimmed(x.supplierLot),supplier:clean(x.supplier,'ผู้ขาย / ที่มายอดยกมา',160),reference,received,mfg,exp,qtyMills:qty,reservedMills:0,qa:'held',source:x.opening?'opening':'receive',createdBy:who,createdAt:now};
   save('lots',r);physical.push({lotId:id,itemId:item.id,inMills:qty,outMills:0,afterMills:qty,unit:item.unit,lotCode});result={id,reference};description=(x.opening?'ตั้งยอดยกมา ':'รับเข้า ')+reference+' / '+lotCode;
  }else if(action.kind==='plan'){
   const recipe=get('recipes',x.recipeId),product=get('items',recipe.productItemId),qty=mills(x.qty,product.precision),due=day(x.dueDate,'วันต้องการสินค้า');ensure(due>=today,'วันต้องการสินค้าต้องไม่ก่อนวันนี้');
@@ -117,7 +127,7 @@ export function applyFactoryAction(action,ctx,meta,actor,today){
  }else if(action.kind==='produce'){
   const job=get('jobs',x.jobId);ensure(job.stage==='issued'&&!job.closed,'ต้องเบิกวัตถุดิบก่อนรับผลผลิต');
   for(const form of job.recipe.requiredForms)ensure(job.processes.some(r=>r.form===form),'ยังไม่มีบันทึกขั้นตอน '+form+' ตามสูตร');
-  const qty=mills(x.qty,job.product.precision),lotCode=code(x.lotCode),mfg=actualDate(x.mfg),exp=day(x.exp,'EXP'),received=actualDate(x.date);ensure(mfg<=received&&exp>=mfg,'ตรวจ MFG / EXP และวันที่รับจริง');ensure(job.issues.every(i=>received>=i.date),'รับผลผลิตต้องไม่ก่อนวันที่เบิกวัสดุจริง');ensure(x.verified===true,'ยืนยันจำนวนผลิตได้จริงแล้ว');
+  const qty=mills(x.qty,job.product.precision),lotCode=code(x.lotCode,' LOT ผลผลิต'),mfg=actualDate(x.mfg),exp=day(x.exp,'EXP'),received=actualDate(x.date);ensure(mfg<=received&&exp>=mfg,'ตรวจ MFG / EXP และวันที่รับจริง');ensure(job.issues.every(i=>received>=i.date),'รับผลผลิตต้องไม่ก่อนวันที่เบิกวัสดุจริง');ensure(x.verified===true,'ยืนยันจำนวนผลิตได้จริงแล้ว');
   const produced=job.batches.reduce((s,b)=>s+b.qtyMills,0);if(produced+qty>job.qtyMills)clean(x.varianceNote,'เหตุผลผลผลิตเกินแผน',240);
   putKey(keyId('lot',job.product.id,lotCode),id);
   const l={id,itemId:job.product.id,item:job.product,code:lotCode,supplierLot:'',supplier:job.docNo,reference:ref('FGR'),received,mfg,exp,qtyMills:qty,reservedMills:0,qa:'held',source:'produce',sourceJob:job.id,createdBy:who,createdAt:now};
@@ -125,17 +135,19 @@ export function applyFactoryAction(action,ctx,meta,actor,today){
   physical.push({lotId:id,itemId:l.itemId,inMills:qty,outMills:0,afterMills:qty,unit:l.item.unit,lotCode});result={id,jobId:job.id,reference:l.reference};description='รับผลผลิตจริง '+lotCode+' / '+job.docNo;
  }else if(action.kind==='inspect'){
   const l=get('lots',x.lotId),item=get('items',l.itemId);ensure(l.qa!=='released','LOT นี้อนุมัติแล้ว');ensure(['released','held','rejected'].includes(x.decision),'เลือกผลการตรวจ');
-  const values=x.values||{},note=clean(x.note,'ผลตรวจ / การแก้ไข',240);const sample=x.sampleQty?mills(x.sampleQty,0):0;
+  const values=x.values||{},note=clean(x.note,'ผลตรวจ / การแก้ไข',240);const fg=item.kind==='FG',sampleUnit=fg?'ชิ้น':unitLabel(x.sampleUnit||item.unit);
+  if(x.sampleQty&&!fg)ensure(inspectionUnits(item).includes(sampleUnit),'เลือกหน่วยที่ใช้ตรวจรับ');
+  const sample=x.sampleQty?mills(x.sampleQty,fg||sampleUnit==='ชิ้น'?0:sampleUnit==='กิโลกรัม'?3:item.precision):0;
   if(x.decision==='released'){
    ensure(!l.exp||l.exp>=today,'LOT หมดอายุแล้ว ปล่อยใช้ / จัดส่งไม่ได้');ensure(x.verified===true,'ยืนยันผลตรวจจริงแล้ว');
    if(item.kind==='FG'){ensure(values.package===true&&values.label===true&&values.code===true&&values.seal==='pass'&&sample>0,'ยืนยันผลบรรจุ ฉลาก โค้ด และผลตรวจซีลให้ครบ');clean(x.samplingPlan,'เอกสารแผนสุ่มที่ QA อนุมัติ',120);}
    else{ensure(values.clean===true&&values.foreign===true&&values.spec===true,'ผลตรวจต้องผ่านข้อกำหนดที่เกี่ยวข้อง');if(item.inspection==='fresh')ensure(values.avl===true,'ยืนยันผู้ขายตาม AVL');if(item.needsAnalysis)clean(x.analysisRef,'หลักฐานผลวิเคราะห์',120);}
   }
   const inspectedDate=actualDate(x.date);ensure(inspectedDate>=l.received,'วันที่ตรวจต้องไม่ก่อนวันที่รับ LOT');
-  const r={id,lotId:l.id,itemId:l.itemId,lotCode:l.code,item:l.item,sourceJob:l.sourceJob||'',date:inspectedDate,decision:x.decision,values,sampleCount:sample/1000,samplingPlan:String(x.samplingPlan||'').slice(0,120),analysisRef:String(x.analysisRef||'').slice(0,120),note,actor:who,createdAt:now};
+  const r={id,lotId:l.id,itemId:l.itemId,lotCode:l.code,item:l.item,sourceJob:l.sourceJob||'',date:inspectedDate,decision:x.decision,values,sampleCount:sample/1000,sampleUnit:sample?sampleUnit:'',samplingPlan:String(x.samplingPlan||'').slice(0,120),analysisRef:String(x.analysisRef||'').slice(0,120),note,actor:who,createdAt:now};
   save('inspections',r);save('lots',{...l,qa:x.decision,lastInspection:id});if(l.sourceJob){const j=get('jobs',l.sourceJob);save('jobs',{...j,qa:[...j.qa,id]});}result={id,lotId:l.id};description='ตรวจ LOT '+l.code+' / '+x.decision;
  }else if(action.kind==='ship'){
-  const job=get('jobs',x.jobId),reference=code(x.reference),checks=x.checks||{};ensure(x.verified===true,'ยืนยันจ่ายของจริงและตรวจรถแล้ว');
+  const job=get('jobs',x.jobId),reference=code(x.reference,'เลขใบส่งของ / เลขจ่ายภายใน'),checks=x.checks||{};ensure(x.verified===true,'ยืนยันจ่ายของจริงและตรวจรถแล้ว');
   ensure(VEHICLE_FIELDS.every(f=>['pass','fixed'].includes(checks[f.id])),'ตรวจรถให้ครบ และแก้รายการที่ไม่ผ่านก่อนจัดส่ง');if(Object.values(checks).includes('fixed'))clean(x.note,'รายละเอียดการแก้ไขก่อนจัดส่ง',240);
   ensure(Array.isArray(x.lines)&&x.lines.length>0&&x.lines.length<=40,'เลือก LOT จัดส่ง');const seen=new Set(),lines=[];
   for(const r of x.lines){ensure(!seen.has(r.lotId),'LOT ซ้ำในใบส่งของ');seen.add(r.lotId);const l=get('lots',r.lotId);ensure(l.sourceJob===job.id&&l.item.kind==='FG','LOT ไม่ตรงงานผลิต');ensure(released(l,today),'LOT ยังไม่ผ่าน QA หรือหมดอายุ');const q=mills(r.qty,l.item.precision);ensure(q<=available(l,today),'จำนวนส่งเกินของพร้อมจัดส่ง');save('lots',{...l,qtyMills:l.qtyMills-q});lines.push({...lotSnap(l),lotId:l.id,qtyMills:q,returnedMills:0});physical.push({lotId:l.id,itemId:l.itemId,inMills:0,outMills:q,afterMills:l.qtyMills-q,unit:l.item.unit,lotCode:l.code});}

@@ -107,3 +107,36 @@ test('make-to-stock jobs require the actual shipment customer and released LOTs 
  await assert.rejects(f.run('ship',shipment(job,l,'10')),/ลูกค้าที่จัดส่งจริง/);
  const ship=await f.run('ship',{...shipment(job,l,'10'),customer:'ลูกค้าที่ซื้อสินค้าจากสต๊อก'});assert.equal(f.record('shipments',ship.id).customer,'ลูกค้าที่ซื้อสินค้าจากสต๊อก');
 });
+test('long codes and nonsequential receipts preserve evidence, stock totals, and separate QA lots',async()=>{
+ const f=await fixture(),code='RAW-'+('LONG-'.repeat(16)),supplierLot='SUP-'+('BATCH-'.repeat(18));
+ const item=(await f.run('item',{code,name:'ขิง',kind:'RAW',unit:'กิโลกรัม',precision:3,productCode:code})).id;
+ const input={itemId:item,supplier:'ผู้ขายทดสอบ',supplierLot,verified:true};
+ const later=await f.run('receive',{...input,reference:'R-90-'+code,lotCode:'LOT-Z-'+code,date:'2026-10-30',qty:'12.500'});
+ const earlier=await f.run('receive',{...input,reference:'R-02-'+code,lotCode:'LOT-A-'+code,date:'2026-10-28',qty:'7.250'});
+ const auto=await f.run('receive',{...input,date:'2026-10-29',qty:'0.250'});
+ assert.match(auto.reference,/^GRN-/);
+ assert.match(f.record('lots',auto.id).code,/^LOT-/);
+ assert.equal(f.record('items',item).productCode,code);
+ assert.equal(f.record('lots',later.id).supplierLot,supplierLot);
+ assert.equal(f.record('lots',earlier.id).received,'2026-10-28');
+ const data=(await f.store.load()).data;
+ assert.deepEqual(f.core.stockTotals(data.lots,date).get(item),{qtyMills:20000,reservedMills:0,availableMills:0});
+ const ledger=data.events.flatMap(e=>e.physical).filter(e=>e.itemId===item);
+ assert.equal(ledger.reduce((n,e)=>n+e.inMills-e.outMills,0),20000);
+ assert.equal(data.lots.length,3);
+ await assert.rejects(f.run('receive',{...input,reference:'R-90-'+code,date,qty:'1'}),/มีอยู่แล้ว/);
+ await assert.rejects(f.run('item',{code:'',name:'ขิง',kind:'RAW',unit:'กิโลกรัม',precision:3}),/กรุณากรอกรหัสรายการคลัง/);
+});
+test('QA records kilograms or whole pieces without changing warehouse balances or releasing held stock',async()=>{
+ const f=await fixture(),seed=await f.bootstrap();
+ const base={lotId:seed.rawLot,date,decision:'held',note:'ตรวจตัวอย่าง'};
+ await f.run('quarantine',{lotId:seed.rawLot,note:'รอตรวจซ้ำ',verified:true});
+ await assert.rejects(f.run('inspect',{...base,sampleQty:'1.5',sampleUnit:'ชิ้น'}),/ทศนิยม/);
+ const kg=await f.run('inspect',{...base,sampleQty:'0.125',sampleUnit:'กิโลกรัม'});
+ const pieces=await f.run('inspect',{...base,sampleQty:'3',sampleUnit:'ชิ้น'});
+ assert.equal(f.record('inspections',kg.id).sampleCount,0.125);
+ assert.equal(f.record('inspections',kg.id).sampleUnit,'กิโลกรัม');
+ assert.equal(f.record('inspections',pieces.id).sampleUnit,'ชิ้น');
+ assert.equal(f.record('lots',seed.rawLot).qtyMills,50000);
+ assert.equal(f.core.available(f.record('lots',seed.rawLot),date),0);
+});
