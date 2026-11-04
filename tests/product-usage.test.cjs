@@ -95,6 +95,26 @@ test('each save shows a dedicated item-use confirmation and the next new record 
  }
  w.editProduct('sale');e.submit();assert.ok($('product-unit-dialog').open);assert.equal($('product-unit-usage-value').textContent,'สินค้าขาย');assert.equal(productWrites().length,3);$('product-unit-cancel').click();assert.equal(productWrites().length,3);
 });
+test('choosing the B prefix immediately selects purchase use and saves after the normal confirmation',async t=>{
+ const e=await setup(t),{$,change}=e;
+ change($('new-prod-prefix'),'P');
+ assert.equal($('new-prod-usage').value,'');
+ change($('new-prod-usage'),'both');
+ change($('new-prod-name'),'ซองซื้อเข้าใหม่');
+ change($('new-prod-price'),'25');
+ change($('new-prod-prefix'),'B');
+ assert.equal($('new-prod-code').value,'B-0001');
+ assert.equal($('new-prod-usage').value,'purchase');
+ assert.equal($('new-prod-usage').selectedOptions[0].textContent,'สินค้าซื้อ');
+ assert.equal($('new-prod-name').value,'ซองซื้อเข้าใหม่');
+ assert.equal(e.writes.length,0);
+ e.submit();assert.ok($('product-unit-dialog').open);
+ assert.equal($('product-unit-usage-value').textContent,'สินค้าซื้อ');
+ await e.confirm();
+ const saved=e.writes.find(x=>x.ref.startsWith('products/')).data;
+ assert.equal(saved.code,'B-0001');assert.equal(saved.tradeUsage,'purchase');assert.equal(saved.price,25);
+ assert.equal($('new-prod-prefix').value,'');assert.equal($('new-prod-usage').value,'');
+});
 test('existing purchase items get B codes after review; original references and VAT rules are preserved',async t=>{
  const e=await setup(t,[...seed,{id:'purchase-g',code:'G-022',name:'วัตถุดิบซื้อเดิมไม่คิด VAT',tradeUsage:'purchase',unit:'KG',price:25,priceBasis:'EXC'}]);
  const {w,$,change}=e;

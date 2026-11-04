@@ -860,7 +860,7 @@
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_prod">เพิ่มสินค้าใหม่</h3>
                             <form id="add-product-form" class="space-y-4 text-[14px]">
                                 <div><label class="block text-[12px] text-gray-600 mb-1">รหัสสินค้า (Code) <span class="text-red-500">*</span></label>
-                                    <div class="flex flex-wrap gap-2"><select id="new-prod-prefix" onchange="handleProductPrefixChange()" class="min-w-0 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option><option value="B">B (สินค้าซื้อ)</option></select><input type="text" id="new-prod-code" required class="flex-1 min-w-0 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
+                                    <div class="flex flex-wrap gap-2"><select id="new-prod-prefix" class="min-w-0 border p-2 rounded outline-none"><option value="">พิมพ์เอง</option><option value="P">P (VAT)</option><option value="K">K (VAT-KG)</option><option value="G">G (No VAT)</option><option value="B">B (สินค้าซื้อ)</option></select><input type="text" id="new-prod-code" required class="flex-1 min-w-0 border p-2 rounded uppercase outline-none" placeholder="ระบุรหัส"></div>
                                     <p id="product-original-code" class="mt-1 text-xs text-gray-500"></p>
                                 </div>
                                 <div><label class="block text-[12px] text-gray-600 mb-1"><span data-i18n="lbl_prod_name">ชื่อสินค้า/บริการ</span> <span class="text-red-500">*</span></label><input type="text" id="new-prod-name" required class="w-full border p-2 rounded"></div>
@@ -2300,6 +2300,7 @@
                 input.value = ''; input.placeholder = currentLang === 'en' ? 'Enter code' : 'ระบุรหัส'; input.readOnly = false;
                 input.classList.remove('bg-gray-100', 'text-gray-500');
             } else if (px === 'B') {
+                $('new-prod-usage').value = 'purchase';
                 const current = products.find(p => p.id === editingProductId);
                 input.value = (purchaseNumber(current?.purchaseCode) && current.purchaseCode) || (purchaseNumber(current?.code) && current.code) || purchaseCodeFor(Math.max(purchaseCodeMax(products), purchaseHighWater) + 1);
                 input.readOnly = true;
@@ -2315,6 +2316,7 @@
             }
             updateProductPricePreview();
         }
+        $('new-prod-prefix')?.addEventListener('change', handleProductPrefixChange);
         if ($('product-category-filter')) $('product-category-filter').addEventListener('change', renderProducts);
         if ($('product-usage-filter')) $('product-usage-filter').addEventListener('change', renderProducts);
         function warnMissingProductUsage() {
