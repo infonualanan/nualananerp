@@ -1,6 +1,33 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {fixture,modules}=require('./factory-fixture.cjs');
+test('inventory edits cannot collide with another code or delete a LOT or recipe item',async()=>{
+ const f=await fixture(),seed=await f.bootstrap();
+ const original={code:'PK002',name:'บรรจุภัณฑ์',kind:'PACK',unit:'ชิ้น',precision:0};
+ const id=(await f.run('item',original)).id;
+ await assert.rejects(f.run('itemEdit',{...original,itemId:id,code:'P001'}),/รหัสรายการคลังนี้มีอยู่แล้ว/);
+ assert.equal(f.record('items',id).code,original.code);
+ await assert.rejects(f.run('itemDelete',{itemId:seed.fg}),/ใช้ในสูตรผลิตแล้ว/);
+ await assert.rejects(f.run('itemEdit',{...original,itemId:seed.raw}),/แก้ไขได้เฉพาะชื่อ/);
+ const {meta}=await f.store.load();
+ const action={kind:'itemDelete',input:{itemId:id},requestId:f.api.newId(),expectedRevision:meta.revision};
+ f.setAckLoss(true);await assert.rejects(f.store.commit(action),/response lost/);
+ const replay=await f.store.commit(action);assert.equal(replay.replayed,true);
+ assert.equal(f.record('items',id),undefined);assert.equal(f.record('events',replay.eventId).kind,'itemDelete');
+});
+test('a concurrent receipt and item deletion cannot leave a LOT without its item',async()=>{
+ const f=await fixture(),itemId=(await f.run('item',{code:'NEW',name:'ของใหม่',kind:'PACK',unit:'ชิ้น',precision:0})).id;
+ const {meta}=await f.store.load(),expectedRevision=meta.revision;
+ const actions=[
+  {kind:'itemDelete',input:{itemId}},
+  {kind:'receive',input:{itemId,qty:'3',date:'2026-10-30',supplier:'ผู้ขายทดสอบ',verified:true}}
+ ];
+ const outcomes=await Promise.allSettled(actions.map(a=>f.store.commit({...a,requestId:f.api.newId(),expectedRevision})));
+ assert.equal(outcomes.filter(r=>r.status==='fulfilled').length,1);
+ const {data}=await f.store.load();
+ assert.equal(data.lots.length,data.items.length);
+ if(data.lots.length)assert.equal(data.lots[0].itemId,data.items[0].id);
+});
 const date='2026-10-30';
 async function issued(f,seed){const j=await f.plan(seed);await f.run('issue',{jobId:j.id,date,lines:[{lotId:seed.rawLot,qty:'20'},{lotId:seed.bagLot,qty:'1000'}]});return j.id;}
 async function produced(f,id){return (await f.run('produce',{jobId:id,lotCode:'FG-A',qty:'980',date,mfg:'2026-10-01',exp:'2027-10-01',verified:true})).id;}

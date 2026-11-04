@@ -20,7 +20,7 @@ async function setup(t,seeded=false){
 }
 test('new workspace is empty, imports catalogue labels and saves only after explicit review',async t=>{
  const e=await setup(t);assert.match(e.$('page').textContent,/ยังไม่มีข้อมูล/);assert.equal(e.f.records.size,0);
- e.set('catalog','p1','change');assert.equal(e.$('item-code').value,'P001');assert.equal(e.$('item-unit').value,'ซอง');assert.equal(e.$('item-kind').value,'FG');
+ e.$('catalog').click();e.$('catalog-option-0').click();assert.equal(e.$('item-code').value,'P001');assert.equal(e.$('item-unit').value,'ซอง');assert.equal(e.$('item-kind').value,'FG');
  e.submit('item-form');assert.equal(e.$('review').hidden,false);assert.equal(e.f.records.size,0);
  await e.confirm();assert.equal((await e.f.store.load()).data.items.length,1);assert.equal(e.$('item-code').value,'');
 });
@@ -66,16 +66,44 @@ test('catalog search accepts code, name and unit, then fills the selected record
  const e=await setup(t);
  e.f.api.getProducts=()=>[{id:'raw1',code:'R-'+('AB'.repeat(40)),name:'ขิงสดทดลอง',unit:'KG'},{id:'other',code:'P2',name:'ถุงทดสอบ',unit:'ชิ้น'}];
  e.controller.refreshCatalog();
- e.set('catalog-search','ขิงสด กิโลกรัม');
- assert.equal(e.$('catalog').options.length,2);
- e.set('catalog','raw1','change');
+ assert.equal(e.$('item-form').querySelectorAll('input[type="search"],select#fx-catalog').length,1);
+ e.set('catalog','ขิงสด กิโลกรัม');
+ assert.equal(e.$('catalog-options').children.length,1);
+ const key=k=>e.$('catalog').dispatchEvent(new e.w.KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true}));
+ key('ArrowDown');assert.equal(e.$('catalog').getAttribute('aria-activedescendant'),'fx-catalog-option-0');key('Enter');
+ assert.equal(e.$('catalog').getAttribute('aria-expanded'),'false');
+ assert.match(e.$('catalog').value,/ขิงสดทดลอง/);
  assert.equal(e.$('item-code').value,'R-'+('AB'.repeat(40)));
  assert.equal(e.$('item-name').value,'ขิงสดทดลอง');
  assert.equal(e.$('item-unit').value,'KG');
  assert.equal(e.$('item-precision').value,'3');
- e.set('catalog-search','ไม่พบรายการนี้');
+ e.set('catalog','ไม่พบรายการนี้');
  assert.match(e.$('catalog-status').textContent,/ไม่พบสินค้า/);
- assert.equal(e.$('catalog').value,'raw1');
+ assert.equal(e.$('catalog-id').value,'');
+ key('Escape');assert.equal(e.$('catalog-popup').hidden,true);
+});
+test('warehouse row buttons edit or confirm removal without losing the add draft or affecting an in-use LOT',async t=>{
+ const e=await setup(t,true);
+ const id=(await e.f.run('item',{code:'NEW',name:'ของทดสอบ',kind:'PACK',unit:'ชิ้น',precision:0})).id;
+ await e.controller.reload();
+ const edit=id=>e.d.querySelector('[data-fx-item-edit="'+id+'"]'),remove=id=>e.d.querySelector('[data-fx-item-delete="'+id+'"]');
+ assert.equal(remove(e.seed.raw).disabled,true);
+ e.set('item-code','DRAFT');edit(e.seed.raw).click();
+ assert.equal(e.$('item-code').disabled,true);assert.equal(e.$('item-unit').disabled,true);assert.equal(e.$('item-name').disabled,false);
+ e.set('item-name','ขิงสดชื่อใหม่');e.submit('item-form');await e.confirm();
+ assert.equal(e.f.record('items',e.seed.raw).name,'ขิงสดชื่อใหม่');
+ assert.equal(e.f.record('lots',e.seed.rawLot).item.name,'วัตถุดิบทดสอบ');
+ assert.equal(e.$('item-code').value,'DRAFT');
+ edit(id).click();assert.equal(e.$('item-code').value,'NEW');assert.equal(e.$('item-code').disabled,false);
+ e.set('item-code','NEW-2');e.submit('item-form');await e.confirm();
+ assert.equal(e.f.record('items',id),undefined);
+ remove('NEW-2').click();
+ assert.match(e.$('review').textContent,/ยืนยันลบรายการคลัง/);
+ assert.equal(e.f.record('items','NEW-2').code,'NEW-2');
+ e.$('review-cancel').click();assert.equal(e.$('review').hidden,true);assert.ok(remove('NEW-2'));
+ remove('NEW-2').click();await e.confirm();
+ assert.equal(e.f.record('items','NEW-2'),undefined);
+ assert.equal(e.$('item-code').value,'DRAFT');
 });
 test('backdated receipt review, warehouse total and stock card agree, with QA units shown per record',async t=>{
  const e=await setup(t,true),raw=e.seed.raw;

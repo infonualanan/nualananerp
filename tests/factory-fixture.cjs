@@ -18,11 +18,12 @@ exports.fixture=async()=>{
    for(let attempt=0;attempt<12;attempt++){
     const reads=new Map(),writes=[];let hasWrites=false;
     const tx={get:async ref=>{if(hasWrites)throw new Error('Read after write');const ver=versions.get(ref)||0;reads.set(ref,ver);const value=snap(ref);if(getHook){const hook=getHook;getHook=null;hook();}await Promise.resolve();return value;},
-     set:(ref,value)=>{hasWrites=true;writes.push([ref,clone(value)]);}};
+     set:(ref,value)=>{hasWrites=true;writes.push([ref,clone(value)]);},
+     delete:ref=>{hasWrites=true;writes.push([ref,undefined]);}};
     const result=await fn(tx);
     if(deny)throw Object.assign(new Error('permission denied'),{code:'permission-denied'});
     if([...reads].some(([ref,version])=>(versions.get(ref)||0)!==version))continue;
-    for(const [ref,value]of writes){records.set(ref,value);versions.set(ref,(versions.get(ref)||0)+1);}
+    for(const [ref,value]of writes){if(value===undefined)records.delete(ref);else records.set(ref,value);versions.set(ref,(versions.get(ref)||0)+1);}
     if(ackLoss){ackLoss=false;throw new Error('response lost after commit');}
     return result;
    }throw new Error('transaction contention');
