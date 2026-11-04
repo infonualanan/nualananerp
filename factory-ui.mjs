@@ -45,11 +45,11 @@ export function createFactoryController(host,api){
  }
  function empty(text,view,label){return '<div class="fx-empty"><p>'+esc(text)+'</p>'+go(view,label)+'</div>';}
  const searchText=v=>String(v??'').normalize('NFKC').toLowerCase().trim();
- const catalogLabel=p=>p.code+' · '+p.name+' ('+(p.unit||'ไม่ระบุหน่วย')+')';
+ const catalogLabel=p=>(p.tradeUsage==='purchase'&&p.purchaseCode?p.purchaseCode+' / ':'')+p.code+' · '+p.name+' ('+(p.unit||'ไม่ระบุหน่วย')+')';
  function showCatalog(){
   const picker=$('fx-catalog');if(!picker||picker.disabled)return;
   const terms=searchText(val('catalog-id')?'':picker.value).split(/\s+/).filter(Boolean);
-  const matches=api.getProducts().filter(p=>terms.every(term=>searchText([p.code,p.name,p.unit,unitLabel(p.unit)].join(' ')).includes(term)));
+  const matches=api.getProducts().filter(p=>terms.every(term=>searchText([p.code,p.purchaseCode,p.name,p.unit,unitLabel(p.unit)].join(' ')).includes(term)));
   catalogMatches=matches.slice(0,40);catalogIndex=-1;
   $('fx-catalog-options').innerHTML=catalogMatches.map((p,i)=>'<div id="fx-catalog-option-'+i+'" role="option" aria-selected="false" data-fx-catalog-index="'+i+'">'+esc(catalogLabel(p))+'</div>').join('');
   $('fx-catalog-status').textContent=!matches.length?'ไม่พบสินค้า · กรอกรายการคลังเองได้':matches.length>catalogMatches.length?'พบ '+matches.length+' รายการ · พิมพ์เพิ่มเพื่อกรอง':'พบ '+matches.length+' รายการ';
