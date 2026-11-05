@@ -217,6 +217,24 @@
             #mobile-doc-save:focus-visible { outline: 3px solid #065f46; outline-offset: 3px; }
             body.erp-document-actions-visible #erp-workspace { padding-bottom: calc(24px + var(--erp-doc-actions-height, 88px)); scroll-padding-bottom: calc(24px + var(--erp-doc-actions-height, 88px)); }
         }
+        .oem-line-fields { display: none; }
+        .oem-receipt-form .oem-line-fields { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .oem-receipt-form #item-column-head > :nth-child(n+5),
+        .oem-receipt-form #items-container .item-row > :nth-child(5),
+        .oem-receipt-form #items-container .item-row > :nth-child(6),
+        .oem-receipt-form #items-container .item-row > :nth-child(7) { display: none; }
+        .oem-receipt-paper th, .oem-receipt-paper td { overflow-wrap: anywhere; }
+        .oem-receipt-paper #preview-col-disc { color: inherit; }
+        @media screen and (min-width: 1200px) and (hover: hover) {
+            .oem-receipt-form .item-grid { grid-template-columns: minmax(90px, 1fr) minmax(130px, 2fr) minmax(70px, .6fr) minmax(80px, .6fr) auto; }
+        }
+        @media screen and (max-width: 1199px), screen and (hover: none) and (pointer: coarse) {
+            .oem-receipt-form #item-column-head { display: none; }
+            .oem-receipt-form #items-container .item-row > :nth-child(8) { grid-column: 4; }
+        }
+        @media screen and (max-width: 479px) {
+            .oem-receipt-form .oem-line-fields { grid-template-columns: 1fr; }
+        }
         @media (prefers-reduced-motion: reduce) { #erp-sidebar { transition: none; } }
     </style>
 </head>
@@ -379,6 +397,7 @@
                         <div id="menu-inventory" class="hidden pl-8 pr-2 py-1 space-y-0.5">
                             <button type="button" onclick="openFactoryWorkspace('stock')" class="w-full text-left block px-2 py-2 text-xs text-emerald-300 hover:bg-white/5 rounded">สต๊อก / จอง / ประวัติ LOT</button>
                             <button type="button" onclick="openFactoryWorkspace('receive')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">รับเข้าจริง / ตั้งยอดยกมา</button>
+                            <a onclick="handleMenuClick('OEMR', 'create')" class="block px-2 py-1.5 text-xs text-emerald-300 hover:bg-white/5 rounded cursor-pointer">ใบรับสินค้า</a>
                             <button type="button" onclick="openFactoryWorkspace('shipping')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">ขนส่ง / จัดส่งตาม LOT</button>
                             <button type="button" onclick="openFactoryWorkspace('setup')" class="w-full text-left block px-2 py-2 text-xs text-white/80 hover:bg-white/5 rounded">ทะเบียนวัตถุดิบ / บรรจุภัณฑ์ / สินค้า</button>
                             <a onclick="handleMenuClick('STI', 'create')" class="block px-2 py-1.5 text-xs text-white/60 hover:text-emerald-300 hover:bg-white/5 rounded cursor-pointer transition">ใบรับเข้า (Stock In)</a>
@@ -539,6 +558,7 @@
                                             <option value="PR">ใบขอซื้อ (Purchase Requisition: PR)</option><option value="PO">ใบสั่งซื้อ (Purchase Order: PO)</option><option value="GRN">ใบรับสินค้า (Goods Receipt Note: GRN)</option><option value="VB">ใบรับวางบิล / ใบแจ้งหนี้ผู้ขาย (Vendor Bill)</option><option value="PINV">ใบกำกับภาษีซื้อ (Purchase Tax Invoice)</option><option value="SDN">ใบเพิ่มหนี้จากผู้ขาย (Supplier DN)</option><option value="SCN">ใบลดหนี้จากผู้ขาย (Supplier CN)</option>
                                         </optgroup>
                                         <optgroup label="4) Inventory">
+                                            <option value="OEMR">ใบรับสินค้า</option>
                                             <option value="STI">ใบรับเข้าคลัง (Stock In)</option><option value="STO">ใบจ่ายออกคลัง (Stock Out)</option><option value="STT">ใบโอนย้ายคลัง (Stock Transfer)</option><option value="STA">ใบปรับปรุงสต๊อก (Stock Adjustment)</option>
                                         </optgroup>
                                         <optgroup label="5) Production">
@@ -559,11 +579,11 @@
                                     <div class="flex items-center justify-between gap-2 mb-2"><label for="doc-date" class="block text-[12px] font-medium text-gray-700" data-i18n="label_doc_date">วันที่เอกสาร</label><button type="button" id="doc-date-clear" class="text-[12px] text-emerald-700 hover:underline" data-i18n="btn_blank_date">เว้นว่าง</button></div>
                                     <input type="date" id="doc-date" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none">
                                 </div>
-                                <div class="md:col-span-1">
+                                <div class="md:col-span-1" id="doc-credit-container">
                                     <label class="block text-[12px] font-medium text-gray-700 mb-2" data-i18n="label_credit">เครดิต (Credit Term)</label>
                                     <select id="doc-credit" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><option value="" data-i18n="opt_blank_credit">-- เว้นว่าง --</option><option value="เงินสด (Cash)" selected>เงินสด (Cash)</option><option value="15 วัน (Days)">15 วัน (Days)</option><option value="30 วัน (Days)">30 วัน (Days)</option><option value="45 วัน (Days)">45 วัน (Days)</option><option value="60 วัน (Days)">60 วัน (Days)</option><option value="90 วัน (Days)">90 วัน (Days)</option></select>
                                 </div>
-                                <div class="md:col-span-1"><label class="block text-[12px] font-medium text-gray-700 mb-2">อ้างอิง (Ref No.)</label><input type="text" id="doc-ref-manual" list="all-docs-list" placeholder="ระบุเลขอ้างอิง" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><datalist id="all-docs-list"></datalist></div>
+                                <div class="md:col-span-1"><label id="doc-ref-label" for="doc-ref-manual" class="block text-[12px] font-medium text-gray-700 mb-2">อ้างอิง (Ref No.)</label><input type="text" id="doc-ref-manual" list="all-docs-list" placeholder="ระบุเลขอ้างอิง" class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-emerald-500 outline-none"><datalist id="all-docs-list"></datalist></div>
 
                                 <div class="md:col-span-3 custom-dropdown-container relative">
                                     <label class="block text-[12px] font-medium text-gray-700 mb-2" id="label_customer_wrap"><span data-i18n="label_customer">ชื่อลูกค้า / คู่ค้า</span> <span class="text-red-500">*</span></label>
@@ -594,6 +614,15 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <section id="oem-receipt-fields" class="hidden bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                                <p id="oem-receipt-guidance" class="text-sm text-emerald-900 mb-3"></p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <label class="text-xs font-medium"><span id="oem-job-label">เลขอ้างอิงงาน OEM</span><input id="oem-job-ref" type="text" maxlength="80" class="w-full border rounded p-2 mt-1"></label>
+                                    <label class="text-xs font-medium"><span id="oem-sender-label">ชื่อผู้ส่งมอบ</span><input id="oem-sender" type="text" maxlength="100" class="w-full border rounded p-2 mt-1"></label>
+                                    <label class="text-xs font-medium"><span id="oem-receiver-label">ชื่อผู้รับของ (โรงงาน)</span><input id="oem-receiver" type="text" maxlength="100" class="w-full border rounded p-2 mt-1"></label>
+                                </div>
+                            </section>
 
                             <div id="qt-details-container" class="hidden bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
                                 <h3 class="text-sm font-bold text-purple-800 mb-4 flex items-center gap-2"><i class="ph ph-calendar-blank"></i> <span data-i18n="qt_details">เงื่อนไขใบเสนอราคา</span></h3>
@@ -648,7 +677,7 @@
                                         <div id="items-summary" class="mt-4 flex justify-between items-start">
                                             <button type="button" onclick="addLineItem()" class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1 text-[14px] bg-emerald-50 px-3 py-1.5 rounded-md transition border border-emerald-200"><i class="ph ph-plus-circle"></i> <span data-i18n="btn_add_item">เพิ่มรายการ</span></button>
                                             
-                                            <div class="text-right w-64 bg-gray-50 p-3 rounded border text-[14px]">
+                                            <div id="live-amount-summary" class="text-right w-64 bg-gray-50 p-3 rounded border text-[14px]">
                                                 <div class="flex justify-between mb-1" id="live-subtotal-row">
                                                     <span class="text-gray-500" id="live-subtotal-label">มูลค่าก่อนภาษี:</span> 
                                                     <span id="live-subtotal" class="font-medium">0.00</span>
@@ -1017,10 +1046,11 @@
                                                     <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-docno-label"></span> <span id="preview-doc-no" class="font-bold text-red-600"></span></div>
                                                     <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-date-label"></span> <span id="preview-date" class="text-gray-800"></span></div>
                                                     <div class="flex hidden" id="preview-expire-container"><span class="w-28 font-bold text-purple-700" id="preview-expire-label"></span> <span id="preview-expire-date" class="font-bold text-purple-700"></span></div>
-                                                    <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-credit-label"></span> <span id="preview-credit" class="text-gray-800"></span></div>
+                                                    <div id="preview-credit-row" class="flex"><span class="w-28 font-bold text-gray-800" id="preview-credit-label"></span> <span id="preview-credit" class="text-gray-800"></span></div>
                                                     <div class="flex"><span class="w-28 font-bold text-gray-800" id="preview-ref-label"></span> <span id="preview-ref-no" class="text-gray-800"></span></div>
                                                 </div>
                                             </div>
+                                            <div id="preview-oem-summary" class="hidden mt-2 p-2 border border-emerald-200 rounded bg-emerald-50 relative z-10 text-[12px]"></div>
                                             <div id="preview-export-details" class="hidden mt-2 p-2 border border-gray-200 rounded grid grid-cols-2 gap-1 bg-gray-50 relative z-10 text-[12px]">
                                                 <div><span class="font-bold">Incoterms:</span> <span id="preview-incoterm"></span></div>
                                                 <div><span class="font-bold">Port of Loading:</span> <span id="preview-pol"></span></div>
@@ -1039,7 +1069,7 @@
                                                 </table>
                                             </div>
                                             
-                                            <div class="flex items-stretch justify-between gap-4 mb-2 shrink-0">
+                                            <div id="preview-amount-summary" class="flex items-stretch justify-between gap-4 mb-2 shrink-0">
                                                 <div class="flex-1 border border-sky-200 bg-sky-50 rounded flex items-center justify-center p-2"><span id="preview-amount-words" class="text-[12px] font-bold text-sky-800 text-center italic"></span></div>
                                                 <div class="w-[45%] border border-gray-200">
                                                     <div class="flex justify-between py-1 px-2 border-b border-gray-200 bg-gray-50" id="preview-subtotal-row"><span class="font-bold text-gray-700" id="preview-lbl-sub"></span><span class="font-bold text-gray-900" id="preview-subtotal"></span></div>
@@ -1228,6 +1258,7 @@
                 ? ['Product code', 'Description', 'Quantity', 'Unit', 'Unit price', 'Discount', 'Amount', 'Delete item']
                 : ['รหัสสินค้า', 'รายละเอียด', 'จำนวน', 'หน่วย', 'ราคา / หน่วย', 'ส่วนลด', 'รวมเงิน', 'ลบรายการ'];
             [...row.children].forEach((cell, index) => {
+                if (index >= labels.length) return;
                 cell.dataset.fieldLabel = labels[index];
                 const control = index === 0 || index === 7 ? cell.querySelector('button') : cell.querySelector('input');
                 if (control) control.setAttribute('aria-label', labels[index]);
@@ -1256,14 +1287,16 @@
         function syncDocumentActions() {
             footer.hidden = !byId('tab-create-doc').classList.contains('active');
             document.body.classList.toggle('erp-document-actions-visible', !footer.hidden);
-            byId('mobile-doc-total').textContent = byId('live-grand').textContent;
+            const oem = byId('create-doc-form').classList.contains('oem-receipt-form');
+            byId('mobile-doc-total').textContent = oem ? (isEnglish() ? 'Goods receipt' : 'ใบรับสินค้า') : byId('live-grand').textContent;
             byId('mobile-doc-save').disabled = byId('doc-save-button').disabled;
             byId('mobile-doc-save').textContent = byId('doc-save-button').textContent.trim();
-            byId('mobile-total-label').textContent = (isEnglish() ? 'Net total' : 'ยอดสุทธิ') + ' · ' + byId('doc-currency').value;
+            byId('mobile-total-label').textContent = oem ? (isEnglish() ? 'Customer-supplied materials' : 'วัตถุดิบจากลูกค้า') : (isEnglish() ? 'Net total' : 'ยอดสุทธิ') + ' · ' + byId('doc-currency').value;
             updateActionSpacing();
         }
         const actionObserver = new MutationObserver(syncDocumentActions);
         actionObserver.observe(byId('tab-create-doc'), { attributes: true, attributeFilter: ['class'] });
+        actionObserver.observe(byId('create-doc-form'), { attributes: true, attributeFilter: ['class'] });
         actionObserver.observe(byId('live-grand'), { childList: true, subtree: true, characterData: true });
         actionObserver.observe(byId('doc-save-button'), { attributes: true, attributeFilter: ['disabled'], childList: true, subtree: true, characterData: true });
         byId('doc-currency').addEventListener('change', syncDocumentActions);
@@ -1445,9 +1478,9 @@
         const initialUserData = JSON.parse(JSON.stringify({companyProfile,products,customers,employees,savedRemarks,exchangeRates}));
         function resetUserData() { const defaults=JSON.parse(JSON.stringify(initialUserData)); companyProfile=defaults.companyProfile; products=defaults.products; customers=defaults.customers; employees=defaults.employees; savedRemarks=defaults.savedRemarks; exchangeRates=defaults.exchangeRates; purchaseHighWater=0; }
 
-        const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
+        const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'OEMR': 'ใบรับสินค้า', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
-        const pendingStatusDocs = ['QT', 'EQT', 'SO', 'DO', 'INV', 'TINV', 'ABB', 'PI', 'CI', 'PO', 'PR', 'VB', 'PINV', 'PAYSLIP'], noVatDocs = ['EVAT', 'EQT', 'PI', 'CI', 'PL', 'STI', 'STO', 'STT', 'STA', 'PDO', 'MI', 'FGR', 'MR', 'RV', 'PV', 'JV', 'WHT', 'SHM', 'BC', 'BL', 'PR', 'PO', 'GRN', 'PAYSLIP'];
+        const pendingStatusDocs = ['QT', 'EQT', 'SO', 'DO', 'INV', 'TINV', 'ABB', 'PI', 'CI', 'PO', 'PR', 'VB', 'PINV', 'PAYSLIP'], noVatDocs = ['EVAT', 'EQT', 'PI', 'CI', 'PL', 'STI', 'STO', 'STT', 'STA', 'PDO', 'MI', 'FGR', 'MR', 'RV', 'PV', 'JV', 'WHT', 'SHM', 'BC', 'BL', 'PR', 'PO', 'GRN', 'OEMR', 'PAYSLIP'];
         const todayRaw = new Date(), todayStr = `${todayRaw.getFullYear()}-${(todayRaw.getMonth() + 1).toString().padStart(2, '0')}-${todayRaw.getDate().toString().padStart(2, '0')}`;
         
         // Unit-price VAT rules: one calculation path for live totals and saved snapshots.
@@ -2808,8 +2841,38 @@
             show('export-details-container', ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(type)); if(!['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(type) && val('doc-currency') !== 'THB') { if($('doc-currency')) $('doc-currency').value = 'THB'; handleCurrencyChange(); }
             
             show('payslip-deductions-container', type === 'PAYSLIP');
+            updateOemReceiptForm(type === 'OEMR');
             renderProductDropdowns();
             calculateLiveTotal();
+        }
+
+        function updateOemReceiptForm(isOem) {
+            const isEn = currentLang === 'en';
+            $('create-doc-form')?.classList.toggle('oem-receipt-form', isOem);
+            show('oem-receipt-fields', isOem);
+            show('doc-credit-container', !isOem);
+            show('doc-date-clear', !isOem);
+            show('live-amount-summary', !isOem);
+            if ($('doc-date')) $('doc-date').required = isOem;
+            const dateLabel = document.querySelector('label[for="doc-date"]');
+            if (dateLabel) dateLabel.textContent = isOem ? (isEn ? 'Date received *' : 'วันที่รับจริง *') : translations[currentLang].label_doc_date;
+            productText('doc-ref-label', isOem ? (isEn ? 'Customer delivery note no.' : 'เลขใบส่งของลูกค้า') : (isEn ? 'Ref No.' : 'อ้างอิง (Ref No.)'));
+            if (isOem) $('doc-ref-manual')?.removeAttribute('list');
+            else $('doc-ref-manual')?.setAttribute('list', 'all-docs-list');
+            productText('oem-job-label', isEn ? 'OEM job reference' : 'เลขอ้างอิงงาน OEM');
+            productText('oem-sender-label', isEn ? 'Delivered by' : 'ชื่อผู้ส่งมอบ');
+            productText('oem-receiver-label', isEn ? 'Received by (factory)' : 'ชื่อผู้รับของ (โรงงาน)');
+            productText('oem-receipt-guidance', isEn ? 'Confirm actual quantities and condition on receipt. This document does not post stock, a purchase or QA approval.' : 'กรอกจำนวนและสภาพที่รับจริง เอกสารนี้ใช้ยืนยันการรับมอบ ไม่ลงสต๊อก ไม่บันทึกยอดซื้อ และไม่ใช่ผลอนุมัติ QA');
+            document.querySelectorAll('#items-container .item-row').forEach(row => updateOemReceiptLine(row, isOem));
+        }
+        function updateOemReceiptLine(row, isOem) {
+            const isEn = currentLang === 'en';
+            const price = row.querySelector('.item-price');
+            if (price) { price.disabled = isOem; price.required = !isOem; }
+            const discount = row.querySelector('.item-disc-val');
+            if (discount) discount.disabled = isOem;
+            row.querySelector('.oem-lot-label').textContent = isEn ? 'Customer LOT / Batch' : 'LOT / รุ่นของลูกค้า';
+            row.querySelector('.oem-condition-label').textContent = isEn ? 'Condition on receipt' : 'สภาพตอนรับ / ข้อสังเกต';
         }
 
         function pullDataFromQuotation() {
@@ -2916,6 +2979,11 @@
             const legacyNoVat = !!data && !data.pricingVersion && !data.priceBasis && noVatDocs.includes(val('doc-type'));
             const basis = cd.toUpperCase().startsWith('G') || data?.priceBasis === 'NONE' || (data?.pricingVersion === 1 && data.taxRate === 0) || legacyNoVat ? 'NONE' : productPriceBasis(data);
             nr.innerHTML = `<div class="custom-dropdown-container relative"><input type="text" class="item-code hidden" id="${id}-code" value="${esc(cd)}"><input type="hidden" class="item-base-price" id="${id}-base-price" value="${esc(bp)}"><button type="button" onclick="toggleSearchMenu('${id}')" onkeydown="handleEnter(event, this)" class="w-full border border-gray-300 rounded p-1.5 text-xs outline-none bg-white text-left flex justify-between shadow-sm"><span id="${id}-display-text" class="truncate ${tc} font-bold">${esc(dt)}</span><i class="ph ph-caret-down text-gray-400"></i></button><div id="${id}-search-menu" class="custom-search-menu hidden absolute z-[90] w-[300px] mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl overflow-hidden left-0 top-full"><div class="p-2 border-b bg-gray-50 space-y-2"><select id="${id}-category-filter" aria-label="${currentLang === 'en' ? 'Product code category' : 'หมวดรหัสสินค้า'}" class="w-full border rounded bg-white p-1.5 text-[12px] outline-none" onchange="filterCustomDropdown('${id}')">${productCategoryOptions()}</select><input type="text" id="${id}-search-input" class="w-full border p-1.5 text-[12px] outline-none" placeholder="${currentLang === 'en' ? 'Search name / code...' : 'ค้นหาชื่อ / รหัสสินค้า...'}" aria-label="${currentLang === 'en' ? 'Search product name or code' : 'ค้นหาชื่อหรือรหัสสินค้า'}" oninput="filterCustomDropdown('${id}')" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); filterCustomDropdown('${id}'); }"></div><ul id="${id}-options-list" class="max-h-48 overflow-y-auto">${getProductListItems(id)}</ul></div></div><div><input type="text" class="item-name w-full border p-1.5 text-sm outline-none" placeholder="รายละเอียด" value="${esc(data?.name || '')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-qty w-full border p-1.5 text-center text-sm outline-none" min="0.000001" step="any" value="${esc(data?.qty ?? 1)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="text" class="item-unit w-full border p-1.5 text-center text-sm outline-none" placeholder="หน่วย" value="${esc(data?.unit || 'PCS')}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"></div><div><input type="number" class="item-price w-full border p-1.5 text-right text-sm outline-none" ${val('doc-type') === 'PAYSLIP' ? '' : 'min="0"'} max="1000000000" step="0.01" value="${esc(data?.price ?? 0)}" required oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><input type="hidden" class="item-price-basis" value="${esc(basis)}"></div><div class="relative"><input type="number" class="item-disc-val w-full border p-1.5 text-right text-sm outline-none pr-5" min="0" max="100" step="0.01" placeholder="0" value="${esc(data?.discVal ?? '')}" oninput="calculateLiveTotal()" onkeydown="handleEnter(event, this)"><span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold pointer-events-none">%</span></div><div class="text-right font-bold text-sm text-gray-700 self-center item-row-total">${formatMoney(data?.displayTotal ?? data?.total ?? 0)}</div><div class="text-right"><button type="button" onclick="this.closest('.item-row').remove(); calculateLiveTotal();" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="ph ph-trash"></i></button></div>`;
+            nr.insertAdjacentHTML('beforeend', `<div class="oem-line-fields">
+                <label class="block text-xs text-gray-600"><span class="oem-lot-label"></span><input type="text" class="oem-line-lot w-full border border-gray-300 rounded p-1.5 mt-1" maxlength="100" value="${esc(data?.customerLot || '')}"></label>
+                <label class="block text-xs text-gray-600"><span class="oem-condition-label"></span><input type="text" class="oem-line-condition w-full border border-gray-300 rounded p-1.5 mt-1" maxlength="200" value="${esc(data?.receiptCondition || '')}"></label>
+            </div>`);
+            updateOemReceiptLine(nr, val('doc-type') === 'OEMR');
             nr.querySelector('.item-price-basis').value = basis;
             window.labelResponsiveLineItem(nr);
             $('items-container').appendChild(nr);
@@ -2944,6 +3012,7 @@
         function calculateLiveTotal() {
             const pre = val('doc-type'), rows = [...document.querySelectorAll('.item-row')];
             updateGlobalPriceBasisUi();
+            if (pre === 'OEMR') { show('pricing-error', false); return; }
             rows.forEach(updateLinePricingUi);
             let pricing;
             try {
@@ -2971,6 +3040,27 @@
             txt('live-subtotal', formatMoney(sub)); txt('live-vat', formatMoney(pricing.vat)); txt('live-grand', formatMoney(gTotal));
         }
 
+        function readOemReceipt(docDate) {
+            const isEn = currentLang === 'en';
+            const fail = (th, en) => { throw pricingFailure(isEn ? en : th); };
+            const date = new Date(docDate);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(docDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== docDate || docDate > employeeTodayISO())
+                fail('ระบุวันที่รับจริงและต้องไม่เป็นวันในอนาคต', 'Enter the actual receipt date. It cannot be in the future.');
+            const rows = [...document.querySelectorAll('#items-container .item-row')];
+            if (!rows.length) fail('เพิ่มรายการวัตถุดิบอย่างน้อย 1 รายการ', 'Add at least one material line.');
+            const read = (row, selector) => row.querySelector(selector).value.trim();
+            const items = rows.map((row, i) => {
+                const name = read(row, '.item-name'), unit = read(row, '.item-unit');
+                const qty = priceUnits(read(row, '.item-qty'), 6);
+                if (!name || !unit || qty <= 0 || qty > 1000000000000)
+                    fail(`รายการที่ ${i + 1}: ระบุชื่อ จำนวนที่รับจริงมากกว่า 0 และหน่วย`, `Line ${i + 1}: enter a name, positive received quantity and unit.`);
+                return {code: read(row, '.item-code'), name, qty: qty / 1000000, unit, customerLot: read(row, '.oem-line-lot'),
+                    receiptCondition: read(row, '.oem-line-condition'), price: 0, basePrice: 0, total: 0, priceBasis: 'NONE', taxRate: 0, pricingVersion: 1};
+            });
+            return {items, vatEnabled: false, subtotal: 0, vat: 0, grandTotal: 0,
+                details: {jobRef: val('oem-job-ref').trim(), sender: val('oem-sender').trim(), receiver: val('oem-receiver').trim()}};
+        }
+
         function generateDocNo(prefix, docDateStr) {
             // Undated documents still use the current year's sequence, without filling the visible date.
             const docYear = docDateStr ? docDateStr.slice(0, 4) : String(new Date().getFullYear());
@@ -2986,10 +3076,24 @@
             return `${series}${String(maxNum + 1).padStart(3, '0')}`;
         }
 
+        async function saveOemReceipt(doc, uid) {
+            const split = doc.docNo.lastIndexOf('-') + 1, prefix = doc.docNo.slice(0, split), first = Number(doc.docNo.slice(split));
+            return runTransaction(db, async tx => {
+                for (let offset = 0; offset < 25; offset++) {
+                    if (currentUser?.uid !== uid) throw new Error('บัญชีผู้ใช้เปลี่ยน');
+                    const docNo = prefix + String(first + offset).padStart(3, '0'), ref = getUserDoc('documents', docNo);
+                    const existing = await tx.get(ref);
+                    if (currentUser?.uid !== uid) throw new Error('บัญชีผู้ใช้เปลี่ยน');
+                    if (!existing.exists()) { tx.set(ref, {...doc, docNo}); return docNo; }
+                }
+                throw new Error('ไม่สามารถจองเลขเอกสารได้ กรุณาโหลดรายการล่าสุดแล้วลองใหม่');
+            });
+        }
+
         if($('create-doc-form')) $('create-doc-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (documentSaveInProgress || remarkSaveInProgress) return;
-            const pre = val('doc-type'), custId = val('customer-select');
+            const pre = val('doc-type'), custId = val('customer-select'), isOem = pre === 'OEMR';
             if (!custId) return showAlert(currentLang === 'en' ? 'Select Customer/Employee.' : 'เลือกลูกค้าหรือพนักงาน');
             if (!currentUser) return showAlert('กรุณาเข้าสู่ระบบก่อนบันทึก');
             const savingUserId = currentUser.uid;
@@ -2999,10 +3103,12 @@
             let saved = false;
             try {
                 if (['RE','RETAX','TINV','RV'].includes(pre) && val('doc-ref-manual').trim()) await validateManualPaymentReference(pre, val('doc-ref-manual').trim());
-                const pricing = readDocumentPricing();
+                const docDate = val('doc-date');
+                if (isOem && !customers.some(c => c.id === custId)) throw pricingFailure(currentLang === 'en' ? 'Select the customer who supplied the materials.' : 'เลือกลูกค้าที่ส่งวัตถุดิบจากทะเบียนคู่ค้า');
+                const pricing = isOem ? readOemReceipt(docDate) : readDocumentPricing();
                 if ((val('doc-remark-text').trim() || editingDocRemarkId) && !await saveRemark('document', true)) return;
                 if (currentUser?.uid !== savingUserId) return;
-                const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId), docDate = val('doc-date');
+                const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId);
                 const items = pricing.items;
                 let gTotal = pricing.grandTotal, tVat = pricing.vat, sub = pricing.subtotal;
 
@@ -3027,10 +3133,14 @@
 
                 const newDoc = { docNo, customerId:custId, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, documentPriceBasis: ['INC', 'EXC'].includes(val('global-price-basis')) ? val('global-price-basis') : null, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
-                await setDoc(getUserDoc("documents", docNo), newDoc);
+                let savedDocNo = docNo;
+                if (isOem) {
+                    Object.assign(newDoc, {customerTaxId: fTax || '', customerBranch: fBran || '', customerAddr: fAdd || '', customerEmail: fEm || '', creditTerm: '', documentPriceBasis: null, oemReceipt: pricing.details});
+                    savedDocNo = await saveOemReceipt(newDoc, savingUserId);
+                } else await setDoc(getUserDoc("documents", docNo), newDoc);
                 if (currentUser?.uid !== savingUserId) return;
                 saved = true;
-                showAlert(`บันทึก ${docNo} สำเร็จ!`); this.reset(); selectedRemarksSequence = []; selectedRemarkTexts.clear(); resetRemarkEditor('document');
+                showAlert(`บันทึก ${savedDocNo} สำเร็จ!`); this.reset(); selectedRemarksSequence = []; selectedRemarkTexts.clear(); resetRemarkEditor('document');
                 if ($('search-remark')) $('search-remark').value = '';
                 if ($('doc-date')) $('doc-date').value = todayStr;
                 checkDocType(); if ($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); }
@@ -3215,9 +3325,9 @@
 
         function updateAllStatuses() {
             database.forEach(doc => { if(doc.paymentManaged||doc.billingManaged) return; if(doc.paymentLedger) { const p=paymentTotals(doc); doc.status=p.balance===0?'paid':p.paid>0?'partial':'pending'; return; } if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
-            const adj = {}; database.filter(doc=>!doc.paymentManaged&&!doc.paymentLedger&&!doc.billingManaged).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
+            const adj = {}; database.filter(doc=>doc.prefix!=='OEMR'&&!doc.paymentManaged&&!doc.paymentLedger&&!doc.billingManaged).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
             const visited = new Set();
-            for (const doc of database) { if(doc.paymentManaged||doc.paymentLedger||doc.billingManaged) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
+            for (const doc of database) { if(doc.prefix==='OEMR'||doc.paymentManaged||doc.paymentLedger||doc.billingManaged) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
         }
 
         function documentTypeKey(d) { return d.prefix || '__untyped__'; }
@@ -3263,7 +3373,7 @@
             updateAllStatuses(); if(!$('document-table-body')) return;
             renderDocumentTypeFilter();
             const documents = getFilteredDocuments(val('document-type-filter'));
-            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'||d.status==='partial'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='partial'?'ชำระบางส่วน':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span></td><td class="p-4 text-center"><div class="flex justify-center gap-1">${canReceivePayments(d) ? `<button type="button" data-open-payment="${encodeURIComponent(d.docNo)}" class="text-emerald-700 border border-emerald-200 px-2 py-1.5 rounded">รับชำระ</button>` : ''}<button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
+            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'||d.status==='partial'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='partial'?'ชำระบางส่วน':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${d.prefix === 'OEMR' ? '—' : `${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span>`}</td><td class="p-4 text-center"><div class="flex justify-center gap-1">${canReceivePayments(d) ? `<button type="button" data-open-payment="${encodeURIComponent(d.docNo)}" class="text-emerald-700 border border-emerald-200 px-2 py-1.5 rounded">รับชำระ</button>` : ''}<button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
         }
 
         function deleteDocument(docNo) { 
@@ -3282,7 +3392,12 @@
                 if (d.sellerName) document.querySelectorAll('#seller-options-list li').forEach(l => { if(l.textContent.includes(d.sellerName)) l.click(); });
                 if ($('doc-date')) $('doc-date').value = d.inputDate ?? '';
                 if ($('doc-credit')) $('doc-credit').value = d.creditTerm ?? '';
-                if ($('doc-ref-manual')) $('doc-ref-manual').value = d.docNo;
+                if ($('doc-ref-manual')) $('doc-ref-manual').value = d.prefix === 'OEMR' ? d.refDocManual || '' : d.docNo;
+                if (d.prefix === 'OEMR') {
+                    $('oem-job-ref').value = d.oemReceipt?.jobRef || '';
+                    $('oem-sender').value = d.oemReceipt?.sender || '';
+                    $('oem-receiver').value = d.oemReceipt?.receiver || '';
+                }
                 if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix)) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const[id,def]=k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = d[id] || def || ''; }); }
                 if($('global-disc-type')) $('global-disc-type').value = d.items[0]?.discType || 'disc_%';
                 if($('payslip-sso-pct')) $('payslip-sso-pct').value = d.ssoPct || 0;
@@ -3326,7 +3441,12 @@
             if(database.find(d=>d.docNo===docNo)?.billingManaged){openBillingDocument(docNo).catch(e=>showAlert(productHtml(e.message)));return;}
             const d = database.find(x => x.docNo === docNo); if (!d) return; currentlyPreviewingDoc = d;
             const issuer = d.paymentIssuer || companyProfile;
-            const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', cur = d.currency || 'THB';
+            const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', isOem = d.prefix === 'OEMR', cur = d.currency || 'THB';
+            $('paper-preview')?.classList.toggle('oem-receipt-paper', isOem);
+            show('preview-credit-row', !isOem);
+            show('preview-amount-summary', !isOem);
+            show('preview-col-amt', !isOem);
+            show('preview-oem-summary', isOem);
             
             // Fit A4 to the visible screen without changing its print dimensions.
             previewAutoFit = true;
@@ -3360,7 +3480,7 @@
             txt('preview-lbl-stamp-auth', authStamp);
             txt('preview-lbl-stamp-maker', isPay ? "" : (isEn ? "Company Stamp (if any)" : "ตราประทับ (ถ้ามี)"));
             txt('pv-comp-tax', productHtml(issuer.taxId)+(d.paymentManaged?' · '+productHtml(issuer.branch||'สำนักงานใหญ่'):'')); txt('pv-comp-phone', productHtml(issuer.phone));
-            txt('preview-doc-name', isPay ? (isEn ? "PAYSLIP" : "สลิปเงินเดือน (PAYSLIP)") : (isEn ? (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName) : d.docName));
+            txt('preview-doc-name', isOem ? (isEn ? 'GOODS RECEIPT' : docTypeNames.OEMR) : isPay ? (isEn ? "PAYSLIP" : "สลิปเงินเดือน (PAYSLIP)") : (isEn ? (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName) : d.docName));
             txt('preview-customer', productHtml(d.customerName));
             txt('preview-customer-tax', isPay ? "" : (d.customerTaxId ? `Tax ID: ${d.customerTaxId}` : ''));
             txt('preview-customer-branch', isPay ? "" : (d.customerBranch ? `Branch: ${d.customerBranch}` : ''));
@@ -3374,7 +3494,7 @@
             const isExp = ['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(d.prefix), sExp = isExp && (d.incoterm || d.pol || d.pod);
             show('preview-export-details', sExp); if (sExp) { txt('preview-incoterm', d.incoterm || '-'); txt('preview-pol', d.pol || '-'); txt('preview-pod', d.pod || '-'); txt('preview-currency-label', cur); }
             
-            const showPriceBasis = !isPay && (d.vatEnabled === true || (!noVatDocs.includes(d.prefix) && d.paymentManaged?.kind !== 'receipt' && d.items.some(i => i.pricingVersion === 1)));
+            const showPriceBasis = !isOem && !isPay && (d.vatEnabled === true || (!noVatDocs.includes(d.prefix) && d.paymentManaged?.kind !== 'receipt' && d.items.some(i => i.pricingVersion === 1)));
             let mixedPriceBases = false;
             if (showPriceBasis) {
                 const bases = [...new Set(d.items.map(i => printedItemBasis(i, d)))];
@@ -3383,7 +3503,25 @@
                 txt('preview-col-price', (isEn ? 'Unit price' : 'ราคา/หน่วย') + '<br>(' + cur + ')<br><span class="text-[10px] font-normal">' + basisTitle + '</span>');
                 txt('preview-col-amt', (isEn ? 'Amount' : 'จำนวนเงิน') + '<br>(' + cur + ')<br><span class="text-[10px] font-normal">' + (mixedPriceBases ? (isEn ? 'Before VAT' : 'ก่อน VAT') : basisTitle) + '</span>');
             }
+            if (isOem) {
+                const {jobRef, sender, receiver} = d.oemReceipt || {};
+                productText('preview-cust-label', isEn ? 'Customer supplying materials:' : 'ลูกค้าผู้ส่งวัตถุดิบ:');
+                productText('preview-date-label', isEn ? 'Date received:' : 'วันที่รับจริง:');
+                productText('preview-ref-label', isEn ? 'Delivery note no.:' : 'เลขใบส่งของ:');
+                productText('preview-col-price', isEn ? 'Customer LOT' : 'LOT ลูกค้า');
+                productText('preview-col-disc', isEn ? 'Condition on receipt' : 'สภาพตอนรับ');
+                productText('preview-lbl-maker', isEn ? 'Delivered by (customer)' : 'ผู้ส่งมอบ (ลูกค้า)');
+                productText('preview-lbl-auth', isEn ? 'Received by (factory)' : 'ผู้รับมอบ (โรงงาน)');
+                productText('preview-lbl-stamp-maker', sender || '(........................................)');
+                productText('preview-lbl-stamp-auth', receiver || '(........................................)');
+                const policy = isEn ? 'Acknowledges physical receipt for OEM production. Materials remain customer-owned. This is not a purchase, payment receipt, tax invoice or QA release.' : 'ยืนยันการรับมอบวัตถุดิบเพื่อผลิต OEM วัตถุดิบยังเป็นของลูกค้า เอกสารนี้ไม่ใช่การซื้อ ใบเสร็จรับเงิน ใบกำกับภาษี หรือใบอนุมัติใช้จาก QA';
+                txt('preview-oem-summary', (jobRef ? '<p class="font-bold mb-1">' + (isEn ? 'OEM job: ' : 'งาน OEM: ') + productHtml(jobRef) + '</p>' : '') + '<p>' + policy + '</p>');
+            } else productText('preview-oem-summary', '');
             if ($('preview-items-body')) $('preview-items-body').innerHTML = d.items.map((i, idx) => {
+                if (isOem) {
+                    const cells = [idx + 1, i.code || '—', i.name, i.qty, i.unit, i.customerLot || '—', i.receiptCondition || '—'];
+                    return '<tr class="border-b border-gray-100">' + cells.map((cell, col) => `<td class="py-1.5 px-2 border-r border-gray-200 ${[0,1,3,4,5].includes(col) ? 'text-center' : ''}">${productHtml(cell)}</td>`).join('') + '</tr>';
+                }
                 const basis = mixedPriceBases ? printedItemBasis(i, d) : null;
                 const label = basis ? '<small class="block text-[10px] font-normal text-gray-500">' + priceBasisLabel(basis) + '</small>' : '';
                 const enteredAmount = i.pricingVersion === 1 ? (i.displayTotal ?? i.total) : i.total;
@@ -3547,6 +3685,14 @@
 
         function draftAIEmail() {
             if(!currentlyPreviewingDoc) return; const d = currentlyPreviewingDoc, t = (d.docName.match(/\(([^)]+)\)/)?.[1] || d.docName);
+            if (d.prefix === 'OEMR') {
+                if ($('ai-email-to')) $('ai-email-to').value = d.customerEmail || '';
+                if ($('ai-email-body')) $('ai-email-body').value = currentLang === 'en'
+                    ? `Subject: Acknowledgement of OEM material receipt — ${d.docNo}\n\nDear ${d.customerName},\n\nWe confirm physical receipt of your materials on ${d.dateStr}. Please see the attached receipt for quantities and condition on delivery.\n\nBest regards,\n${companyProfile.nameEn || companyProfile.nameTh}`
+                    : `หัวข้อ: ยืนยันการรับวัตถุดิบเพื่อผลิต OEM — ${d.docNo}\n\nเรียน ${d.customerName}\n\nบริษัทฯ ได้รับวัตถุดิบที่ท่านส่งมอบเมื่อวันที่ ${d.dateStr} แล้ว โปรดดูจำนวนที่รับจริงและสภาพตอนรับในเอกสารแนบ\n\nขอแสดงความนับถือ\n${companyProfile.nameTh}`;
+                show('ai-email-container', true);
+                return;
+            }
             const m = currentLang === 'en' ? `Subject: ${t} No. ${d.docNo} from ${companyProfile.nameEn}\n\nDear ${d.customerName},\n\nPlease find attached the ${t} (Doc No: ${d.docNo}) ${d.dateStr ? `dated ${d.dateStr} ` : ''}for your reference.\n\nThe total amount due is ${formatMoney(d.grandTotal)} THB. If you have any questions regarding this document, please feel free to contact us.\n\nBest regards,\n${companyProfile.nameEn}` : `หัวข้อ: นำส่งเอกสาร ${t} เลขที่ ${d.docNo} จาก ${companyProfile.nameTh}\n\nเรียน ทีมงาน ${d.customerName}\n\nทางบริษัทฯ ขอแนบเอกสาร ${t} (เลขที่: ${d.docNo})${d.dateStr ? ` ลงวันที่ ${d.dateStr}` : ''} มาเพื่อโปรดพิจารณาและดำเนินการในส่วนที่เกี่ยวข้องครับ/ค่ะ\n\nโดยมียอดรวมสุทธิทั้งสิ้น ${formatMoney(d.grandTotal)} บาท หากมีข้อสงสัยประการใดสามารถติดต่อสอบถามได้ทันทีครับ\n\nขอแสดงความนับถือ\n${companyProfile.nameTh}`;
             if($('ai-email-to')) $('ai-email-to').value = d.customerEmail || ''; if($('ai-email-body')) $('ai-email-body').value = m; show('ai-email-container', true);
         }
@@ -3564,7 +3710,7 @@
             const pc = val('stc-product-select'); if(!pc || !$('stc-table-body')) return; const pObj = products.find(p => p.code === pc); txt('stc-title-item', pObj ? pObj.name : pc);
             let h = [], bal = 0, i = 1; const iT = ['STI','GRN','FGR','MR'], oT = ['STO','DO','ABB','MI','PL'];
             const codes = new Set([pc, pObj?.purchaseCode].map(normalizeProductSearch).filter(Boolean));
-            database.forEach(d => d.items.forEach(it => { if(codes.has(normalizeProductSearch(it.code)) || it.name === pObj?.name) h.push({ d: documentTimestamp(d.rawDate) || documentTimestamp(d.createdAt), ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
+            database.filter(d => d.prefix !== 'OEMR').forEach(d => d.items.forEach(it => { if(codes.has(normalizeProductSearch(it.code)) || it.name === pObj?.name) h.push({ d: documentTimestamp(d.rawDate) || documentTimestamp(d.createdAt), ds: d.dateStr, no: d.docNo, t: d.prefix, q: it.qty }); }));
             h.sort((a,b) => a.d - b.d);
             $('stc-table-body').innerHTML = h.length ? h.map(r => { let iq = 0, oq = 0; if(iT.includes(r.t)){ iq=r.q; bal+=r.q; }else if(oT.includes(r.t)){ oq=r.q; bal-=r.q; }else return ''; return `<tr class="border-b"><td class="p-3 text-center border-r">${i++}</td><td class="p-3 border-r">${r.ds}</td><td class="p-3 border-r font-bold text-blue-600">${r.no}</td><td class="p-3 border-r">${docTypeNames[r.t] || r.t}</td><td class="p-3 text-center bg-green-50 text-green-700 font-bold border-r">${iq||'-'}</td><td class="p-3 text-center bg-red-50 text-red-700 font-bold border-r">${oq||'-'}</td><td class="p-3 text-center font-bold bg-gray-50 text-lg">${bal}</td></tr>`; }).join('') : '<tr><td colspan="7" class="p-8 text-center text-gray-500">ไม่มีการเคลื่อนไหว</td></tr>';
         }
