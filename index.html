@@ -3226,6 +3226,29 @@
         function isInactiveExpenseDocument(doc) {
             return (Object.hasOwn(expenseDocumentTypes, doc.prefix) || doc.prefix === 'PO') && ['draft', 'cancelled', 'canceled', 'void', 'voided', 'rejected', 'deleted'].includes(String(doc.status || '').trim().toLowerCase());
         }
+        function dashboardPayrollTotals(doc) {
+            // A saved subtotal can already contain negative advance/deduction lines.
+            // Read the original earnings lines, never today's employee salary or net pay.
+            if (!Array.isArray(doc.items) || !doc.items.length) throw new Error('Missing payroll earnings');
+            const money = value => {
+                const raw = String(value ?? '').trim();
+                if (!/^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(raw)) throw new Error('Invalid payroll amount');
+                return priceUnits(raw.replace(/,/g, ''), 2, true);
+            };
+            let grossCents = 0;
+            for (const item of doc.items) {
+                const amount = money(item?.total ?? item?.displayTotal);
+                if (amount > 0) grossCents += amount;
+                if (!Number.isSafeInteger(grossCents)) throw new Error('Payroll amount exceeds safe range');
+            }
+            let netCents = null;
+            try {
+                // Legacy percentage deductions may have stored floating-point fractions.
+                netCents = money(typeof doc.grandTotal === 'number' && Number.isFinite(doc.grandTotal) ? doc.grandTotal.toFixed(2) : doc.grandTotal);
+                if (netCents > grossCents) throw new Error('Net payroll exceeds earnings');
+            } catch {netCents = null;}
+            return {grossCents, netCents};
+        }
         // Document totals, not cash paid. PO/PR/GRN and customer receipts never create expenses here.
         function dashboardExpenses(documents, vaultRecords = [], company = {}) {
             const norm = value => String(value ?? '').normalize('NFKC').trim().toUpperCase().replace(/\s+/g, '');
@@ -3259,15 +3282,28 @@
                 if (source === 'vault' && companyTax && row.taxId === companyTax) {row.state = 'sales'; return;}
                 if (source === 'vault' && companyTax && tax(d.buyerTaxId) && tax(d.buyerTaxId) !== companyTax) {row.state = 'company'; return;}
                 try {
-                    const rawAmount = String(d.grandTotal ?? '').trim();
-                    if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(rawAmount)) throw new Error('Invalid amount');
-                    const amount = priceUnits(rawAmount.replace(/,/g, ''), 2);
+                    let amount;
+                    if (source === 'erp' && type === 'PAYSLIP') {
+                        row.payroll = dashboardPayrollTotals(d);
+                        amount = row.payroll.grossCents;
+                    } else {
+                        const rawAmount = String(d.grandTotal ?? '').trim();
+                        if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?$/.test(rawAmount)) throw new Error('Invalid amount');
+                        amount = priceUnits(rawAmount.replace(/,/g, ''), 2);
+                    }
                     const currency = String(d.currency || (source === 'erp' ? 'THB' : '')).trim().toUpperCase();
                     if (!currency) throw new Error('Missing currency');
                     const rate = currency === 'THB' ? 1000000 : priceUnits(d.exchangeRate, 6);
                     if (rate <= 0) throw new Error('Missing exchange rate');
                     row.cents = roundPriceRatio(BigInt(amount) * BigInt(rate), 1000000n) * row.sign;
                     if (!Number.isSafeInteger(row.cents)) throw new Error('Amount exceeds safe range');
+                    if (row.payroll) {
+                        const net = row.payroll.netCents;
+                        row.payroll.grossCents = row.cents;
+                        row.payroll.netCents = net === null ? null : roundPriceRatio(BigInt(net) * BigInt(rate), 1000000n);
+                        if (row.payroll.netCents !== null && (!Number.isSafeInteger(row.payroll.netCents) || !Number.isSafeInteger(row.cents - row.payroll.netCents))) row.payroll.netCents = null;
+                        row.payroll.deductionsCents = row.payroll.netCents === null ? null : row.cents - row.payroll.netCents;
+                    }
                 } catch {row.state = 'invalid';}
             }
             for (const d of documents) if (Object.hasOwn(expenseDocumentTypes, d.prefix)) add(d, 'erp', d);
@@ -3369,13 +3405,16 @@
             const reasons = en ? {included: 'Included', duplicate: 'Already counted in linked document', inactive: 'Draft / cancelled', unreviewed: 'Not reviewed', sales: 'Company is the seller', company: 'Buyer does not match company', invalid: 'Check amount / saved exchange rate', review: 'Linked totals differ — review needed', 'po-review': 'Invoice shares this PO — enter the exact invoice reference'}
                 : {included: 'รวมในยอด', duplicate: 'นับผ่านเอกสารอ้างอิงแล้ว', inactive: 'ร่าง / ยกเลิก', unreviewed: 'ยังไม่ตรวจยืนยัน', sales: 'บริษัทเป็นผู้ขาย', company: 'ผู้ซื้อไม่ตรงกับบริษัท', invalid: 'ตรวจยอด / อัตราแลกเปลี่ยนที่บันทึก', review: 'ยอดอ้างอิงไม่ตรง ต้องตรวจสอบ', 'po-review': 'มีใบซื้ออ้าง PO เดียวกัน กรุณาระบุเลขใบซื้อที่ชำระ'};
             productText('dash-expense-heading', en ? 'Expense document details' : 'รายละเอียดรายจ่าย');
-            productText('dash-expense-guidance', en ? 'Operational purchase/payment document totals including VAT and net payslips; not cash paid or an accounting expense report. A PO alone adds zero. Linked supplier invoices/receipts contribute their actual documented amounts, never the full PO value. Add the exact invoice reference when recording its receipt/PV. Accounting classification, recoverable VAT, accruals and payroll deductions require separate accounting review.' : 'ยอดเอกสารฝั่งซื้อ/จ่ายสะสม รวม VAT และเงินเดือนสุทธิ ไม่ใช่ยอดเงินจ่ายจริงหรือค่าใช้จ่ายในงบกำไรขาดทุน PO อย่างเดียวไม่เพิ่มยอด เมื่อเชื่อมใบกำกับภาษี/ใบเสร็จผู้ขายที่ตรวจแล้วจะรวมตามยอดเอกสารนั้น ไม่ดึงยอด PO เต็มใบมารวม ระบุเลขใบซื้อที่ชำระในใบเสร็จ/ใบสำคัญจ่ายเพื่อป้องกันซ้ำ ฝ่ายบัญชียังต้องแยกสต๊อก สินทรัพย์ เงินล่วงหน้า ภาษีซื้อที่ขอคืนได้ รายการค้างจ่าย และเงินเดือนก่อนหัก');
+            productText('dash-expense-guidance', en ? 'Operational purchase/payment document totals including VAT and gross payroll before advances and deductions; not cash paid or an accounting expense report. Payroll counts the earnings saved in each payslip, with deductions and net pay shown separately. A PO alone adds zero. Linked supplier invoices/receipts contribute their actual documented amounts, never the full PO value. Add the exact invoice reference when recording its receipt/PV. Accounting classification, recoverable VAT and accruals require separate accounting review.' : 'ยอดเอกสารฝั่งซื้อ/จ่ายสะสม รวม VAT และรายได้รวมของเงินเดือนก่อนหักเบิก/รายการหัก โดยอ่านจากรายการรายได้ในสลิปและแสดงยอดหักกับยอดจ่ายสุทธิแยกกัน ยอดนี้ไม่ใช่ยอดเงินจ่ายจริงหรือค่าใช้จ่ายในงบกำไรขาดทุน PO อย่างเดียวไม่เพิ่มยอด เมื่อเชื่อมใบกำกับภาษี/ใบเสร็จผู้ขายที่ตรวจแล้วจะรวมตามยอดเอกสารนั้น ไม่ดึงยอด PO เต็มใบมารวม ระบุเลขใบซื้อที่ชำระในใบเสร็จ/ใบสำคัญจ่ายเพื่อป้องกันซ้ำ ฝ่ายบัญชียังต้องแยกสต๊อก สินทรัพย์ เงินล่วงหน้า ภาษีซื้อที่ขอคืนได้ และรายการค้างจ่าย');
             txt('dash-po-details', expenses.purchaseOrders.length ? `<h4 class="font-semibold mb-2">${en ? 'PO and supporting supplier documents (PO values excluded)' : 'PO และเอกสารผู้ขายที่เชื่อมกัน (ไม่นำยอด PO มาบวก)'}</h4>` + expenses.purchaseOrders.map(order => `<p class="p-3 border-b"><strong>${productHtml(order.docNo)}</strong> — ${order.state === 'waiting' ? en ? 'Awaiting supplier documents' : 'รอเอกสารผู้ขาย' : en ? 'Linked documents' : 'มีเอกสารผู้ขายเชื่อมแล้ว'}${order.proofKeys.length ? ': ' + order.proofKeys.map(key => productHtml(byKey.get(key)?.docNo)).join(', ') : ''}</p>`).join('') : '');
             txt('dash-expense-columns', '<tr>' + (en ? ['Document / type', 'Payee / source', 'Amount counted (THB)', 'Status / reference', 'Open'] : ['เลขที่ / ประเภท', 'ผู้รับเงิน / แหล่งข้อมูล', 'ยอดที่รวม (บาท)', 'สถานะ / อ้างอิง', 'เปิดดู']).map(t => `<th class="p-3 text-left border-b">${t}</th>`).join('') + '</tr>');
             txt('dash-expense-rows', expenses.rows.length ? expenses.rows.map(row => {
                 const references = row.covers.map(key => byKey.get(key)?.docNo).filter(Boolean).join(', ');
                 const label = en && row.source === 'erp' ? row.label.match(/\(([^)]+)\)/)?.[1] || row.type : row.label;
-                return `<tr><td class="p-3 border-b"><strong>${productHtml(row.docNo || '—')}</strong><br>${productHtml(label)}</td><td class="p-3 border-b">${productHtml(row.party || '—')}<br><span class="text-xs text-gray-500">${row.source === 'erp' ? 'ERP' : en ? 'Reviewed document vault' : 'คลังเอกสารแนบ'}</span></td><td class="p-3 border-b text-right whitespace-nowrap">${row.state === 'included' ? formatMoney(row.cents / 100) : '—'}</td><td class="p-3 border-b">${productHtml(reasons[row.state])}${references ? '<br>' + productHtml(references) : ''}</td><td class="p-3 border-b"><button type="button" data-expense-source="${row.source}" data-expense-doc="${productHtml(row.docNo)}" class="text-emerald-700 underline p-2">${row.source === 'erp' ? en ? 'View' : 'ดูเอกสาร' : en ? 'Open vault' : 'เปิดคลัง'}</button></td></tr>`;
+                const payroll = row.state === 'included' && row.payroll;
+                const breakdown = payroll ? `<div class="text-xs text-gray-500 mt-1">${en ? 'Gross earnings before deductions' : 'รายได้รวมก่อนหักเบิก/รายการหัก'}${payroll.netCents === null ? `<br>${en ? 'Check net pay in the original payslip' : 'ตรวจยอดจ่ายสุทธิจากสลิปต้นฉบับ'}` : `<br>${en ? 'Advances / deductions: ' : 'เบิก/รายการหักรวม: '}${formatMoney(payroll.deductionsCents / 100)}<br>${en ? 'Net pay: ' : 'ยอดจ่ายสุทธิ: '}${formatMoney(payroll.netCents / 100)}`}</div>` : '';
+                const reason = row.type === 'PAYSLIP' && row.state === 'invalid' ? (en ? 'Check saved payroll earnings / exchange rate' : 'ตรวจรายการรายได้ก่อนหักในสลิป / อัตราแลกเปลี่ยน') : reasons[row.state];
+                return `<tr><td class="p-3 border-b"><strong>${productHtml(row.docNo || '—')}</strong><br>${productHtml(label)}</td><td class="p-3 border-b">${productHtml(row.party || '—')}<br><span class="text-xs text-gray-500">${row.source === 'erp' ? 'ERP' : en ? 'Reviewed document vault' : 'คลังเอกสารแนบ'}</span></td><td class="p-3 border-b text-right whitespace-nowrap">${row.state === 'included' ? formatMoney(row.cents / 100) : '—'}${breakdown}</td><td class="p-3 border-b">${productHtml(reason)}${references ? '<br>' + productHtml(references) : ''}</td><td class="p-3 border-b"><button type="button" data-expense-source="${row.source}" data-expense-doc="${productHtml(row.docNo)}" class="text-emerald-700 underline p-2">${row.source === 'erp' ? en ? 'View' : 'ดูเอกสาร' : en ? 'Open vault' : 'เปิดคลัง'}</button></td></tr>`;
             }).join('') : `<tr><td colspan="5" class="p-4 text-gray-500">${en ? 'No expense documents' : 'ยังไม่มีเอกสารรายจ่าย'}</td></tr>`);
         }
         $('dash-open-expenses')?.addEventListener('click', () => {
