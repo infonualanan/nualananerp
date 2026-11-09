@@ -15,7 +15,7 @@ function setup(t,documents=[],vault=[]){
  w.dashboardTest.refresh(documents,vault);
  return {w,$};
 }
-const doc=(prefix,number,grandTotal,extra={})=>({docNo:prefix+'-'+number,prefix,docName:prefix,status:'completed',currency:'THB',exchangeRate:1,grandTotal,items:[],customerName:'Supplier A',customerTaxId:'TEST-SUPPLIER-A-TAX',customerBranch:'00000',...extra});
+const doc=(prefix,number,grandTotal,extra={})=>({docNo:prefix+'-'+number,prefix,docName:prefix,status:'completed',currency:'THB',exchangeRate:1,grandTotal,items:prefix==='PAYSLIP'?[{code:'SALARY',total:grandTotal}]:[],customerName:'Supplier A',customerTaxId:'TEST-SUPPLIER-A-TAX',customerBranch:'00000',...extra});
 const vault=(id,type,grandTotal,extra={})=>({id,status:'reviewed',data:{documentType:type,documentNo:id,documentDate:'2026-11-01',currency:'THB',grandTotal,sellerName:'Supplier A',sellerTaxId:'TEST-SUPPLIER-A-TAX',sellerBranch:'00000',buyerTaxId:company.taxId,reviewed:true,...extra}});
 
 test('dashboard includes purchase invoices, bills, vouchers, payroll and supplier adjustments; excludes PO and sales',t=>{
@@ -118,4 +118,36 @@ test('receipt and PV naming only a shared PO wait for invoice matching rather th
  assert.equal(held.rows.find(r=>r.docNo==='RC-1').state,'po-review');assert.match($('dash-expense-rows').textContent,/กรุณาระบุเลขใบซื้อที่ชำระ/);
  const matchedRows=rows.map(d=>d.prefix==='PV'?{...d,refDocManual:'PINV-1, PO-1'}:d),matchedFile={...file,data:{...file.data,referenceNo:'PINV-1, PO-1'}};
  const matched=w.dashboardTest.expenses(matchedRows,[matchedFile]);assert.equal(matched.cents,400000);assert.equal(matched.invalid,0);assert.equal(matched.duplicates,2);
+});
+
+test('payroll expenses count saved earnings before advances, even when saved subtotal already contains the advance deduction',t=>{
+ const rows=[15000,12000,9000].map((advance,i)=>doc('PAYSLIP','gross-'+i,30000-advance,{subtotal:30000-advance,items:[{code:'SALARY',total:30000},{name:'เบิกล่วงหน้า',total:-advance}]})),before=JSON.stringify(rows);
+ const {w,$}=setup(t,rows),r=w.dashboardTest.expenses(rows);
+ assert.equal(r.cents,9000000);assert.equal(r.count,3);assert.equal(r.invalid,0);assert.equal(JSON.stringify(rows),before,'calculating expense totals must not change saved net pay');
+ assert.match($('dash-total-expenses').textContent,/90,000\.00/);assert.match($('dash-expense-guidance').textContent,/ก่อนหักเบิก\/รายการหัก/);assert.doesNotMatch($('dash-expense-guidance').textContent,/เงินเดือนสุทธิ/);
+ const row=$('dash-expense-rows').querySelector('tr').children[2];assert.match(row.textContent,/30,000\.00/);assert.match(row.textContent,/เบิก\/รายการหักรวม: 15,000\.00/);assert.match(row.textContent,/ยอดจ่ายสุทธิ: 15,000\.00/);
+ w.toggleLanguage();assert.match($('dash-expense-rows').textContent,/Gross earnings before deductions/);assert.match($('dash-expense-guidance').textContent,/gross payroll before advances and deductions/);
+});
+
+test('payroll includes bonuses and overtime after line discounts while stored deductions and legacy fractional net pay remain separate',t=>{
+ const slip=doc('PAYSLIP','earnings',16554.434,{subtotal:17611.10,ssoAmt:880.555,whtAmt:176.111,items:[{code:'SALARY',total:30000},{name:'Bonus',total:'2,500.00'},{name:'OT after discount',price:1234.56,discVal:10,total:1111.10,displayTotal:1111.10},{name:'Advance',total:-16000}]}),{w,$}=setup(t,[slip]),r=w.dashboardTest.expenses([slip]);
+ assert.equal(r.cents,3361110);assert.equal(r.rows[0].payroll.netCents,1655443);assert.equal(r.rows[0].payroll.deductionsCents,1705667);assert.equal(slip.grandTotal,16554.434);
+ assert.match($('dash-expense-rows').textContent,/ยอดจ่ายสุทธิ: 16,554\.43/);
+});
+
+test('full salary advances and linked payroll payment vouchers never add salary expenses twice',t=>{
+ const rows=[doc('PAYSLIP','full',0,{subtotal:0,items:[{total:18000},{total:-18000}]}),doc('PV','advance-full',18000,{refDocManual:'PAYSLIP-full'}),
+ doc('PAYSLIP','partial',14000,{subtotal:14000,items:[{total:24000},{total:-10000}]}),doc('PV','advance-partial',10000,{refDocManual:'PAYSLIP-partial'}),doc('PV','net',14000,{refDocManual:'PAYSLIP-partial'})];
+ const {w,$}=setup(t,rows),r=w.dashboardTest.expenses(rows);assert.equal(r.cents,4200000);assert.equal(r.count,2);assert.equal(r.duplicates,3);assert.equal(r.invalid,0);assert.equal(r.rows.find(x=>x.docNo==='PAYSLIP-full').payroll.netCents,0);assert.match($('dash-expense-rows').textContent,/ยอดจ่ายสุทธิ: 0\.00/);
+});
+
+test('missing or malformed payroll earnings are flagged instead of guessing gross salary from net pay, subtotal or employee defaults',t=>{
+ const rows=[doc('PAYSLIP','missing',12000,{subtotal:12000,items:[]}),doc('PAYSLIP','bad',12000,{items:[{total:'not-money'}]}),doc('PAYSLIP','fraction',12000,{items:[{total:'12000.001'}]})],{w,$}=setup(t,rows),r=w.dashboardTest.expenses(rows);
+ assert.equal(r.cents,0);assert.equal(r.count,0);assert.equal(r.invalid,3);assert.match($('dash-expense-rows').textContent,/ตรวจรายการรายได้ก่อนหักในสลิป/);assert.equal($('dash-expense-warning').classList.contains('hidden'),false);
+});
+
+test('payroll satang and FX conversions stay exact and available gross earnings do not invent missing net pay',t=>{
+ const fx=doc('PAYSLIP','fx','1.06',{currency:'USD',exchangeRate:'36.25',items:[{total:1.01},{total:'0.20'},{total:-0.15}]}),{w,$}=setup(t,[fx]),r=w.dashboardTest.expenses([fx]);
+ assert.equal(r.cents,4386);assert.equal(r.rows[0].payroll.grossCents,4386);assert.equal(r.rows[0].payroll.netCents,3843);assert.equal(r.rows[0].payroll.deductionsCents,543);
+ const noNet=doc('PAYSLIP','no-net','',{items:[{total:1000}]});w.dashboardTest.refresh([noNet]);const known=w.dashboardTest.expenses([noNet]);assert.equal(known.cents,100000);assert.equal(known.rows[0].payroll.netCents,null);assert.match($('dash-expense-rows').textContent,/ตรวจยอดจ่ายสุทธิจากสลิปต้นฉบับ/);
 });
