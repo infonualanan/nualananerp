@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./assets/phosphor-2.1.2.css">
     <link rel="stylesheet" href="./payments.css">
     <link rel="stylesheet" href="./vault.css">
+    <link rel="stylesheet" href="./assets/customer-intake.css">
     <link rel="stylesheet" href="./factory.css">
     <link rel="stylesheet" href="./billing.css">
     <link rel="stylesheet" href="./salary-certificate.css">
@@ -798,12 +799,15 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-fit">
                             <h3 class="text-lg font-semibold mb-4 text-gray-700" data-i18n="title_add_cust" id="form-cust-title">เพิ่มลูกค้าใหม่</h3>
+                            <section id="customer-ai-intake" aria-label="อ่านข้อมูลลูกค้าด้วย AI"></section>
                             <form id="add-customer-form" class="space-y-4 text-[14px]">
                                 <div><label class="block text-gray-600 mb-1 text-[12px]"><span data-i18n="lbl_cust_name">ชื่อบริษัท/องค์กร</span> <span class="text-red-500">*</span></label><input type="text" id="new-cust-name" required autocomplete="off" aria-describedby="customer-name-error" class="w-full border p-2 rounded focus:ring-2 focus:ring-emerald-500 outline-none"><p id="customer-name-error" class="hidden text-xs text-red-600 mt-1" role="status"></p></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_contact">ชื่อลูกค้า (เว้นได้)</label><input type="text" id="new-cust-contact" class="w-full border p-2 rounded outline-none"></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_email">อีเมล</label><input type="email" id="new-cust-email" class="w-full border p-2 rounded outline-none"></div>
+                                <div><label for="new-cust-phone" class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_phone">โทรศัพท์</label><input type="tel" id="new-cust-phone" class="w-full border p-2 rounded outline-none"></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_addr">ที่อยู่</label><textarea id="new-cust-address" rows="2" class="w-full border p-2 rounded outline-none"></textarea></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_tax">เลขภาษี</label><input type="text" id="new-cust-tax" placeholder="13 หลัก" class="w-full border p-2 rounded outline-none"></div>
+                                <div><label for="new-cust-registration" class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_reg">เลขทะเบียนนิติบุคคล (ถ้ามี)</label><input type="text" id="new-cust-registration" class="w-full border p-2 rounded outline-none"></div>
                                 <div><label class="block text-gray-600 mb-1 text-[12px]" data-i18n="lbl_cust_branch">สาขา</label><input type="text" id="new-cust-branch" value="สำนักงานใหญ่" class="w-full border p-2 rounded outline-none"></div>
                                 <div class="flex gap-2 pt-2">
                                     <button type="submit" id="btn-save-cust" class="flex-1 bg-emerald-600 text-white font-medium p-2 rounded" data-i18n="btn_save_cust">บันทึก</button>
@@ -1406,7 +1410,7 @@
             auth = getAuth(app);
             db = getFirestore(app);
             onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetVaultSession(); resetSalaryCertificateSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetCustomerIntakeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetVaultSession(); resetSalaryCertificateSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
             currentUser = user;
             if (user) {
                 $('login-screen').style.display = 'none';
@@ -1577,8 +1581,8 @@
         // End unit-price VAT rules.
 
         const translations = {
-            th: { menu_dashboard: "ภาพรวม (Dashboard)", menu_create: "สร้างเอกสารใหม่", menu_docs: "คลังเอกสารทั้งหมด", menu_customers: "ฐานข้อมูลคู่ค้า / ลูกค้าหลัก", menu_employees: "ฐานข้อมูลพนักงาน", menu_products: "ฐานข้อมูลสินค้า / บริการ", menu_vat: "รายงานภาษี", menu_settings: "ตั้งค่าระบบ", menu_company: "ข้อมูลพื้นฐานบริษัท", title_dashboard: "ภาพรวมธุรกิจ (Executive Dashboard)", dash_revenue: "ยอดขายสุทธิ (รวมภาษี)", dash_docs: "เอกสารทั้งหมดที่ออก", dash_invs: "ใบกำกับภาษีขาย", dash_doc_type_title: "จำนวนเอกสารแยกตามประเภท", dash_sales_by_product: "สัดส่วนยอดขายแยกตามสินค้า", dash_sales_by_customer: "สัดส่วนยอดขายแยกตามลูกค้า", currency: "บาท", unit_doc: "ฉบับ", title_create_doc: "สร้างเอกสารใหม่", label_doc_type: "ประเภทเอกสาร", opt_select_type: "-- เลือกประเภท --", label_customer: "ชื่อลูกค้า / คู่ค้า", opt_select_cust: "-- เลือกลูกค้า --", label_credit: "เครดิต (Credit)", label_seller: "พนักงานขาย", label_vendor_inv: "อ้างอิงใบกำกับภาษีผู้ขาย", label_vendor_inv_desc: "สำหรับรายงานภาษีซื้อ", export_details: "ข้อมูลการส่งออก", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "เงื่อนไขใบเสนอราคา", valid_until: "กำหนดยืนราคา", title_items: "รายละเอียดรายการ (Line Items)", btn_add_item: "เพิ่มรายการ", label_select_remarks: "เลือกข้อความหมายเหตุ", btn_save_doc: "บันทึกเอกสาร", title_doc_list: "คลังเอกสารทั้งหมด", col_doc_no: "เลขที่เอกสาร", col_type: "ประเภท", col_customer: "ลูกค้า/ผู้ติดต่อ", col_email: "อีเมล", col_date: "วันที่", col_status: "สถานะ", col_total: "ยอดสุทธิ", col_action: "จัดการ", col_ref_no: "อ้างอิง", title_customers: "ข้อมูลลูกค้า/คู่ค้า", title_add_cust: "เพิ่มลูกค้าใหม่", lbl_cust_name: "ชื่อบริษัท/องค์กร", lbl_cust_contact: "ชื่อลูกค้า", lbl_cust_email: "อีเมล", col_cust_code: "รหัส", lbl_cust_tax: "เลขภาษี", lbl_cust_branch: "สาขา", lbl_cust_addr: "ที่อยู่", btn_save_cust: "บันทึก", btn_update: "อัปเดต", btn_cancel: "ยกเลิก", title_employees: "ข้อมูลพนักงาน", title_add_emp: "เพิ่มพนักงานใหม่", lbl_emp_name: "ชื่อ-นามสกุล", lbl_emp_pos: "ตำแหน่ง", title_products: "รายการสินค้า", title_add_prod: "เพิ่มสินค้าใหม่", lbl_prod_name: "ชื่อสินค้า/บริการ", lbl_prod_price: "ราคา", btn_save_prod: "บันทึก", title_exchange_rate: "ตั้งค่าอัตราแลกเปลี่ยน", desc_exchange_rate: "* เทียบ 1 สกุลเงิน = ? บาท", btn_save: "บันทึก", menu_settings: "ตั้งค่าระบบ", title_vat_report: "รายงานภาษี (VAT)", lbl_report_type: "ประเภท", lbl_report_month: "เดือน/ปี", btn_view_report: "ดูรายงาน", btn_print_report: "พิมพ์", title_preview: "ตัวอย่างเอกสาร", btn_draft_email: "ร่างอีเมล (AI)", btn_print: "พิมพ์", btn_save_company: "บันทึกข้อมูลบริษัท", tax_id_label: "Tax ID:", phone_label: "โทร:", menu_payslip: "สลิปเงินเดือน" },
-            en: { menu_dashboard: "Dashboard", menu_create: "Create Doc", menu_docs: "All Docs", menu_customers: "Customers", menu_employees: "Employees", menu_products: "Products", menu_vat: "VAT Reports", menu_settings: "Settings", menu_company: "Company Profile", title_dashboard: "Executive Dashboard", dash_revenue: "Net Sales", dash_docs: "Total Docs", dash_invs: "Tax Invoices", dash_doc_type_title: "Docs by Type", dash_sales_by_product: "Sales by Product", dash_sales_by_customer: "Sales by Customer", currency: "THB", unit_doc: "Docs", title_create_doc: "Create New Document", label_doc_type: "Document Type", opt_select_type: "-- Select Type --", label_customer: "Customer / Vendor", opt_select_cust: "-- Select Customer --", label_credit: "Credit Term", label_seller: "Salesperson", label_vendor_inv: "Vendor Tax Inv No.", label_vendor_inv_desc: "Required for Input VAT", export_details: "Export Details", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "Quotation Details", valid_until: "Valid Until", title_items: "Line Items", btn_add_item: "Add Item", label_select_remarks: "Select Remarks", btn_save_doc: "Save Document", title_doc_list: "Document Library", col_doc_no: "Doc No.", col_type: "Type", col_customer: "Customer", col_email: "Email", col_date: "Date", col_status: "Status", col_total: "Net Total", col_action: "Action", col_ref_no: "Ref No.", title_customers: "Customers & Vendors", title_add_cust: "Add New", lbl_cust_name: "Company Name", lbl_cust_contact: "Contact Name", lbl_cust_email: "Email", col_cust_code: "Code", lbl_cust_tax: "Tax ID", lbl_cust_branch: "Branch", lbl_cust_addr: "Address", btn_save_cust: "Save", btn_update: "Update", btn_cancel: "Cancel", title_employees: "Employees", title_add_emp: "Add New Employee", lbl_emp_name: "Full Name", lbl_emp_pos: "Position", title_products: "Products", title_add_prod: "Add New", lbl_prod_name: "Product Name", lbl_prod_price: "Price", btn_save_prod: "Save", title_exchange_rate: "Exchange Rates", desc_exchange_rate: "* 1 FCY = ? THB", btn_save: "Save", menu_settings: "Settings", title_vat_report: "VAT Reports", lbl_report_type: "Type", lbl_report_month: "Month/Year", btn_view_report: "View Report", btn_print_report: "Print", title_preview: "Preview", btn_draft_email: "Draft Email", btn_print: "Print", btn_save_company: "Save Profile", tax_id_label: "Tax ID:", phone_label: "Tel:", menu_payslip: "Payslip" }
+            th: { menu_dashboard: "ภาพรวม (Dashboard)", menu_create: "สร้างเอกสารใหม่", menu_docs: "คลังเอกสารทั้งหมด", menu_customers: "ฐานข้อมูลคู่ค้า / ลูกค้าหลัก", menu_employees: "ฐานข้อมูลพนักงาน", menu_products: "ฐานข้อมูลสินค้า / บริการ", menu_vat: "รายงานภาษี", menu_settings: "ตั้งค่าระบบ", menu_company: "ข้อมูลพื้นฐานบริษัท", title_dashboard: "ภาพรวมธุรกิจ (Executive Dashboard)", dash_revenue: "ยอดขายสุทธิ (รวมภาษี)", dash_docs: "เอกสารทั้งหมดที่ออก", dash_invs: "ใบกำกับภาษีขาย", dash_doc_type_title: "จำนวนเอกสารแยกตามประเภท", dash_sales_by_product: "สัดส่วนยอดขายแยกตามสินค้า", dash_sales_by_customer: "สัดส่วนยอดขายแยกตามลูกค้า", currency: "บาท", unit_doc: "ฉบับ", title_create_doc: "สร้างเอกสารใหม่", label_doc_type: "ประเภทเอกสาร", opt_select_type: "-- เลือกประเภท --", label_customer: "ชื่อลูกค้า / คู่ค้า", opt_select_cust: "-- เลือกลูกค้า --", label_credit: "เครดิต (Credit)", label_seller: "พนักงานขาย", label_vendor_inv: "อ้างอิงใบกำกับภาษีผู้ขาย", label_vendor_inv_desc: "สำหรับรายงานภาษีซื้อ", export_details: "ข้อมูลการส่งออก", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "เงื่อนไขใบเสนอราคา", valid_until: "กำหนดยืนราคา", title_items: "รายละเอียดรายการ (Line Items)", btn_add_item: "เพิ่มรายการ", label_select_remarks: "เลือกข้อความหมายเหตุ", btn_save_doc: "บันทึกเอกสาร", title_doc_list: "คลังเอกสารทั้งหมด", col_doc_no: "เลขที่เอกสาร", col_type: "ประเภท", col_customer: "ลูกค้า/ผู้ติดต่อ", col_email: "อีเมล", col_date: "วันที่", col_status: "สถานะ", col_total: "ยอดสุทธิ", col_action: "จัดการ", col_ref_no: "อ้างอิง", title_customers: "ข้อมูลลูกค้า/คู่ค้า", title_add_cust: "เพิ่มลูกค้าใหม่", lbl_cust_name: "ชื่อบริษัท/องค์กร", lbl_cust_contact: "ชื่อลูกค้า", lbl_cust_email: "อีเมล", lbl_cust_phone: "โทรศัพท์", lbl_cust_reg: "เลขทะเบียนนิติบุคคล (ถ้ามี)", col_cust_code: "รหัส", lbl_cust_tax: "เลขภาษี", lbl_cust_branch: "สาขา", lbl_cust_addr: "ที่อยู่", btn_save_cust: "บันทึก", btn_update: "อัปเดต", btn_cancel: "ยกเลิก", title_employees: "ข้อมูลพนักงาน", title_add_emp: "เพิ่มพนักงานใหม่", lbl_emp_name: "ชื่อ-นามสกุล", lbl_emp_pos: "ตำแหน่ง", title_products: "รายการสินค้า", title_add_prod: "เพิ่มสินค้าใหม่", lbl_prod_name: "ชื่อสินค้า/บริการ", lbl_prod_price: "ราคา", btn_save_prod: "บันทึก", title_exchange_rate: "ตั้งค่าอัตราแลกเปลี่ยน", desc_exchange_rate: "* เทียบ 1 สกุลเงิน = ? บาท", btn_save: "บันทึก", menu_settings: "ตั้งค่าระบบ", title_vat_report: "รายงานภาษี (VAT)", lbl_report_type: "ประเภท", lbl_report_month: "เดือน/ปี", btn_view_report: "ดูรายงาน", btn_print_report: "พิมพ์", title_preview: "ตัวอย่างเอกสาร", btn_draft_email: "ร่างอีเมล (AI)", btn_print: "พิมพ์", btn_save_company: "บันทึกข้อมูลบริษัท", tax_id_label: "Tax ID:", phone_label: "โทร:", menu_payslip: "สลิปเงินเดือน" },
+            en: { menu_dashboard: "Dashboard", menu_create: "Create Doc", menu_docs: "All Docs", menu_customers: "Customers", menu_employees: "Employees", menu_products: "Products", menu_vat: "VAT Reports", menu_settings: "Settings", menu_company: "Company Profile", title_dashboard: "Executive Dashboard", dash_revenue: "Net Sales", dash_docs: "Total Docs", dash_invs: "Tax Invoices", dash_doc_type_title: "Docs by Type", dash_sales_by_product: "Sales by Product", dash_sales_by_customer: "Sales by Customer", currency: "THB", unit_doc: "Docs", title_create_doc: "Create New Document", label_doc_type: "Document Type", opt_select_type: "-- Select Type --", label_customer: "Customer / Vendor", opt_select_cust: "-- Select Customer --", label_credit: "Credit Term", label_seller: "Salesperson", label_vendor_inv: "Vendor Tax Inv No.", label_vendor_inv_desc: "Required for Input VAT", export_details: "Export Details", incoterm: "Incoterms", pol: "Port of Loading", pod: "Port of Discharge", qt_details: "Quotation Details", valid_until: "Valid Until", title_items: "Line Items", btn_add_item: "Add Item", label_select_remarks: "Select Remarks", btn_save_doc: "Save Document", title_doc_list: "Document Library", col_doc_no: "Doc No.", col_type: "Type", col_customer: "Customer", col_email: "Email", col_date: "Date", col_status: "Status", col_total: "Net Total", col_action: "Action", col_ref_no: "Ref No.", title_customers: "Customers & Vendors", title_add_cust: "Add New", lbl_cust_name: "Company Name", lbl_cust_contact: "Contact Name", lbl_cust_email: "Email", lbl_cust_phone: "Phone", lbl_cust_reg: "Registration number (optional)", col_cust_code: "Code", lbl_cust_tax: "Tax ID", lbl_cust_branch: "Branch", lbl_cust_addr: "Address", btn_save_cust: "Save", btn_update: "Update", btn_cancel: "Cancel", title_employees: "Employees", title_add_emp: "Add New Employee", lbl_emp_name: "Full Name", lbl_emp_pos: "Position", title_products: "Products", title_add_prod: "Add New", lbl_prod_name: "Product Name", lbl_prod_price: "Price", btn_save_prod: "Save", title_exchange_rate: "Exchange Rates", desc_exchange_rate: "* 1 FCY = ? THB", btn_save: "Save", menu_settings: "Settings", title_vat_report: "VAT Reports", lbl_report_type: "Type", lbl_report_month: "Month/Year", btn_view_report: "View Report", btn_print_report: "Print", title_preview: "Preview", btn_draft_email: "Draft Email", btn_print: "Print", btn_save_company: "Save Profile", tax_id_label: "Tax ID:", phone_label: "Tel:", menu_payslip: "Payslip" }
         };
 
         Object.assign(translations.th, { label_doc_date: 'วันที่เอกสาร', btn_blank_date: 'เว้นว่าง', opt_blank_credit: '-- เว้นว่าง --' });
@@ -1629,7 +1633,7 @@
             if (billingController && (billingController.busy || billingController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการบัญชีก่อนเปลี่ยนหน้า'); return; }
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': renderCustomers, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault, 'salary-certificates': renderSalaryCertificates };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': () => {renderCustomers(); renderCustomerIntake();}, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault, 'salary-certificates': renderSalaryCertificates };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -1970,6 +1974,38 @@
         if ($('customer-duplicate-dialog')) $('customer-duplicate-dialog').addEventListener('close', () => setTimeout(checkUpcomingEmployeeLeave, 100));
         setInterval(checkUpcomingEmployeeLeave, 60000);
 
+        // AI intake is isolated from login and never writes customer records itself.
+        let customerIntakeController = null, customerIntakeLoading = null, customerIntakeEpoch = 0;
+        const customerIntakeFields = {name:'new-cust-name',contactName:'new-cust-contact',email:'new-cust-email',phone:'new-cust-phone',taxId:'new-cust-tax',registrationNo:'new-cust-registration',branch:'new-cust-branch',address:'new-cust-address'};
+        function resetCustomerIntakeSession() {
+            customerIntakeEpoch++; customerIntakeController?.destroy(); customerIntakeController = null; customerIntakeLoading = null;
+            customerDuplicateMatch = null; customerDialogFocus = null; customerNameComposing = false;
+            if ($('customer-duplicate-dialog')?.open) $('customer-duplicate-dialog').close();
+            customerText('customer-duplicate-name', ''); customerText('customer-duplicate-code', '');
+            $('customer-ai-intake')?.replaceChildren(); resetCustomerForm();
+        }
+        async function renderCustomerIntake() {
+            if (!currentUser) return;
+            if (customerIntakeController) {customerIntakeController.refresh(); return;}
+            if (customerIntakeLoading) return;
+            const uid=currentUser.uid, epoch=customerIntakeEpoch, host=$('customer-ai-intake');
+            if (!host) return;
+            host.textContent='กำลังเตรียมตัวอ่านข้อมูลลูกค้า…';
+            customerIntakeLoading=import('./customer-intake-ui.mjs');
+            try {
+                const {createCustomerIntake}=await customerIntakeLoading;
+                if(currentUser?.uid!==uid||epoch!==customerIntakeEpoch)return;
+                customerIntakeController=createCustomerIntake(host,{
+                    getUser:()=>currentUser,isSaving:()=>customerSaveInProgress,isEditing:()=>!!editingCustomerId,
+                    getForm:()=>Object.fromEntries(Object.entries(customerIntakeFields).map(([key,id])=>[key,val(id)])),
+                    applyFields:fields=>{if(currentUser?.uid!==uid||customerSaveInProgress||editingCustomerId)return;for(const [key,value] of Object.entries(fields)){const input=$(customerIntakeFields[key]);if(input)input.value=value;}},
+                    onApplied:()=>queueCustomerNameCheck()
+                });
+            } catch {
+                if(currentUser?.uid===uid&&epoch===customerIntakeEpoch)host.textContent='เปิดตัวอ่าน AI ไม่สำเร็จ กรอกข้อมูลเองได้ หรือเลือกเมนูลูกค้าอีกครั้งเพื่อลองใหม่';
+            } finally {if(epoch===customerIntakeEpoch)customerIntakeLoading=null;}
+        }
+
         // Search uses company/contact names; duplicate checks use the full company name.
         function normalizeCustomerName(value) {
             return String(value || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -2006,9 +2042,10 @@
             if (!body) return;
             body.innerHTML = filtered.length ? filtered.map(c => {
                 const id = customerHtml(encodeURIComponent(c.id)), editLabel = isEn ? 'Edit' : 'แก้ไข', deleteLabel = isEn ? 'Delete' : 'ลบ';
-                return `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${customerHtml(c.code)}</td><td class="p-4 font-medium text-gray-800">${customerHtml(c.name)}</td><td class="p-4 text-gray-600">${customerHtml(c.contactName || '-')}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${customerHtml(c.email)}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${customerHtml(c.taxId || '-')} (${customerHtml(c.branch || '-')})</div></td><td class="p-4 text-center"><button type="button" data-customer-edit="${id}" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="${editLabel}" aria-label="${editLabel} ${customerHtml(c.name)}"><i class="ph ph-pencil"></i></button><button type="button" data-customer-delete="${id}" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="${deleteLabel}" aria-label="${deleteLabel} ${customerHtml(c.name)}"><i class="ph ph-trash"></i></button></td></tr>`;
+                return `<tr class="hover:bg-gray-50 transition"><td class="p-4 font-bold text-emerald-700">${customerHtml(c.code)}</td><td class="p-4 font-medium text-gray-800">${customerHtml(c.name)}</td><td class="p-4 text-gray-600">${customerHtml(c.contactName || '-')}</td><td class="p-4 text-gray-600">${c.email ? `<div class="text-blue-600"><i class="ph ph-envelope-simple"></i> ${customerHtml(c.email)}</div>` : ''}${c.phone ? `<div>${customerHtml(c.phone)}</div>` : ''}<div class="text-xs text-gray-400 mt-1">Tax: ${customerHtml(c.taxId || '-')} (${customerHtml(c.branch || '-')})</div></td><td class="p-4 text-center"><button type="button" data-customer-edit="${id}" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded transition mr-1" title="${editLabel}" aria-label="${editLabel} ${customerHtml(c.name)}"><i class="ph ph-pencil"></i></button><button type="button" data-customer-delete="${id}" class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" title="${deleteLabel}" aria-label="${deleteLabel} ${customerHtml(c.name)}"><i class="ph ph-trash"></i></button></td></tr>`;
             }).join('') : `<tr><td colspan="5" class="p-8 text-center text-gray-400">${isEn ? (normalizeCustomerName(query) ? 'No matching customers. Try part of a name.' : 'No customers yet.') : (normalizeCustomerName(query) ? 'ไม่พบลูกค้าที่ตรงกับคำค้นหา ลองค้นด้วยชื่อบางส่วน' : 'ยังไม่มีลูกค้าในระบบ')}</td></tr>`;
             updateCustomerNameError(customersLoaded ? findDuplicateCustomer(val('new-cust-name')) : null);
+            customerIntakeController?.refresh();
         }
         function showCustomerDuplicate(match) {
             const dialog = $('customer-duplicate-dialog'), isEn = currentLang === 'en';
@@ -2070,13 +2107,14 @@
         if ($('add-customer-form')) $('add-customer-form').addEventListener('submit', async e => {
             e.preventDefault(); clearTimeout(customerNameTimer);
             if (customerSaveInProgress || customerNameComposing) return;
-            const data = { name: val('new-cust-name').trim(), contactName: val('new-cust-contact').trim(), email: val('new-cust-email').trim(), taxId: val('new-cust-tax').trim(), branch: val('new-cust-branch').trim(), address: val('new-cust-address').trim() };
+            const data = { name: val('new-cust-name').trim(), contactName: val('new-cust-contact').trim(), phone: val('new-cust-phone').trim(), registrationNo: val('new-cust-registration').trim(), email: val('new-cust-email').trim(), taxId: val('new-cust-tax').trim(), branch: val('new-cust-branch').trim(), address: val('new-cust-address').trim() };
             if (!normalizeCustomerName(data.name)) { $('new-cust-name').value = ''; $('new-cust-name').reportValidity(); return; }
             if (checkCustomerDuplicate(true)) return;
             if (!currentUser) return showAlert(currentLang === 'en' ? 'Please sign in before saving.' : 'กรุณาเข้าสู่ระบบก่อนบันทึก');
             const savedId = editingCustomerId, userId = currentUser.uid, form = e.currentTarget;
             const controls = Array.from(form.elements).map(el => [el, el.disabled]);
             customerSaveInProgress = true;
+            customerIntakeController?.refresh();
             controls.forEach(([el]) => { el.disabled = true; });
             customerText('btn-save-cust', currentLang === 'en' ? 'Saving...' : 'กำลังบันทึก...');
             let duplicateAfterRefresh = null;
@@ -2094,30 +2132,32 @@
                 const id = savedId || crypto.randomUUID();
                 const record = savedId ? data : { id, code: 'C-' + String(max + 1).padStart(4, '0'), ...data };
                 await setDoc(getUserDoc('customers', id), record, { merge: true });
+                if (currentUser?.uid !== userId) return;
                 if (savedId) customers = customers.map(c => c.id === savedId ? { ...c, ...data } : c);
                 else if (!customers.some(c => c.id === id)) customers.push(record);
                 resetCustomerForm(); renderCustomers();
                 showAlert(currentLang === 'en' ? (savedId ? 'Customer updated!' : 'Customer added!') : (savedId ? 'อัปเดตข้อมูลลูกค้าสำเร็จ!' : 'เพิ่มลูกค้าสำเร็จ!'));
             } catch (err) {
                 console.error('Customer save failed:', err.code || err.message);
-                showAlert(currentLang === 'en' ? 'Could not save. Check your connection and access, then try again. Your entries have been kept.' : 'บันทึกไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์การเข้าถึงแล้วลองใหม่ ข้อมูลที่กรอกยังอยู่');
+                if (currentUser?.uid === userId) showAlert(currentLang === 'en' ? 'Could not save. Check your connection and access, then try again. Your entries have been kept.' : 'บันทึกไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์การเข้าถึงแล้วลองใหม่ ข้อมูลที่กรอกยังอยู่');
             } finally {
                 customerSaveInProgress = false;
                 controls.forEach(([el, disabled]) => { el.disabled = disabled; });
                 customerText('btn-save-cust', translations[currentLang][editingCustomerId ? 'btn_update' : 'btn_save_cust']);
-                if (duplicateAfterRefresh) showCustomerDuplicate(duplicateAfterRefresh);
+                customerIntakeController?.refresh();
+                if (currentUser?.uid === userId && duplicateAfterRefresh) showCustomerDuplicate(duplicateAfterRefresh);
             }
         });
         function editCustomer(id) {
             if (customerSaveInProgress) return;
             const c = customers.find(x => x.id === id); if (!c) return;
-            resetCustomerForm(); editingCustomerId = id;
-            ['name', 'contact:contactName', 'email', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($('new-cust-' + eid)) $('new-cust-' + eid).value = c[okey || eid] || ''; });
+            resetCustomerForm(); editingCustomerId = id; customerIntakeController?.refresh();
+            ['name', 'contact:contactName', 'email', 'phone', 'registration:registrationNo', 'tax:taxId', 'branch', 'address'].forEach(k => { const [eid, okey] = k.split(':'); if($('new-cust-' + eid)) $('new-cust-' + eid).value = c[okey || eid] || ''; });
             txt('form-cust-title', currentLang === 'en' ? 'Edit Customer' : 'แก้ไขข้อมูลลูกค้า');
             txt('btn-save-cust', translations[currentLang]['btn_update']); show('btn-cancel-cust', true);
         }
         function resetCustomerForm() {
-            clearTimeout(customerNameTimer); customerWarnedName = ''; editingCustomerId = null;
+            clearTimeout(customerNameTimer); customerWarnedName = ''; editingCustomerId = null; customerIntakeController?.reset(); customerIntakeController?.refresh();
             if ($('add-customer-form')) $('add-customer-form').reset();
             updateCustomerNameError(null);
             txt('form-cust-title', translations[currentLang]['title_add_cust']);
