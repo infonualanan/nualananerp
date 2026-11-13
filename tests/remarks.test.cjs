@@ -59,11 +59,17 @@ function setup(initial = []) {
         getDocsFromServer: async () => { if (behavior.readGate) await behavior.readGate; if (behavior.failRead) throw new Error('offline'); return { docs: [...server.values()].map(note => ({ id: note.id, data: () => ({ ...note }) })) }; },
         getDoc: async ref => ({ exists: () => server.has(ref.id), data: () => server.get(ref.id) }),
         setDoc: async (ref, data) => { if (behavior.failWrite === true || behavior.failWrite === ref.collection) throw new Error('permission-denied'); writes.push({ ...ref, data: JSON.parse(JSON.stringify(data)) }); if (ref.collection === 'savedRemarks') server.set(ref.id, { ...data }); },
+        db: {}, runTransaction: async (_db, fn) => {
+            const pending = [];
+            const result = await fn({get: context.getDoc, set: (ref, value) => pending.push([ref, value])});
+            for (const [ref, value] of pending) await context.setDoc(ref, value);
+            return result;
+        },
         deleteDoc: async ref => server.delete(ref.id), serverTimestamp: () => 'server-time',
         formatDateEng: date => date, formatDateThai: date => date, checkDocType() {}, addLineItem() {}, switchTab() {},
     });
     vm.runInContext(`
-        let currentUser = { uid: 'user-1' }, currentLang = 'th';
+        let currentUser = { uid: 'user-1' }, currentLang = 'th', signatureSession = 0, signatureChoiceChanged = false;
         let savedRemarks = ${JSON.stringify(initial)}, editingRemarkId = null, editingDocRemarkId = null;
         let remarkSaveInProgress = false, documentSaveInProgress = false, remarksLoaded = true, remarksDataUserId = 'user-1';
         const remarkEditorBaseline = { document: '', settings: '' }, selectedRemarkTexts = new Map();

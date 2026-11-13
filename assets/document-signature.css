@@ -1,0 +1,35 @@
+.erp-signature-settings { background: #fff; border: 1px solid #e1e9e3; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+.erp-signature-settings h3, .erp-signature-choice legend { font-weight: 700; color: #243e32; }
+.erp-signature-settings h3 { font-size: 17px; margin-bottom: 4px; }
+.erp-signature-settings-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 240px); gap: 16px; margin-top: 14px; }
+.erp-signature-fields { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.erp-signature-fields label { display: grid; gap: 5px; font-size: 13px; color: #375044; }
+.erp-signature-fields input, .erp-signature-choice select { width: 100%; min-width: 0; min-height: 44px; border: 1px solid #cbd9d0; border-radius: 7px; background: #fff; padding: 7px 9px; font-size: 14px; color: #23382d; }
+.erp-signature-fields input[type=file] { padding: 6px 7px; }
+.erp-signature-fields input::file-selector-button { margin-right: 8px; border: 0; border-radius: 4px; padding: 5px 8px; background: #e4f2e9; color: #215b42; }
+.erp-signature-settings-preview { min-width: 0; display: grid; align-content: center; justify-items: center; gap: 8px; padding: 12px; background: #f6faf7; border: 1px dashed #c5d9ca; border-radius: 8px; text-align: center; }
+.erp-signature-settings-preview img { max-width: 100%; max-height: 92px; object-fit: contain; }
+.erp-signature-copy { font-size: 13px; color: #4c6256; overflow-wrap: anywhere; }
+.erp-signature-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px; }
+.erp-signature-actions button { min-height: 44px; padding: 8px 12px; border-radius: 7px; font-size: 14px; font-weight: 600; }
+.erp-signature-save { background: #087d59; color: #fff; }
+.erp-signature-remove { border: 1px solid #e9ccd0; color: #972936; background: #fff; }
+.erp-signature-actions button:disabled, .erp-signature-fields input:disabled { opacity: .56; cursor: not-allowed; }
+.erp-signature-message { margin-top: 9px; font-size: 13px; color: #176144; }
+.erp-signature-message[data-error=true] { color: #9b2431; }
+.erp-signature-choice { min-width: 0; border: 1px solid #cce4d5; border-radius: 9px; background: #f3faf6; padding: 12px 14px; }
+.erp-signature-choice legend { padding: 0 6px; font-size: 14px; }
+.erp-signature-choice-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.erp-signature-choice select { width: min(100%, 224px); }
+.erp-signature-choice img { max-width: 140px; max-height: 38px; object-fit: contain; }
+.erp-signature-choice .erp-signature-copy { margin-top: 7px; }
+.erp-signature-settings img[hidden], .erp-signature-choice img[hidden], .erp-paper-signature img[hidden] { display: none; }
+.erp-paper-signature { display: none; }
+.print-footer.erp-has-signature .erp-paper-signature { height: 43px; margin-bottom: 3px; display: flex; align-items: flex-end; justify-content: center; }
+.erp-paper-signature img { max-width: 82%; max-height: 42px; object-fit: contain; }
+.erp-has-signature .erp-signer-caption { margin-top: 5px; overflow-wrap: anywhere; white-space: pre-line; }
+@media (max-width: 700px) {
+    .erp-signature-settings { padding: 15px; }
+    .erp-signature-settings-form { grid-template-columns: minmax(0, 1fr); }
+    .erp-signature-fields input, .erp-signature-choice select { font-size: 16px; }
+}

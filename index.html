@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="./payments.css">
     <link rel="stylesheet" href="./vault.css">
     <link rel="stylesheet" href="./assets/customer-intake.css">
+    <link rel="stylesheet" href="./assets/document-signature.css">
     <link rel="stylesheet" href="./factory.css">
     <link rel="stylesheet" href="./billing.css">
     <link rel="stylesheet" href="./salary-certificate.css">
@@ -745,6 +746,19 @@
                                 <div id="doc-remarks-selected" class="mt-3 text-sm space-y-2"></div>
                             </div>
 
+                            <fieldset class="erp-signature-choice" aria-describedby="document-signature-help">
+                                <legend id="document-signature-legend">ลายเซ็นท้ายเอกสาร</legend>
+                                <div class="erp-signature-choice-row">
+                                    <select id="document-signature-choice" aria-labelledby="document-signature-legend">
+                                        <option id="document-signature-none" value="none" selected>ไม่มีลายเซ็น</option>
+                                        <option id="document-signature-include" value="include" disabled>มีลายเซ็น</option>
+                                    </select>
+                                    <img id="document-signature-thumb" alt="รูปที่จะใช้ในเอกสารนี้" hidden>
+                                    <button type="button" id="document-signature-open-settings" class="text-sm text-emerald-700 underline p-2">ตั้งค่าลายเซ็น</button>
+                                </div>
+                                <p id="document-signature-help" class="erp-signature-copy" aria-live="polite">เอกสารใหม่เริ่มโดยไม่แนบลายเซ็น</p>
+                            </fieldset>
+
                             <div id="doc-form-actions" class="flex justify-end pt-4 border-t border-gray-100">
                                 <button type="submit" id="doc-save-button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-bold shadow-md transition flex items-center gap-2"><i class="ph ph-floppy-disk text-lg"></i> <span data-i18n="btn_save_doc">บันทึกเอกสาร</span></button>
                             </div>
@@ -937,6 +951,26 @@
 
                 <div id="tab-settings" class="tab-content">
                     <h2 class="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2"><i class="ph ph-gear"></i> <span data-i18n="menu_settings">ตั้งค่าระบบ</span></h2>
+                    <section class="erp-signature-settings" aria-labelledby="signature-settings-heading">
+                        <h3 id="signature-settings-heading">ลายเซ็นบริษัท</h3>
+                        <p id="signature-settings-description" class="erp-signature-copy">บันทึกรูปไว้ในบัญชีนี้ แล้วเลือกใช้เป็นรายเอกสาร</p>
+                        <form id="signature-settings-form" class="erp-signature-settings-form">
+                            <div class="erp-signature-fields">
+                                <label for="signature-settings-file"><span id="signature-settings-file-label">รูปลายเซ็น · PNG หรือ JPG ไม่เกิน 2 MB</span><input type="file" id="signature-settings-file" accept="image/png,image/jpeg,.png,.jpg,.jpeg"></label>
+                                <label for="signature-settings-name"><span id="signature-settings-name-label">ชื่อผู้เซ็น (ถ้ามี)</span><input id="signature-settings-name" type="text" maxlength="100" autocomplete="off"></label>
+                                <label for="signature-settings-position"><span id="signature-settings-position-label">ตำแหน่ง (ถ้ามี)</span><input id="signature-settings-position" type="text" maxlength="100" autocomplete="off"></label>
+                                <div class="erp-signature-actions">
+                                    <button type="submit" id="signature-settings-save" class="erp-signature-save" disabled>บันทึกลายเซ็น</button>
+                                    <button type="button" id="signature-settings-remove" class="erp-signature-remove" disabled>ลบรูปที่บันทึกไว้</button>
+                                </div>
+                            </div>
+                            <div class="erp-signature-settings-preview">
+                                <img id="signature-settings-preview" alt="ตัวอย่างรูปลายเซ็น" hidden>
+                                <p id="signature-settings-preview-label" class="erp-signature-copy">ยังไม่มีรูปลายเซ็น</p>
+                            </div>
+                        </form>
+                        <p id="signature-settings-status" class="erp-signature-message" role="status"></p>
+                    </section>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-white rounded-xl shadow-sm border p-6 flex flex-col h-full">
                             <h3 class="text-lg font-semibold mb-2"><i class="ph ph-list-checks"></i> คลังข้อความหมายเหตุ</h3>
@@ -1113,9 +1147,9 @@
                                             </div>
                                         </div>
                                         
-                                        <div class="flex justify-between mt-auto pt-2 pb-2 relative z-10 shrink-0 print-footer">
-                                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-maker"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-maker"></p></div>
-                                            <div class="text-center w-1/3 border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-auth"></p><p class="text-[11px] text-gray-500 mt-6" id="preview-lbl-stamp-auth"></p></div>
+                                        <div id="preview-document-footer" class="flex justify-between mt-auto pt-2 pb-2 relative z-10 shrink-0 print-footer">
+                                            <div class="text-center w-1/3"><div class="erp-paper-signature"><img id="preview-signature-maker" alt="" hidden></div><div class="border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-maker"></p><p class="text-[11px] text-gray-500 mt-6 erp-signer-caption" id="preview-lbl-stamp-maker"></p></div></div>
+                                            <div class="text-center w-1/3"><div class="erp-paper-signature"><img id="preview-signature-auth" alt="" hidden></div><div class="border-t border-gray-800 pt-2"><p class="text-[14px] font-bold text-gray-900" id="preview-lbl-auth"></p><p class="text-[11px] text-gray-500 mt-6 erp-signer-caption" id="preview-lbl-stamp-auth"></p></div></div>
                                         </div>
                                     </div>
                                 </div>
@@ -1410,8 +1444,9 @@
             auth = getAuth(app);
             db = getFirestore(app);
             onAuthStateChanged(auth, (user) => {
-            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetCustomerIntakeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetVaultSession(); resetSalaryCertificateSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
+            if (currentUser?.uid !== user?.uid) { resetEmployeeSession(); resetCustomerIntakeSession(); resetRemarkSession(); resetPaymentSession(); resetFactorySession(); resetBillingSession(); resetVaultSession(); resetSalaryCertificateSession(); resetDocumentSignatureSession(); resetUserData(); firebaseUnsubscribers.forEach(stop => stop()); firebaseUnsubscribers = []; window.appInitialized = false; database = []; }
             currentUser = user;
+            renderSignatureSettings();
             if (user) {
                 $('login-screen').style.display = 'none';
                 $('main-app').style.display = 'flex';
@@ -1620,7 +1655,7 @@
         function toggleSubmenu(id) { const el = $(id), icon = $('icon-' + id); if(el && icon) { el.classList.toggle('hidden'); icon.classList.replace(el.classList.contains('hidden') ? 'ph-caret-up' : 'ph-caret-down', el.classList.contains('hidden') ? 'ph-caret-down' : 'ph-caret-up'); } }
         function handleMenuClick(moduleType, category) {
             if (documentSaveInProgress || remarkSaveInProgress) return;
-            if (category === 'create') { switchTab('create-doc'); if($('doc-type')) $('doc-type').value = moduleType; checkDocType(); }
+            if (category === 'create') { switchTab('create-doc'); if($('doc-type')) $('doc-type').value = moduleType; resetDocumentSignatureChoice(); checkDocType(); }
             else if (category === 'report') { if(moduleType === 'VATOUT' || moduleType === 'VATIN') { switchTab('vat-report'); if($('vat-type-filter')) $('vat-type-filter').value = moduleType === 'VATOUT' ? 'output' : 'input'; generateVatReport(); } else if(moduleType === 'STC') { switchTab('stock-card'); renderStockCardDropdown(); } else { switchTab('reports-center'); generateUnifiedReport(moduleType); } }
             else if (category === 'label') { switchTab('shipping-mark'); renderShippingMarkDropdown(); } 
         }
@@ -1633,7 +1668,7 @@
             if (billingController && (billingController.busy || billingController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการบัญชีก่อนเปลี่ยนหน้า'); return; }
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': () => {renderCustomers(); renderCustomerIntake();}, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': renderSettingsRemarks, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault, 'salary-certificates': renderSalaryCertificates };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': () => {renderCustomers(); renderCustomerIntake();}, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': () => {renderSettingsRemarks(); renderSignatureSettings();}, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault, 'salary-certificates': renderSalaryCertificates };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -1647,7 +1682,7 @@
             document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(translations[currentLang][key]) el.innerHTML = translations[currentLang][key]; });
             renderProductDropdowns(); checkDocType(); renderEmployeeDropdownForSeller();
             const gDisc = $('global-disc-type'); if (gDisc) { const isGp = gDisc.value === 'gp_%'; gDisc.innerHTML = `<option value="disc_%" ${!isGp ? 'selected' : ''}>${currentLang === 'en' ? 'Discount (%)' : 'ส่วนลด (%)'}</option><option value="gp_%" ${isGp ? 'selected' : ''}>GP (%)</option>`; }
-            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDashboard(); updateDocumentTable(); renderCustomers(); renderEmployees(); renderProducts();
+            updateCompanyHeader(); if(currentlyPreviewingDoc) previewDocument(currentlyPreviewingDoc.docNo); updateDashboard(); updateDocumentTable(); renderCustomers(); renderEmployees(); renderProducts(); renderSignatureSettings();
         }
 
         if ($('comp-logo-input')) { 
@@ -2908,6 +2943,7 @@
             
             show('payslip-deductions-container', type === 'PAYSLIP');
             updateOemReceiptForm(type === 'OEMR');
+            renderDocumentSignatureChoice();
             renderProductDropdowns();
             calculateLiveTotal();
         }
@@ -2946,6 +2982,7 @@
             const qtNo = val('ref-qt-select'); if(!qtNo) return;
             if ($('doc-ref-manual')) $('doc-ref-manual').value = qtNo;
             const qtDoc = database.find(d => d.docNo === qtNo); if(!qtDoc) return;
+            resetDocumentSignatureChoice();
             if (qtDoc.customerName) document.querySelectorAll('#customer-options-list li').forEach(li => { if(li.textContent.includes(qtDoc.customerName)) li.click(); });
             if($('items-container')) { restoreDocumentPriceBasis(qtDoc); $('items-container').innerHTML = ''; qtDoc.items.forEach(it => addLineItem(it)); }
             if (['EQT', 'PI', 'CI', 'PL', 'EVAT'].includes(val('doc-type'))) { ['incoterm', 'currency:THB', 'pol', 'pod'].forEach(k => { const [id, def] = k.split(':'); if($(`doc-${id}`)) $(`doc-${id}`).value = qtDoc[id] || def || ''; }); }
@@ -3127,6 +3164,249 @@
                 details: {jobRef: val('oem-job-ref').trim(), sender: val('oem-sender').trim(), receiver: val('oem-receiver').trim()}};
         }
 
+        const signatureSettingsId = 'documentSignature';
+        const signatureText = (th, en) => currentLang === 'en' ? en : th;
+        let signatureProfile = null, signatureLoadState = 'loading', signatureTask = '', signatureSession = 0;
+        let signatureDraftImage = '', signatureDirty = false, signatureDraftBase = null, signatureNotice = null;
+        let selectedDocumentSignature = null, signatureChoiceChanged = false;
+
+        function signatureImageSource(value) {
+            const prefix = 'data:image/png;base64,';
+            return typeof value === 'string' && value.length > 60 && value.length <= 128000
+                && (value.length - prefix.length) % 4 === 0
+                && /^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/]+={0,2}$/.test(value) ? value : '';
+        }
+        function signatureProfileFrom(record) {
+            if (record?.version !== 1 || typeof record.revision !== 'string' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(record.revision)) return null;
+            const image = signatureImageSource(record.image);
+            if (!image) return null;
+            const clean = value => typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, 100) : '';
+            return {version: 1, revision: record.revision, image, name: clean(record.name), position: clean(record.position)};
+        }
+        function sameSignatureProfile(a, b) {
+            return a === b || (!!a && !!b && a.revision === b.revision && a.image === b.image && a.name === b.name && a.position === b.position);
+        }
+        function setSignatureImage(id, image, alt) {
+            const node = $(id);
+            if (!node) return;
+            node.hidden = !image;
+            if (image) { if (node.getAttribute('src') !== image) node.src = image; }
+            else node.removeAttribute('src');
+            if (alt !== undefined) node.alt = alt;
+        }
+        function signaturePlacement(prefix) {
+            if (!Object.hasOwn(docTypeNames, prefix)) return null;
+            const roles = {
+                QT: ['auth','ผู้เสนอราคา','Quotation issued by'],
+                EQT: ['auth','ผู้เสนอราคา','Quotation issued by'],
+                PO: ['maker','ผู้สั่งซื้อ','Purchaser'],
+                DO: ['auth','ผู้ส่งของ','Delivered by'],
+                GRN: ['maker','ผู้รับสินค้าฝ่ายบริษัท','Received by (company)'],
+                OEMR: ['auth','ผู้รับมอบ (โรงงาน)','Received by (factory)'],
+                RV: ['auth','ผู้รับเงินฝ่ายบริษัท','Received by (company)'],
+                PV: ['auth','ผู้จ่ายเงิน / ผู้อนุมัติ','Paid by / approved by'],
+                PAYSLIP: ['auth','ผู้จ่ายเงิน / ผู้อนุมัติ','Paid by / approved by'],
+                WHT: ['auth','ผู้มีอำนาจลงนามฝ่ายผู้จ่ายเงิน','Authorized payer']
+            };
+            const [slot, th, en] = roles[prefix] || (['VB','PINV','SDN','SCN'].includes(prefix)
+                ? ['maker','ผู้ตรวจรับเอกสารฝ่ายบริษัท','Reviewed by (company)']
+                : ['auth','ผู้ลงนามฝ่ายบริษัท','Company signatory']);
+            return {slot, label: signatureText(th, en)};
+        }
+        function renderDocumentSignatureChoice() {
+            const select = $('document-signature-choice');
+            if (!select) return;
+            const prefix = val('doc-type'), placement = signaturePlacement(prefix);
+            if (selectedDocumentSignature && selectedDocumentSignature.prefix !== prefix) {
+                select.value = 'none'; selectedDocumentSignature = null; signatureChoiceChanged = false;
+            }
+            const available = !!(currentUser && signatureLoadState === 'ready' && signatureProfile && placement);
+            const active = available && select.value === 'include' && selectedDocumentSignature?.prefix === prefix
+                && sameSignatureProfile(selectedDocumentSignature.profile, signatureProfile);
+            if (select.value === 'include' && !active) {
+                select.value = 'none'; selectedDocumentSignature = null; signatureChoiceChanged = true;
+            }
+            $('document-signature-include').disabled = !available;
+            productText('document-signature-legend', signatureText('ลายเซ็นท้ายเอกสาร','Document signature'));
+            productText('document-signature-none', signatureText('ไม่มีลายเซ็น','No signature'));
+            productText('document-signature-include', signatureText('มีลายเซ็น','Include signature'));
+            productText('document-signature-open-settings', signatureText('ตั้งค่าลายเซ็น','Signature settings'));
+            setSignatureImage('document-signature-thumb', active ? signatureProfile.image : '', signatureText('รูปที่จะใช้ในเอกสารนี้','Signature to be used on this document'));
+            const help = active
+                ? signatureText('จะแนบที่ช่อง '+placement.label+(signatureProfile.name ? ' · '+signatureProfile.name : ''),'Will appear in '+placement.label+(signatureProfile.name ? ' · '+signatureProfile.name : ''))
+                : signatureChoiceChanged
+                    ? signatureText('รูปที่เลือกมีการเปลี่ยนแปลง กรุณาตรวจตัวเลือกก่อนบันทึก','The selected image changed. Review your choice before saving.')
+                    : signatureLoadState === 'error'
+                        ? signatureText('โหลดรูปที่บันทึกไว้ไม่ได้ ยังออกเอกสารแบบไม่มีลายเซ็นได้','Saved signature unavailable. You can still issue documents without a signature.')
+                        : !signatureProfile
+                            ? signatureText('ค่าเริ่มต้นไม่มีลายเซ็น หากต้องการใช้ ให้บันทึกรูปในตั้งค่าระบบก่อน','Default: no signature. Save an image in Settings to enable this option.')
+                            : signatureText('ค่าเริ่มต้นไม่มีลายเซ็น เลือกแนบเฉพาะเอกสารใบนี้ได้','Default: no signature. You can include it on this document only.');
+            productText('document-signature-help', help);
+        }
+        function resetDocumentSignatureChoice() {
+            selectedDocumentSignature = null; signatureChoiceChanged = false;
+            if ($('document-signature-choice')) $('document-signature-choice').value = 'none';
+            renderDocumentSignatureChoice();
+        }
+        function renderSignatureSettings() {
+            if (!$('signature-settings-form')) return;
+            const busy = !!signatureTask, ready = !!currentUser && signatureLoadState === 'ready';
+            const image = signatureDraftImage || signatureProfile?.image || '';
+            productText('signature-settings-heading', signatureText('ลายเซ็นบริษัท','Company signature'));
+            productText('signature-settings-description', signatureText('บันทึกรูปไว้ในบัญชีนี้ แล้วเลือกใช้เป็นรายเอกสาร','Save one image to this account and choose whether to include it on each document.'));
+            productText('signature-settings-file-label', signatureText('รูปลายเซ็น · PNG หรือ JPG ไม่เกิน 2 MB','Signature image · PNG or JPG, up to 2 MB'));
+            productText('signature-settings-name-label', signatureText('ชื่อผู้เซ็น (ถ้ามี)','Signer name (optional)'));
+            productText('signature-settings-position-label', signatureText('ตำแหน่ง (ถ้ามี)','Position (optional)'));
+            productText('signature-settings-save', signatureTask === 'saving' ? signatureText('กำลังบันทึก…','Saving…') : signatureText('บันทึกลายเซ็น','Save signature'));
+            productText('signature-settings-remove', signatureText('ลบรูปที่บันทึกไว้','Remove saved image'));
+            for (const field of ['file','name','position']) $('signature-settings-'+field).disabled = !ready || busy;
+            $('signature-settings-save').disabled = !ready || busy || !image || !signatureDirty;
+            $('signature-settings-remove').disabled = !ready || busy || !signatureProfile;
+            setSignatureImage('signature-settings-preview', image, signatureText('ตัวอย่างรูปลายเซ็น','Signature image preview'));
+            productText('signature-settings-preview-label', signatureDirty
+                ? signatureText('ยังไม่ได้บันทึกการเปลี่ยนแปลง','Unsaved changes')
+                : signatureProfile ? signatureText('รูปที่บันทึกไว้ในบัญชีนี้','Saved in this account') : signatureText('ยังไม่มีรูปลายเซ็น','No signature saved'));
+            const status = $('signature-settings-status');
+            status.dataset.error = String(!!signatureNotice?.[2]);
+            status.textContent = signatureTask === 'reading' ? signatureText('กำลังเตรียมรูป…','Preparing image…')
+                : signatureTask === 'removing' ? signatureText('กำลังลบรูป…','Removing image…')
+                : signatureNotice ? signatureText(signatureNotice[0], signatureNotice[1])
+                : currentUser && signatureLoadState === 'loading' ? signatureText('กำลังโหลดลายเซ็นจากบัญชี…','Loading saved signature…') : '';
+            renderDocumentSignatureChoice();
+        }
+        function resetSignatureEditor() {
+            signatureDraftImage = ''; signatureDirty = false; signatureDraftBase = null;
+            if ($('signature-settings-file')) $('signature-settings-file').value = '';
+            if ($('signature-settings-name')) $('signature-settings-name').value = signatureProfile?.name || '';
+            if ($('signature-settings-position')) $('signature-settings-position').value = signatureProfile?.position || '';
+        }
+        function markSignatureEdit() {
+            if (!signatureDirty) signatureDraftBase = signatureProfile;
+            signatureDirty = true;
+        }
+        function receiveSignatureSetting(record) {
+            signatureProfile = signatureProfileFrom(record);
+            signatureLoadState = 'ready';
+            if (!signatureDirty) resetSignatureEditor();
+            if (signatureNotice?.[2] && !signatureDirty) signatureNotice = null;
+            renderSignatureSettings();
+        }
+        function resetDocumentSignatureSession() {
+            signatureSession++; signatureProfile = null; signatureLoadState = 'loading'; signatureTask = ''; signatureNotice = null;
+            resetSignatureEditor(); resetDocumentSignatureChoice(); renderSignatureSettings();
+            if (currentlyPreviewingDoc) closePreview();
+            else renderSavedDocumentSignature(null);
+        }
+        async function persistSignatureSetting(record, expected) {
+            const uid = currentUser?.uid, session = signatureSession;
+            if (!uid || signatureLoadState !== 'ready' || signatureTask) return;
+            const active = () => currentUser?.uid === uid && signatureSession === session;
+            const ref = getUserDoc('settings', signatureSettingsId);
+            signatureTask = record ? 'saving' : 'removing'; signatureNotice = null; renderSignatureSettings();
+            try {
+                const result = await runTransaction(db, async tx => {
+                    if (!active()) throw new Error('Account changed');
+                    const snap = await tx.get(ref);
+                    if (!active()) throw new Error('Account changed');
+                    const actual = signatureProfileFrom(snap.exists() ? snap.data() : null);
+                    if (!sameSignatureProfile(actual, expected)) return {conflict: true, actual};
+                    if (record) tx.set(ref, {...record, updatedAt: serverTimestamp()});
+                    else tx.delete(ref);
+                    return {conflict: false};
+                });
+                if (!active()) return;
+                if (result.conflict) {
+                    receiveSignatureSetting(result.actual); signatureDraftBase = result.actual;
+                    signatureNotice = ['ลายเซ็นถูกเปลี่ยนจากอีกหน้าต่าง กรุณาตรวจแล้วกดบันทึกหรือลบอีกครั้ง','The saved signature changed in another session. Review it before saving or removing again.',true];
+                } else {
+                    if (sameSignatureProfile(signatureProfile, expected) || sameSignatureProfile(signatureProfile, record)) signatureProfile = record;
+                    resetSignatureEditor();
+                    signatureNotice = record
+                        ? ['บันทึกลายเซ็นแล้ว เลือกใช้ได้ที่ท้ายฟอร์มออกเอกสาร','Signature saved. Choose it at the end of the document form.']
+                        : ['ลบรูปจากตั้งค่าแล้ว เอกสารที่ออกไว้ยังใช้รูปเดิม','Saved image removed. Previously issued documents keep their signature.'];
+                }
+            } catch {
+                if (active()) signatureNotice = ['บันทึกการเปลี่ยนแปลงไม่สำเร็จ กรุณาตรวจการเชื่อมต่อแล้วลองใหม่','Could not save the change. Check your connection and try again.',true];
+            } finally {
+                if (active()) { signatureTask = ''; renderSignatureSettings(); }
+            }
+        }
+        $('signature-settings-file')?.addEventListener('change', async event => {
+            const file = event.target.files?.[0], uid = currentUser?.uid, session = signatureSession;
+            if (!file || !uid || signatureTask || signatureLoadState !== 'ready') return;
+            const active = () => currentUser?.uid === uid && signatureSession === session;
+            const before = signatureProfile;
+            signatureTask = 'reading'; signatureNotice = null; renderSignatureSettings();
+            try {
+                const { prepareDocumentSignature } = await import('./document-signature-image.mjs');
+                if (!active()) return;
+                const image = await prepareDocumentSignature(file);
+                if (!active()) return;
+                if (!signatureDirty) signatureDraftBase = before;
+                signatureDirty = true; signatureDraftImage = image;
+            } catch {
+                if (active()) signatureNotice = ['เปิดรูปไม่ได้ กรุณาใช้ PNG หรือ JPG ไม่เกิน 2 MB และครอปให้เหลือเฉพาะลายเซ็น','Could not open the image. Use a cropped PNG or JPG up to 2 MB.',true];
+            } finally {
+                if (active()) { event.target.value = ''; signatureTask = ''; renderSignatureSettings(); }
+            }
+        });
+        for (const field of ['name','position']) $('signature-settings-'+field)?.addEventListener('input', () => {
+            if (!currentUser || signatureTask || signatureLoadState !== 'ready') return;
+            markSignatureEdit(); signatureNotice = null; renderSignatureSettings();
+        });
+        $('signature-settings-form')?.addEventListener('submit', event => {
+            event.preventDefault();
+            if (!currentUser || signatureTask || !signatureDirty || signatureLoadState !== 'ready') return;
+            const image = signatureDraftImage || signatureDraftBase?.image || '';
+            if (!signatureImageSource(image)) return;
+            const record = signatureProfileFrom({version: 1, revision: crypto.randomUUID(), image, name: val('signature-settings-name'), position: val('signature-settings-position')});
+            if (record) persistSignatureSetting(record, signatureDraftBase);
+        });
+        $('signature-settings-remove')?.addEventListener('click', () => {
+            if (!currentUser || !signatureProfile || signatureTask) return;
+            const uid = currentUser.uid, session = signatureSession, expected = signatureProfile;
+            showConfirm(signatureText('ลบรูปจากตั้งค่า? เอกสารที่ออกไว้ยังคงรูปเดิม','Remove the saved image? Issued documents will keep their signature.'), () => {
+                if (currentUser?.uid === uid && signatureSession === session) persistSignatureSetting(null, expected);
+            });
+        });
+        $('document-signature-open-settings')?.addEventListener('click', () => switchTab('settings'));
+        $('document-signature-choice')?.addEventListener('change', event => {
+            const prefix = val('doc-type');
+            selectedDocumentSignature = event.target.value === 'include' && signatureLoadState === 'ready' && signatureProfile && signaturePlacement(prefix)
+                ? {prefix, profile: signatureProfile} : null;
+            signatureChoiceChanged = false; renderDocumentSignatureChoice();
+        });
+        $('doc-type')?.addEventListener('change', resetDocumentSignatureChoice);
+        $('create-doc-form')?.addEventListener('reset', resetDocumentSignatureChoice);
+        function signatureSelectionError() {
+            return Object.assign(new Error(signatureText('ลายเซ็นที่เลือกใช้ไม่ได้แล้ว กรุณาตรวจตั้งค่าแล้วเลือกใหม่','The selected signature is no longer available. Review the settings and select it again.')), {code: 'signature-changed'});
+        }
+        function readDocumentSignatureChoice(prefix) {
+            const choice = selectedDocumentSignature;
+            if (!choice || choice.prefix !== prefix || !signaturePlacement(prefix) || signatureLoadState !== 'ready' || !sameSignatureProfile(choice.profile, signatureProfile)) throw signatureSelectionError();
+            return choice.profile;
+        }
+        function renderSavedDocumentSignature(record) {
+            const saved = record?.documentSignature;
+            const valid = saved && saved.docNo === record.docNo && saved.prefix === record.prefix && saved.appliedByUid === currentUser?.uid
+                && !record.billingManaged && !record.paymentManaged ? signatureProfileFrom(saved) : null;
+            const placement = valid ? signaturePlacement(record.prefix) : null;
+            const footer = $('preview-document-footer');
+            if (!record && footer?.classList.contains('erp-has-signature')) {
+                productText('preview-lbl-stamp-maker',''); productText('preview-lbl-stamp-auth','');
+            }
+            footer?.classList.toggle('erp-has-signature', !!placement);
+            for (const slot of ['maker','auth']) setSignatureImage('preview-signature-'+slot, placement?.slot === slot ? valid.image : '', signatureText('รูปลายเซ็นฝ่ายบริษัท','Company signature image'));
+            if (placement) {
+                productText('preview-lbl-'+placement.slot, placement.label);
+                productText('preview-lbl-stamp-'+placement.slot, [valid.name, valid.position].filter(Boolean).join('\n'));
+            }
+        }
+        async function decodeDocumentSignature(root) {
+            const image = root?.querySelector('.erp-paper-signature img:not([hidden])');
+            if (typeof image?.decode === 'function') await image.decode();
+        }
+
         function generateDocNo(prefix, docDateStr) {
             // Undated documents still use the current year's sequence, without filling the visible date.
             const docYear = docDateStr ? docDateStr.slice(0, 4) : String(new Date().getFullYear());
@@ -3142,15 +3422,27 @@
             return `${series}${String(maxNum + 1).padStart(3, '0')}`;
         }
 
-        async function saveOemReceipt(doc, uid) {
+        async function saveNumberedDocument(doc, uid, session) {
             const split = doc.docNo.lastIndexOf('-') + 1, prefix = doc.docNo.slice(0, split), first = Number(doc.docNo.slice(split));
+            const assertSession = () => { if (currentUser?.uid !== uid || signatureSession !== session) throw new Error('บัญชีผู้ใช้เปลี่ยน'); };
             return runTransaction(db, async tx => {
+                assertSession();
+                if (doc.documentSignature) {
+                    const snap = await tx.get(getUserDoc('settings', signatureSettingsId));
+                    assertSession();
+                    const profile = signatureProfileFrom(snap.exists() ? snap.data() : null);
+                    if (!sameSignatureProfile(profile, doc.documentSignature)) throw signatureSelectionError();
+                }
                 for (let offset = 0; offset < 25; offset++) {
-                    if (currentUser?.uid !== uid) throw new Error('บัญชีผู้ใช้เปลี่ยน');
+                    assertSession();
                     const docNo = prefix + String(first + offset).padStart(3, '0'), ref = getUserDoc('documents', docNo);
                     const existing = await tx.get(ref);
-                    if (currentUser?.uid !== uid) throw new Error('บัญชีผู้ใช้เปลี่ยน');
-                    if (!existing.exists()) { tx.set(ref, {...doc, docNo}); return docNo; }
+                    assertSession();
+                    if (!existing.exists()) {
+                        const record = {...doc, docNo};
+                        if (record.documentSignature) record.documentSignature = {...record.documentSignature, docNo};
+                        tx.set(ref, record); return docNo;
+                    }
                 }
                 throw new Error('ไม่สามารถจองเลขเอกสารได้ กรุณาโหลดรายการล่าสุดแล้วลองใหม่');
             });
@@ -3162,18 +3454,24 @@
             const pre = val('doc-type'), custId = val('customer-select'), isOem = pre === 'OEMR';
             if (!custId) return showAlert(currentLang === 'en' ? 'Select Customer/Employee.' : 'เลือกลูกค้าหรือพนักงาน');
             if (!currentUser) return showAlert('กรุณาเข้าสู่ระบบก่อนบันทึก');
-            const savingUserId = currentUser.uid;
+            if (signatureChoiceChanged) {
+                resetDocumentSignatureChoice();
+                return showAlert(signatureText('รูปที่เลือกเปลี่ยนแล้ว กรุณาเลือก “มีลายเซ็น” ใหม่ หรือกดบันทึกอีกครั้งเพื่อออกแบบไม่มีลายเซ็น','The selected signature changed. Select Include signature again, or save again without a signature.'), {warning:true,title:signatureText('ตรวจตัวเลือกลายเซ็น','Review signature choice')});
+            }
+            const savingUserId = currentUser.uid, savingSession = signatureSession;
+            const active = () => currentUser?.uid === savingUserId && signatureSession === savingSession;
             documentSaveInProgress = true;
             const formControls = [...this.querySelectorAll('input, select, textarea, button')].map(el => [el, el.disabled]);
             formControls.forEach(([el]) => { el.disabled = true; });
             let saved = false;
             try {
+                const signature = val('document-signature-choice') === 'include' ? readDocumentSignatureChoice(pre) : null;
                 if (['RE','RETAX','TINV','RV'].includes(pre) && val('doc-ref-manual').trim()) await validateManualPaymentReference(pre, val('doc-ref-manual').trim());
                 const docDate = val('doc-date');
                 if (isOem && !customers.some(c => c.id === custId)) throw pricingFailure(currentLang === 'en' ? 'Select the customer who supplied the materials.' : 'เลือกลูกค้าที่ส่งวัตถุดิบจากทะเบียนคู่ค้า');
                 const pricing = isOem ? readOemReceipt(docDate) : readDocumentPricing();
                 if ((val('doc-remark-text').trim() || editingDocRemarkId) && !await saveRemark('document', true)) return;
-                if (currentUser?.uid !== savingUserId) return;
+                if (!active()) return;
                 const isPay = pre === 'PAYSLIP', cust = isPay ? null : customers.find(c => c.id === custId);
                 const items = pricing.items;
                 let gTotal = pricing.grandTotal, tVat = pricing.vat, sub = pricing.subtotal;
@@ -3199,27 +3497,32 @@
 
                 const newDoc = { docNo, customerId:custId, createdAt: serverTimestamp(), refDocManual: val('doc-ref-manual').trim(), vendorInvNo: pre === 'PINV' ? val('vendor-inv-no') : '', prefix: pre, docName: docTypeNames[pre] || pre, customerName: fCust, customerTaxId: fTax, customerBranch: fBran, customerAddr: fAdd, customerEmail: fEm, sellerName: employees.find(e => e.id === val('seller-select'))?.name || '', dateStr: currentLang === 'en' ? formatDateEng(docDate) : formatDateThai(docDate), rawDate: docDate ? new Date(docDate).toISOString() : '', inputDate: docDate, expireDateStr: val('doc-expire-date') ? (currentLang === 'en' ? formatDateEng(val('doc-expire-date')) : formatDateThai(val('doc-expire-date'))) : '', creditTerm: val('doc-credit'), status: 'completed', pricingVersion: 1, documentPriceBasis: ['INC', 'EXC'].includes(val('global-price-basis')) ? val('global-price-basis') : null, vatEnabled: pricing.vatEnabled, items, subtotal: sub, vat: tVat, grandTotal: gTotal, remark: finalRemarkText, remarkIds: rIds, remarkEntries, isRevenue: revenueDocs.includes(pre), isInputTax: inputTaxDocs.includes(pre), currency: cur, incoterm: val('doc-incoterm')?.toUpperCase()||'', pol: val('doc-pol'), pod: val('doc-pod'), exchangeRate: exRate, ssoPct, whtPct, ssoAmt, whtAmt };
             
-                let savedDocNo = docNo;
+                if (signature) newDoc.documentSignature = {...signature, docNo, prefix: pre, appliedByUid: savingUserId, appliedAt: serverTimestamp()};
                 if (isOem) {
                     Object.assign(newDoc, {customerTaxId: fTax || '', customerBranch: fBran || '', customerAddr: fAdd || '', customerEmail: fEm || '', creditTerm: '', documentPriceBasis: null, oemReceipt: pricing.details});
-                    savedDocNo = await saveOemReceipt(newDoc, savingUserId);
-                } else await setDoc(getUserDoc("documents", docNo), newDoc);
-                if (currentUser?.uid !== savingUserId) return;
+                }
+                // Both signed and unsigned issues must reserve a fresh number; a stale tab
+                // must not overwrite an already issued document and its signature.
+                const savedDocNo = await saveNumberedDocument(newDoc, savingUserId, savingSession);
+                if (!active()) return;
                 saved = true;
                 showAlert(`บันทึก ${savedDocNo} สำเร็จ!`); this.reset(); selectedRemarksSequence = []; selectedRemarkTexts.clear(); resetRemarkEditor('document');
                 if ($('search-remark')) $('search-remark').value = '';
                 if ($('doc-date')) $('doc-date').value = todayStr;
                 checkDocType(); if ($('items-container')) { $('items-container').innerHTML = ''; addLineItem(); }
             } catch (err) {
-                console.error('Document save failed', err);
-                if (currentUser?.uid === savingUserId) showAlert(['payment-managed', 'pricing-invalid'].includes(err.code)?productHtml(err.message):'บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
+                console.error('Document save failed', err.code || err.name);
+                if (active()) {
+                    if (err.code === 'signature-changed') resetDocumentSignatureChoice();
+                    showAlert(['payment-managed', 'pricing-invalid', 'signature-changed'].includes(err.code)?productHtml(err.message):'บันทึกเอกสารไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาตรวจการเชื่อมต่อและลองอีกครั้ง');
+                }
             } finally {
                 documentSaveInProgress = false;
                 formControls.forEach(([el, disabled]) => { el.disabled = disabled; });
                 renderRemarksCheckboxes(); renderSettingsRemarks();
                 if (typeof calculateLiveTotal === 'function') calculateLiveTotal();
             }
-            if (saved && currentUser?.uid === savingUserId) switchTab('document-list');
+            if (saved && active()) switchTab('document-list');
         });
 
         const expenseDocumentTypes = {PINV: 5, PAYSLIP: 5, VB: 4, PV: 2, SDN: 5, SCN: 5};
@@ -3674,7 +3977,7 @@
             if (documentSaveInProgress || remarkSaveInProgress) return;
             const d = database.find(x => x.docNo === docNo); if(!d) return;
             showConfirm(currentLang === 'en' ? 'Load for editing? (Saves as new doc)' : 'โหลดเพื่อแก้ไข? (บันทึกเป็นเลขใหม่)', () => {
-                switchTab('create-doc'); if($('doc-type')) $('doc-type').value = d.prefix; checkDocType(); 
+                switchTab('create-doc'); if($('doc-type')) $('doc-type').value = d.prefix; resetDocumentSignatureChoice(); checkDocType();
                 if (d.customerName) document.querySelectorAll('#customer-options-list li').forEach(l => { if(l.textContent.includes(d.customerName)) l.click(); });
                 if (d.sellerName) document.querySelectorAll('#seller-options-list li').forEach(l => { if(l.textContent.includes(d.sellerName)) l.click(); });
                 if ($('doc-date')) $('doc-date').value = d.inputDate ?? '';
@@ -3839,6 +4142,7 @@
             renderPreviewPaymentSummary(d);
             if(d.paymentManaged?.priceIncludesVat && !showPriceBasis) { txt('preview-col-price','ราคา/หน่วย (รวม VAT)'); txt('preview-col-amt','จำนวนเงิน (รวม VAT)'); }
             if(['advance','receipt'].includes(d.paymentManaged?.kind)) { txt('preview-lbl-grand','รับชำระครั้งนี้'); txt('preview-lbl-maker','ผู้ชำระเงิน'); txt('preview-lbl-auth','ผู้รับเงิน'); }
+            renderSavedDocumentSignature(d);
             // Set remark text and auto-resize
             txt('preview-remark', d.remark ? d.remark.split('\n').filter(l=>l.trim()).map(l=>`<div class="mb-1 break-inside-avoid">${productHtml(l)}</div>`).join('') : '-');
             
@@ -3862,7 +4166,7 @@
             }, 150);
         }
 
-        function closePreview() { show('document-preview-modal', false); document.body.classList.remove('modal-open'); currentlyPreviewingDoc = null; }
+        function closePreview() { show('document-preview-modal', false); document.body.classList.remove('modal-open'); renderSavedDocumentSignature(null); currentlyPreviewingDoc = null; }
         
         let pdfLibraryPromise = null, pdfExportInProgress = false;
 
@@ -3925,12 +4229,17 @@
             if(database.find(d=>d.docNo===docNo)?.billingManaged){await downloadBillingDocument(docNo);return;}
             if (pdfExportInProgress) return;
             if (!database.some(d => d.docNo === docNo)) return showAlert(currentLang === 'en' ? 'Document not found.' : 'ไม่พบเอกสารนี้');
+            const uid = currentUser?.uid, session = signatureSession;
+            const active = () => currentUser?.uid === uid && signatureSession === session;
             pdfExportInProgress = true;
             document.querySelectorAll('.document-pdf-button').forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
             try {
                 await loadPdfLibrary();
                 if (document.fonts?.ready) await document.fonts.ready;
+                if (!active()) return;
                 const source = createDocumentPdfSource(docNo);
+                await decodeDocumentSignature(source);
+                if (!active()) return;
                 const filename = String(docNo).replace(/[\\/:*?"<>|\x00-\x1f]/g, '_') + '.pdf';
                 await window.html2pdf().set({
                     margin: [10, 10, 10, 10], filename, enableLinks: false,
@@ -3941,7 +4250,7 @@
                 }).from(source).save();
             } catch (error) {
                 console.error('PDF export failed:', error);
-                showAlert(currentLang === 'en' ? 'Could not download the PDF. Check your connection and try again.' : 'ดาวน์โหลด PDF ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+                if (active()) showAlert(currentLang === 'en' ? 'Could not download the PDF. Check your connection and try again.' : 'ดาวน์โหลด PDF ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
             } finally {
                 pdfExportInProgress = false;
                 document.querySelectorAll('.document-pdf-button').forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); });
@@ -3953,9 +4262,15 @@
             if (button) downloadDocumentPdf(decodeURIComponent(button.dataset.downloadPdf));
         });
 
-        function printDocumentList(docNo) { 
+        async function printDocumentList(docNo) {
+            const uid = currentUser?.uid;
             previewDocument(docNo); 
+            const preview = currentlyPreviewingDoc;
+            if (!preview || preview.docNo !== docNo) return;
+            try { await decodeDocumentSignature($('paper-preview')); }
+            catch { return showAlert(signatureText('โหลดรูปลายเซ็นไม่สำเร็จ กรุณาเปิดเอกสารใหม่ก่อนพิมพ์','Could not load the signature. Reopen the document before printing.')); }
             setTimeout(() => { 
+                if (currentUser?.uid !== uid || currentlyPreviewingDoc !== preview) return;
                 document.body.classList.add('modal-open', 'printing-modal'); 
                 window.print(); 
             }, 150); 
@@ -4120,6 +4435,17 @@
             watch(userRef("settings", "exchangeRates"), (docSnap) => {
                 if(docSnap.exists()) { exchangeRates = docSnap.data(); renderExchangeRates(); }
             }, errHandler);
+            const signatureWatchSession = signatureSession;
+            watch(userRef('settings', signatureSettingsId), {includeMetadataChanges: true}, snap => {
+                if (signatureSession !== signatureWatchSession || snap.metadata?.fromCache || snap.metadata?.hasPendingWrites) return;
+                receiveSignatureSetting(snap.exists() ? snap.data() : null);
+            }, () => {
+                if (currentUser?.uid !== sessionUid || signatureSession !== signatureWatchSession) return;
+                signatureProfile = null; signatureLoadState = 'error';
+                resetSignatureEditor();
+                signatureNotice = ['โหลดลายเซ็นจากบัญชีไม่ได้ กรุณาตรวจการเชื่อมต่อแล้วรีเฟรช','Could not load the saved signature. Check your connection and refresh.',true];
+                renderSignatureSettings();
+            });
             
             watch(userCol("products"), (snap) => {
                 products = snap.docs.map(d => d.data()); renderProducts(); renderProductDropdowns();

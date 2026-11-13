@@ -37,6 +37,12 @@ function setup(t, options = {}) {
         let currentUser = {uid: 'offline'};
         const getUserCol = name => name, getUserDoc = (name, id) => name + '/' + id;
         const setDoc = async (ref, data) => { window.testWrites.push({ref, data}); if(window.testWriteGate) await window.testWriteGate; };
+        const runTransaction = async (_db, fn) => {
+            const pending = [];
+            const result = await fn({get: async ref => ({exists: () => window.testWrites.some(write => write.ref === ref)}), set: (ref, data) => pending.push([ref,data])});
+            for (const [ref,data] of pending) await setDoc(ref,data);
+            return result;
+        };
         const deleteDoc = async () => {}, serverTimestamp = () => null;
         const getDocsFromServer = async () => ({docs: []});
     ` + offline.slice(end);
