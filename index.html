@@ -1078,6 +1078,7 @@
                                     <div id="paper-preview" class="bg-white relative leading-tight flex flex-col overflow-hidden" style="width: 210mm; height: 297mm; padding: 10mm; box-sizing: border-box; transform: scale(0.8); transform-origin: top left; position: absolute; top: 0; left: 0;">
                                         <div id="preview-copy-type" class="absolute top-6 right-8 font-bold text-gray-500 tracking-wide border-b border-gray-300 pb-1">ต้นฉบับ (Original)</div>
                                         <div id="preview-stamp-container"></div>
+                                        <div id="preview-cancelled-banner" class="payment-cancelled-banner hidden"></div>
                                         
                                         <div class="shrink-0 mb-2">
                                             <div class="grid grid-cols-[120px_1fr_120px] items-center relative z-10 mb-2 gap-4 mt-2">
@@ -3736,7 +3737,7 @@
             let tRev = 0, iCnt = 0; const ty = {}, pS = {}, cS = {};
             database.forEach(d => { 
                 ty[d.docName] = (ty[d.docName] || 0) + 1; 
-                if (d.paymentLedger ? d.paymentLedger.delivered : d.isRevenue) {
+                if (!isCancelledDocument(d) && (d.paymentLedger ? d.paymentLedger.delivered : d.isRevenue)) {
                     const r = d.exchangeRate || 1; const thb = d.grandTotal * r; tRev += thb; iCnt++; 
                     cS[d.customerName || 'Unknown'] = (cS[d.customerName || 'Unknown'] || 0) + thb; 
                     d.items.forEach(i => { const pk = i.code ? `[${i.code}] ${i.name}` : i.name; pS[pk] = (pS[pk] || 0) + (i.total * r); }); 
@@ -3870,10 +3871,11 @@
 
         // Payments use the existing authenticated documents/settings paths and Firebase project.
         let paymentsController = null, companyProfileLoaded = false;
-        function canReceivePayments(d) { return ['SO','INV'].includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
+        function isCancelledDocument(d) { return ['cancelled','canceled','void','voided','superseded'].includes(String(d?.status||'').toLowerCase()); }
+        function canReceivePayments(d) { return !isCancelledDocument(d) && ['SO','INV'].includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
         function paymentTotals(d) {
             const total = d.paymentLedger?.totalCents || Math.round(Number(d.grandTotal) * 100);
-            const paid = (d.paymentLedger?.payments || []).reduce((sum,p) => sum + p.amountCents, 0);
+            const paid = (d.paymentLedger?.payments || []).filter(p=>!isCancelledDocument(p)).reduce((sum,p) => sum + p.amountCents, 0);
             return {total, paid, balance:total-paid};
         }
         function resetPaymentSession() { companyProfileLoaded=false; if (paymentsController) paymentsController.destroy(); paymentsController = null; }
@@ -3882,9 +3884,10 @@
                 db, runTransaction, serverTimestamp, userDoc:getUserDoc, getUserId:()=>currentUser?.uid,
                 getDocuments:()=>database, getCompany:()=>companyProfile, isCompanyReady:()=>companyProfileLoaded, today:()=>employeeTodayISO(), newId:()=>crypto.randomUUID(),
                 readServerDocuments:async()=>{ const uid=currentUser?.uid; const snap=await getDocsFromServer(getUserCol('documents')); if(currentUser?.uid!==uid) throw new Error('บัญชีผู้ใช้เปลี่ยน'); return snap.docs.map(d=>d.data()); },
-                preview:previewDocument, download:downloadDocumentPdf,
+                preview:previewDocument, download:downloadDocumentPdf, editCopy:loadDocumentCopy,
                 onSaved:result=>{
                     if(result.root) { database=database.filter(d=>d.docNo!==result.root.docNo); database.push(result.root); }
+                    for(const corrected of result.documents||[]) { database=database.filter(d=>d.docNo!==corrected.docNo); database.push(corrected); }
                     if(result.document) { const latest=database.find(d=>d.docNo===result.document.docNo); database=database.filter(d=>d.docNo!==result.document.docNo); database.push({...latest,...result.document,createdAt:latest?.createdAt||new Date().toISOString()}); }
                     updateDashboard(); updateDocumentTable(); populateRefDocDatalist(); populateAllDocsDatalist();
                     if(paymentsController) paymentsController.refresh();
@@ -3893,6 +3896,7 @@
             paymentsController.refresh();
         }
         function openPaymentWorkspace(docNo='') { switchTab('payments'); if(docNo && paymentsController) paymentsController.open(docNo); }
+        function openPaymentDocumentManagement(docNo,mode) { switchTab('payments'); if(paymentsController)paymentsController.manage(docNo,mode); }
         document.addEventListener('click',event=>{ const button=event.target.closest('[data-open-payment]'); if(button) openPaymentWorkspace(decodeURIComponent(button.dataset.openPayment)); });
         async function validateManualPaymentReference(prefix, references) {
             if (!['RE','RETAX','TINV','RV','CN','DN'].includes(prefix) || !references) return;
@@ -3914,10 +3918,10 @@
         }
 
         function updateAllStatuses() {
-            database.forEach(doc => { if(isInactiveExpenseDocument(doc)||doc.paymentManaged||doc.billingManaged) return; if(doc.paymentLedger) { const p=paymentTotals(doc); doc.status=p.balance===0?'paid':p.paid>0?'partial':'pending'; return; } if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
-            const adj = {}; database.filter(doc=>doc.prefix!=='OEMR'&&!isInactiveExpenseDocument(doc)&&!doc.paymentManaged&&!doc.paymentLedger&&!doc.billingManaged).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
+            database.forEach(doc => { if(isCancelledDocument(doc)||isInactiveExpenseDocument(doc)||doc.paymentManaged||doc.billingManaged) return; if(doc.paymentLedger) { const p=paymentTotals(doc); doc.status=p.balance===0?'paid':p.paid>0?'partial':'pending'; return; } if (['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(doc.prefix)) doc.status = 'paid'; else if (pendingStatusDocs.includes(doc.prefix)) doc.status = 'pending'; else doc.status = 'completed'; });
+            const adj = {}; database.filter(doc=>doc.prefix!=='OEMR'&&!isCancelledDocument(doc)&&!isInactiveExpenseDocument(doc)&&!doc.paymentManaged&&!doc.paymentLedger&&!doc.billingManaged).forEach(doc => { if (!adj[doc.docNo]) adj[doc.docNo] = []; if (doc.refDocManual) { const refs = doc.refDocManual.split(',').map(r => r.trim()).filter(r => r); refs.forEach(r => { if (!adj[r]) adj[r] = []; adj[doc.docNo].push(r); adj[r].push(doc.docNo); }); } });
             const visited = new Set();
-            for (const doc of database) { if(doc.prefix==='OEMR'||isInactiveExpenseDocument(doc)||doc.paymentManaged||doc.paymentLedger||doc.billingManaged) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && !isInactiveExpenseDocument(d) && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !isInactiveExpenseDocument(d) && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !isInactiveExpenseDocument(d) && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
+            for (const doc of database) { if(doc.prefix==='OEMR'||isCancelledDocument(doc)||isInactiveExpenseDocument(doc)||doc.paymentManaged||doc.paymentLedger||doc.billingManaged) continue; if (!visited.has(doc.docNo)) { const component = []; const queue = [doc.docNo]; visited.add(doc.docNo); while (queue.length > 0) { const curr = queue.shift(); component.push(curr); if (adj[curr]) { adj[curr].forEach(neighbor => { if (!visited.has(neighbor)) { visited.add(neighbor); queue.push(neighbor); } }); } } let hasPaid = false; let hasExportCompleted = false; for (const id of component) { const d = database.find(x => x.docNo === id); if (d && !isCancelledDocument(d) && !isInactiveExpenseDocument(d) && ['RE', 'RV', 'ABB', 'PAYSLIP', 'RETAX'].includes(d.prefix)) hasPaid = true; if (d && ['CI', 'PL'].includes(d.prefix)) hasExportCompleted = true; } if (hasPaid) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !isCancelledDocument(d) && !isInactiveExpenseDocument(d) && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'paid'; }); } else if (hasExportCompleted) { component.forEach(id => { const d = database.find(x => x.docNo === id); if (d && !isCancelledDocument(d) && !isInactiveExpenseDocument(d) && !d.paymentLedger && !d.paymentManaged && pendingStatusDocs.includes(d.prefix)) d.status = 'completed'; }); } } }
         }
 
         function documentTypeKey(d) { return d.prefix || '__untyped__'; }
@@ -3963,20 +3967,25 @@
             updateAllStatuses(); if(!$('document-table-body')) return;
             renderDocumentTypeFilter();
             const documents = getFilteredDocuments(val('document-type-filter'));
-            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'||d.status==='partial'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():d.status==='paid'?'ชำระแล้ว':d.status==='partial'?'ชำระบางส่วน':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${d.prefix === 'OEMR' ? '—' : `${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span>`}</td><td class="p-4 text-center"><div class="flex justify-center gap-1">${canReceivePayments(d) ? `<button type="button" data-open-payment="${encodeURIComponent(d.docNo)}" class="text-emerald-700 border border-emerald-200 px-2 py-1.5 rounded">รับชำระ</button>` : ''}<button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="Delete"><i class="ph ph-trash"></i></button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
+            $('document-table-body').innerHTML = documents.length ? documents.map(d => `<tr class="hover:bg-gray-50 border-b"><td class="p-4 font-bold text-emerald-700">${d.docNo}</td><td class="p-4"><span class="px-2 py-1 rounded text-xs ${revenueDocs.includes(d.prefix)?"bg-green-100 text-green-800":inputTaxDocs.includes(d.prefix)||String(d.prefix || '').includes('P')?"bg-orange-100 text-orange-800":d.prefix==='PAYSLIP'?"bg-purple-100 text-purple-800":"bg-emerald-100 text-emerald-800"}">${d.docName}</span></td><td class="p-4">${d.customerName}</td><td class="p-4">${d.customerEmail ? `<button onclick="emailDocumentList('${d.docNo}')" class="text-blue-500 hover:text-blue-700 underline flex items-center gap-1"><i class="ph ph-envelope"></i> ${d.customerEmail}</button>` : `<span class="text-gray-400">-</span>`}</td><td class="p-4">${d.dateStr}</td><td class="p-4">${d.refDocManual ? `<span class="text-blue-500 font-medium">${d.refDocManual}</span>` : '<span class="text-gray-400">-</span>'}</td><td class="p-4 text-center"><span class="${d.status==='paid'?'bg-green-100 text-green-700':d.status==='pending'||d.status==='partial'?'bg-orange-100 text-orange-700':'bg-gray-100 text-gray-700'} px-2 py-1 rounded text-[10px] font-bold uppercase whitespace-nowrap">${currentLang==='en'?d.status.toUpperCase():isCancelledDocument(d)?'ยกเลิกแล้ว':d.status==='paid'?'ชำระแล้ว':d.status==='partial'?'ชำระบางส่วน':d.status==='pending'?'รอดำเนินการ':'สำเร็จ'}</span></td><td class="p-4 text-right">${d.prefix === 'OEMR' ? '—' : `${formatMoney(d.grandTotal)} <span class="text-xs text-gray-500 font-normal">${d.currency || 'THB'}</span>`}</td><td class="p-4 text-center"><div class="flex justify-center gap-1">${canReceivePayments(d) ? `<button type="button" data-open-payment="${encodeURIComponent(d.docNo)}" class="text-emerald-700 border border-emerald-200 px-2 py-1.5 rounded">รับชำระ</button>` : ''}<button type="button" data-download-pdf="${encodeURIComponent(d.docNo)}" class="document-pdf-button text-emerald-700 hover:bg-emerald-50 border border-emerald-200 px-2 py-1.5 rounded transition inline-flex items-center gap-1 disabled:opacity-50" ${pdfExportInProgress ? 'disabled' : ''}><i class="ph ph-download-simple" aria-hidden="true"></i> ${currentLang === 'en' ? 'Download PDF' : 'โหลด PDF'}</button><button onclick="previewDocument('${d.docNo}')" class="text-emerald-600 hover:bg-emerald-50 px-2 py-1.5 rounded transition" title="View"><i class="ph ph-eye"></i></button><button onclick="editDocument('${d.docNo}')" class="text-blue-600 hover:bg-blue-50 px-2 py-1.5 rounded transition" title="Edit"><i class="ph ph-pencil"></i></button><button onclick="printDocumentList('${d.docNo}')" class="text-gray-600 hover:bg-gray-50 px-2 py-1.5 rounded transition" title="Print"><i class="ph ph-printer"></i></button><button onclick="emailDocumentList('${d.docNo}')" class="text-purple-600 hover:bg-purple-50 px-2 py-1.5 rounded transition" title="Email"><i class="ph ph-envelope"></i></button><button onclick="deleteDocument('${d.docNo}')" class="text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition" title="${d.paymentManaged||d.paymentLedger?'ยกเลิกเอกสาร':'Delete'}"><i class="ph ph-trash"></i>${d.paymentManaged||d.paymentLedger?' ยกเลิก':''}</button></div></td></tr>`).join('') : `<tr><td colspan="9" class="p-8 text-center text-gray-400 italic">${val('document-type-filter') ? (currentLang === 'en' ? 'No documents of this type' : 'ไม่มีเอกสารประเภทนี้') : (currentLang === 'en' ? 'No documents yet' : 'ยังไม่มีเอกสารในระบบ')}</td></tr>`;
         }
 
         function deleteDocument(docNo) { 
-            const financial=database.find(d=>d.docNo===docNo); if(financial?.billingManaged)return openBillingDocument(docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดมีประวัติทางการเงิน ห้ามลบ กรุณาให้ผู้รับผิดชอบบัญชีตรวจสอบรายการแก้ไข/ใบลดหนี้');
+            const financial=database.find(d=>d.docNo===docNo); if(financial?.billingManaged)return openBillingDocument(docNo); if(financial?.paymentManaged || financial?.paymentLedger) return openPaymentDocumentManagement(docNo,'cancel');
             showConfirm(currentLang === 'en' ? `Delete ${docNo}?` : `ยืนยันลบ ${docNo}?`, () => { 
                 if (currentUser) deleteDoc(getUserDoc("documents", docNo));
             }); 
         }
         function editDocument(docNo) {
-            const financial=database.find(d=>d.docNo===docNo); if(financial?.billingManaged)return openBillingDocument(docNo); if(financial?.paymentManaged || financial?.paymentLedger) return showAlert('เอกสารรับเงินหลายงวดล็อกยอดที่ออกแล้ว กรุณาจัดการจากเมนู รับชำระหลายงวด / ออกเอกสาร');
+            const financial=database.find(d=>d.docNo===docNo); if(financial?.billingManaged)return openBillingDocument(docNo); if(financial?.paymentManaged || financial?.paymentLedger) return openPaymentDocumentManagement(docNo,'edit');
             if (documentSaveInProgress || remarkSaveInProgress) return;
             const d = database.find(x => x.docNo === docNo); if(!d) return;
             showConfirm(currentLang === 'en' ? 'Load for editing? (Saves as new doc)' : 'โหลดเพื่อแก้ไข? (บันทึกเป็นเลขใหม่)', () => {
+                loadDocumentCopy(d);
+            });
+        }
+
+        function loadDocumentCopy(d) {
                 switchTab('create-doc'); if($('doc-type')) $('doc-type').value = d.prefix; resetDocumentSignatureChoice(); checkDocType();
                 if (d.customerName) document.querySelectorAll('#customer-options-list li').forEach(l => { if(l.textContent.includes(d.customerName)) l.click(); });
                 if (d.sellerName) document.querySelectorAll('#seller-options-list li').forEach(l => { if(l.textContent.includes(d.sellerName)) l.click(); });
@@ -3997,7 +4006,6 @@
                 restoreDocumentRemarks(d);
                 
                 calculateLiveTotal(); showAlert(currentLang === 'en' ? 'Loaded as draft.' : 'โหลดข้อมูลสำเร็จ!');
-            });
         }
 
         // ================= PREVIEW, PRINT, EMAIL LOGIC =================
@@ -4030,6 +4038,8 @@
         function previewDocument(docNo) {
             if(database.find(d=>d.docNo===docNo)?.billingManaged){openBillingDocument(docNo).catch(e=>showAlert(productHtml(e.message)));return;}
             const d = database.find(x => x.docNo === docNo); if (!d) return; currentlyPreviewingDoc = d;
+            show('preview-cancelled-banner',isCancelledDocument(d));
+            productText('preview-cancelled-banner',isCancelledDocument(d)?'ยกเลิกแล้ว · '+d.docNo+'\nเหตุผล: '+(d.paymentCancellation?.reason||'')+(d.paymentCancellation?.replacedBy?'\nออกแทนด้วย '+d.paymentCancellation.replacedBy:''):'');
             const issuer = d.paymentIssuer || companyProfile;
             const isEn = currentLang === 'en', isPay = d.prefix === 'PAYSLIP', isOem = d.prefix === 'OEMR', cur = d.currency || 'THB';
             $('paper-preview')?.classList.toggle('oem-receipt-paper', isOem);
@@ -4334,7 +4344,7 @@
             const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
             
             // กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น ตามที่เคยขอไว้
-            const fD = database.filter(d => !!d.rawDate && ((rt==='output'&&(['RETAX', 'CI'].includes(d.prefix)||['advance','tax'].includes(d.paymentManaged?.kind)))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
+            const fD = database.filter(d => !isCancelledDocument(d) && !!d.rawDate && ((rt==='output'&&(['RETAX', 'CI'].includes(d.prefix)||['advance','tax'].includes(d.paymentManaged?.kind)))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
             const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
             
             txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);

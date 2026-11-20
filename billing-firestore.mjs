@@ -1,6 +1,6 @@
 import {buildBill,prepareBatch,clone,ensure,text,sourceDate} from './billing-core.mjs';
 import {operationFingerprint,referenceKey,referenceAlreadyUsed} from './accounting-common.mjs';
-import {validDate} from './payments-core.mjs';
+import {validDate,isCancelledRecord} from './payments-core.mjs';
 const bytes=x=>new TextEncoder().encode(JSON.stringify(x)).length;
 export function createBillingStore(api){
  const scope=()=>{
@@ -45,7 +45,7 @@ export function createBillingStore(api){
    let receivingRef=null;
    if(action.kind==='payment'){
     receivingRef=s.ref('settings',refId);const refSnap=await tx.get(receivingRef);s.check();
-    ensure(!refSnap.exists()&&!referenceAlreadyUsed(documents,action.input.reference),'เลขอ้างอิงรับเงินนี้ใช้แล้ว กรุณาตรวจรายการซ้ำ');
+    ensure((!refSnap.exists()||isCancelledRecord(refSnap.data()))&&!referenceAlreadyUsed(documents,action.input.reference),'เลขอ้างอิงรับเงินนี้ใช้แล้ว กรุณาตรวจรายการซ้ำ');
    }
    async function next(prefix,collection,series='B',externalCounter=null){
     const current=externalCounter||updatedCounter;let n=Number(current[prefix]||0);

@@ -26,3 +26,52 @@ test('retry after an uncertain commit is idempotent and cannot issue another rec
 test('concurrent devices cannot over-collect or reuse the same document number',async()=>{const [,fs]=await modules,{root}=await initialized();const f=fakeFirestore(root),store=fs.createPaymentStore(f.api);const results=await Promise.allSettled([store.commit(root.docNo,action(36000,TODAY,'BANK-A','request-device-a')),store.commit(root.docNo,action(36000,TODAY,'BANK-B','request-device-b'))]);assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.match(results.find(x=>x.status==='rejected').reason.message,/อีกเครื่อง/);const l=f.records.get('documents/'+root.docNo).paymentLedger;assert.equal(l.payments.length,1);assert.equal(l.payments[0].amountCents,3600000);assert.equal(f.records.get('settings/payment-sequence-2026').RETAX,1);});
 test('switching accounts while a transaction reads cannot write through the other account',async()=>{const [,fs]=await modules,{root}=await initialized();const f=fakeFirestore(root),store=fs.createPaymentStore(f.api);f.setReadHook(async()=>{f.setUid('user-2');});await assert.rejects(store.commit(root.docNo,action(18000)),/บัญชี/);assert.equal(f.records.size,1);});
 test('existing document numbers are never overwritten and old numeric sequences stay separate',async()=>{const [,fs]=await modules,{root}=await initialized();const f=fakeFirestore(root);f.records.set('documents/RETAX-2026-P000001',{docNo:'RETAX-2026-P000001',grandTotal:99});const r=await fs.createPaymentStore(f.api).commit(root.docNo,action(18000));assert.equal(r.docNo,'RETAX-2026-P000002');assert.equal(f.records.get('documents/RETAX-2026-P000001').grandTotal,99);});
+
+const correction=(target,reason='ออกเอกสารผิด',id='correction-request-001')=>({kind:'cancel',requestId:id,now:'2026-10-29T08:00:00Z',expectedRevision:0,input:{targetDocNo:target,reason,verified:true}});
+async function liveStore(mode='domestic-vat7') {const {core,root}=await initialized(mode),[,fs]=await modules,f=fakeFirestore(root),store=fs.createPaymentStore(f.api);return {core,root,f,store,current:()=>f.records.get('documents/'+root.docNo)};}
+test('cancel an erroneous receipt atomically restores balance, retains originals and releases its reference',async()=>{
+ const {core,root,f,store,current}=await liveStore();const paid=await store.commit(root.docNo,action(30000));const original=structuredClone(f.records.get('documents/'+paid.docNo));
+ const a=correction(paid.docNo);a.expectedRevision=current().paymentLedger.revision;const result=await store.commit(root.docNo,a);
+ assert.equal(core.ledgerSummary(current()).paid,0);assert.equal(core.ledgerSummary(current()).balance,6000000);assert.equal(current().status,'pending');
+ const old=f.records.get('documents/'+paid.docNo);assert.equal(old.status,'cancelled');assert.deepEqual(old.items,original.items);assert.equal(old.grandTotal,30000);assert.equal(old.paymentCancellation.reason,'ออกเอกสารผิด');assert.equal(old.paymentCancellation.by,'user-1');
+ assert.equal(current().paymentLedger.payments[0].amountCents,3000000);assert.equal(current().paymentLedger.payments[0].status,'cancelled');assert.equal(current().paymentLedger.corrections.length,1);
+ const refs=[...f.records.values()].filter(d=>d.reference==='BANK-001');assert.equal(refs[0].status,'cancelled');assert.equal(result.documents.length,1);
+ const next=action(10000,TODAY,'BANK-001','payment-retry-correct');next.expectedRevision=current().paymentLedger.revision;await store.commit(root.docNo,next);assert.equal(core.ledgerSummary(current()).paid,1000000);
+});
+test('replacing an incorrect amount reuses its own reference, issues a new number and never doubles cash or VAT',async()=>{
+ const {core,root,f,store,current}=await liveStore();const first=await store.commit(root.docNo,action(60000));const a=correction(first.docNo);a.kind='replace';a.expectedRevision=current().paymentLedger.revision;Object.assign(a.input,action(30000).input,{replacementKind:'payment'});
+ const replacement=await store.commit(root.docNo,a);assert.notEqual(replacement.docNo,first.docNo);assert.equal(core.ledgerSummary(current()).paid,3000000);assert.equal(core.ledgerSummary(current()).balance,3000000);
+ const old=f.records.get('documents/'+first.docNo),fresh=f.records.get('documents/'+replacement.docNo);assert.equal(old.status,'cancelled');assert.equal(old.paymentCancellation.replacedBy,replacement.docNo);assert.equal(fresh.paymentCorrection.replaces,first.docNo);
+ assert.equal(fresh.grandTotal,30000);assert.equal(fresh.vat,1962.62);assert.equal(core.activePaymentEntries(current().paymentLedger).filter(d=>d.kind==='advance').length,1);
+ assert.equal((await store.commit(root.docNo,a)).replayed,true);assert.equal(current().paymentLedger.payments.length,2);
+ await assert.rejects(store.commit(root.docNo,{...a,input:{...a.input,amount:'20000'}}),/ข้อมูลอื่น/);
+});
+test('cancel and reissue an invoice for 50% without receiving or refunding money',async()=>{
+ const {core,root,f,store,current}=await liveStore();const first=await store.commit(root.docNo,{kind:'invoice',requestId:'invoice-original-001',expectedRevision:0});
+ const a=correction(first.docNo);a.kind='replace';a.expectedRevision=current().paymentLedger.revision;Object.assign(a.input,{replacementKind:'invoice',amount:'30000',date:TODAY});
+ const result=await store.commit(root.docNo,a);assert.equal(f.records.get('documents/'+first.docNo).status,'cancelled');assert.equal(result.document.grandTotal,30000);assert.equal(result.document.paymentManaged.requestedCents,3000000);assert.equal(core.ledgerSummary(current()).paid,0);assert.equal(current().paymentLedger.payments.length,0);
+});
+test('invoice cancellation preserves actual collections and an unused source can be cancelled with its invoices',async()=>{
+ const {core,root,f,store,current}=await liveStore();const inv=await store.commit(root.docNo,{kind:'invoice',requestId:'invoice-original-001',expectedRevision:0});let a=correction(root.docNo);a.expectedRevision=current().paymentLedger.revision;
+ await store.commit(root.docNo,a);assert.equal(current().status,'cancelled');assert.equal(f.records.get('documents/'+inv.docNo).status,'cancelled');assert.equal(core.isPaymentRoot(current()),false);
+ await assert.rejects(store.commit(root.docNo,{...action(500),expectedRevision:current().paymentLedger.revision}),/ต้นทาง/);
+});
+test('financial dependencies must unwind from the latest event; receipt-free delivery can also be cancelled',async()=>{
+ const {core,root,store,current}=await liveStore();const paid=await store.commit(root.docNo,action(60000));const delivered=await store.commit(root.docNo,{kind:'delivery',requestId:'delivery-request-001',expectedRevision:1});assert.equal(delivered.document,null);
+ let a=correction(paid.docNo);a.expectedRevision=current().paymentLedger.revision;await assert.rejects(store.commit(root.docNo,a),/รายการส่งมอบ/);
+ a=correction(root.docNo,'บันทึกส่งมอบผิด','correction-delivery-001');a.input.targetRequestId='delivery-request-001';a.expectedRevision=current().paymentLedger.revision;await store.commit(root.docNo,a);assert.equal(current().paymentLedger.delivered,false);
+ a=correction(paid.docNo);a.expectedRevision=current().paymentLedger.revision;await store.commit(root.docNo,a);assert.equal(core.ledgerSummary(current()).paid,0);
+});
+test('cancel the latest tax delivery returns revenue to undelivered without removing real deposits',async()=>{
+ const {core,root,f,store,current}=await liveStore();await store.commit(root.docNo,action(18000));const delivery=await store.commit(root.docNo,{kind:'delivery',requestId:'delivery-request-001',expectedRevision:1});let a=correction(delivery.docNo);a.expectedRevision=2;await store.commit(root.docNo,a);
+ assert.equal(current().isRevenue,false);assert.equal(current().paymentLedger.delivered,false);assert.equal(current().paymentLedger.deliveryTaxDocNo,'');assert.equal(core.ledgerSummary(current()).paid,1800000);assert.equal(f.records.get('documents/'+delivery.docNo).status,'cancelled');
+ const redelivery=await store.commit(root.docNo,{kind:'delivery',requestId:'delivery-request-002',expectedRevision:3});assert.equal(redelivery.document.grandTotal,42000);
+});
+test('a failed correction transaction leaves the receipt, ledger, reference and sequence unchanged',async()=>{
+ const {root,f,store,current}=await liveStore();const first=await store.commit(root.docNo,action(30000));const before=structuredClone([...f.records]);const a=correction(first.docNo);a.kind='replace';a.expectedRevision=1;Object.assign(a.input,action(10000).input,{replacementKind:'payment'});
+ f.setDeny(true);await assert.rejects(store.commit(root.docNo,a),/permission/);assert.deepEqual([...f.records],before);f.setDeny(false);f.failAfter();await assert.rejects(store.commit(root.docNo,a),/connection lost/);const r=await store.commit(root.docNo,a);assert.equal(r.replayed,true);assert.equal(current().paymentLedger.corrections.length,1);
+});
+test('stale devices, missing reasons, unconfirmed cancellations and shared billing receipts cannot change a ledger',async()=>{
+ const {root,f,store,current}=await liveStore();const first=await store.commit(root.docNo,action(18000));let a=correction(first.docNo);await assert.rejects(store.commit(root.docNo,a),/อีกเครื่อง/);a.expectedRevision=1;a.input.reason='';await assert.rejects(store.commit(root.docNo,a),/เหตุผล/);a.input.reason='บันทึกผิด';a.input.verified=false;await assert.rejects(store.commit(root.docNo,a),/ยืนยัน/);a.input.verified=true;
+ const doc=f.records.get('documents/'+first.docNo);doc.paymentManaged.batchId='MULTI-ORDER';await assert.rejects(store.commit(root.docNo,a),/หลายออเดอร์/);assert.equal(current().paymentLedger.payments[0].status,undefined);
+});
