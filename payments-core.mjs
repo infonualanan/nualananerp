@@ -1,6 +1,8 @@
 // All money in this module is integer satang. It never calls Firebase or mutates inputs.
 export const ROOT_TYPES = ['SO', 'INV'];
 const clone = value => JSON.parse(JSON.stringify(value));
+export const isCancelledRecord = value => ['cancelled','canceled','void','voided','superseded'].includes(String(value?.status || '').toLowerCase());
+export const activePaymentEntries = ledger => (ledger?.documents || []).filter(d => !isCancelledRecord(d));
 export function moneyCents(value) {
     if (typeof value === 'number') {
         if (!Number.isFinite(value)) throw new Error('จำนวนเงินไม่ถูกต้อง');
@@ -19,21 +21,22 @@ export function validDate(value) {
     const d = new Date(String(value) + 'T00:00:00Z');
     return /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
-export function paidCents(ledger) { return (ledger?.payments || []).reduce((sum, p) => sum + p.amountCents, 0); }
+export function paidCents(ledger) { return (ledger?.payments || []).filter(p=>!isCancelledRecord(p)).reduce((sum, p) => sum + p.amountCents, 0); }
 export function ledgerSummary(root) {
     const total = root.paymentLedger?.totalCents ?? moneyCents(root.grandTotal);
     const paid = paidCents(root.paymentLedger);
     return {total, paid, balance: total - paid, percent: total ? paid / total * 100 : 0};
 }
-export function isPaymentRoot(d) { return ROOT_TYPES.includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
+export function isPaymentRoot(d) { return !isCancelledRecord(d) && ROOT_TYPES.includes(d.prefix) && !d.paymentManaged && (d.currency || 'THB') === 'THB' && Number(d.grandTotal) > 0; }
 export function relatedLegacyDocuments(root, documents) {
     const visited = new Set([root.docNo]);
     let changed = true;
-    const edges = documents.filter(d => !d.paymentManaged).map(d => [d.docNo, ...String(d.refDocManual || '').split(',').map(x => x.trim()).filter(Boolean)]);
+    const edges = documents.filter(d => !d.paymentManaged && !isCancelledRecord(d)).map(d => [d.docNo, ...String(d.refDocManual || '').split(',').map(x => x.trim()).filter(Boolean)]);
     while (changed) { changed = false; for (const edge of edges) if (edge.some(id => visited.has(id))) for (const id of edge) if (!visited.has(id)) { visited.add(id); changed = true; } }
-    return documents.filter(d => d.docNo !== root.docNo && visited.has(d.docNo) && ['RE', 'RETAX', 'TINV', 'ABB', 'RV', 'EVAT', 'CI', 'DO'].includes(d.prefix));
+    return documents.filter(d => !isCancelledRecord(d) && d.docNo !== root.docNo && visited.has(d.docNo) && ['RE', 'RETAX', 'TINV', 'ABB', 'RV', 'EVAT', 'CI', 'DO'].includes(d.prefix));
 }
 function assertRoot(root) {
+    if (isCancelledRecord(root)) throw new Error('เอกสารต้นทางยกเลิกแล้ว ไม่สามารถบันทึกรับเงินหรือออกเอกสารเพิ่ม');
     if (!isPaymentRoot(root)) throw new Error('เลือกรายการใบสั่งขายหรือใบแจ้งหนี้สกุล THB');
     if (root.paymentLedger && root.paymentLedger.totalCents !== moneyCents(root.grandTotal)) throw new Error('ยอดเอกสารเปลี่ยน กรุณาตรวจสอบกับผู้ดูแลก่อนรับเงิน');
     if (root.paymentLedger && root.paymentLedger.version !== 1) throw new Error('เวอร์ชันรายการชำระเงินไม่รองรับ');
@@ -59,11 +62,11 @@ function assertLedger(root) {
 export function validatePayment(root, input, today) {
     const l = assertLedger(root), amount = moneyCents(input.amount);
     if (amount <= 0 || amount > l.totalCents - paidCents(l)) throw new Error('ยอดรับเงินต้องมากกว่า 0 และไม่เกินยอดคงเหลือ');
-    const last = l.payments.at(-1)?.date || String(root.inputDate || '').slice(0,10);
+    const last = l.payments.filter(p=>!isCancelledRecord(p)).at(-1)?.date || String(root.inputDate || '').slice(0,10);
     if (!validDate(input.date) || input.date > today || (last && input.date < last) || (l.delivered && input.date < l.deliveryDate)) throw new Error('วันที่รับเงินต้องไม่ก่อนเอกสาร/งวดล่าสุด/วันส่งมอบ และไม่เป็นวันในอนาคต');
     const reference = String(input.reference || '').normalize('NFKC').trim();
     if (!reference || reference.length > 80) throw new Error('กรอกเลขอ้างอิงรับเงินไม่เกิน 80 ตัวอักษร');
-    if (l.payments.some(p => p.reference.normalize('NFKC').toUpperCase() === reference.toUpperCase())) throw new Error('เลขอ้างอิงรับเงินนี้ใช้แล้ว กรุณาตรวจสอบรายการซ้ำ');
+    if (l.payments.some(p => !isCancelledRecord(p) && p.reference.normalize('NFKC').toUpperCase() === reference.toUpperCase())) throw new Error('เลขอ้างอิงรับเงินนี้ใช้แล้ว กรุณาตรวจสอบรายการซ้ำ');
     if (!['โอนธนาคาร','พร้อมเพย์','เงินสด'].includes(input.method)) throw new Error('เลือกช่องทางรับเงิน');
     if (!input.verified) throw new Error('ยืนยันตรวจสอบยอดเงินเข้าจริงก่อน');
     if (amount < l.totalCents - paidCents(l) && (!validDate(input.dueDate) || input.dueDate < input.date)) throw new Error('วันนัดชำระยอดที่เหลือต้องไม่ก่อนวันที่รับเงิน');
@@ -79,7 +82,7 @@ export function applyOperation(root, action, docNo, today, allDocuments = []) {
     if (priorOperation) return {replayed:true, docNo:priorOperation.docNo};
     const before = paidCents(l), dueBefore = l.totalCents - before;
     let kind, prefix, date, gross = 0, net = 0, vat = 0, items = [], note = '', payment = null;
-    const priorTax = l.documents.filter(d => ['advance','tax'].includes(d.kind));
+    const priorTax = activePaymentEntries(l).filter(d => ['advance','tax'].includes(d.kind));
     const covered = priorTax.reduce((s,d)=>s+d.grossCents,0), coveredNet = priorTax.reduce((s,d)=>s+d.netCents,0), coveredVat=priorTax.reduce((s,d)=>s+d.vatCents,0);
     if (action.kind === 'payment') {
         const p = validatePayment(root, action.input, today);
@@ -90,7 +93,7 @@ export function applyOperation(root, action, docNo, today, allDocuments = []) {
         if (!proof && !String(p.proofNote || '').trim()) throw new Error('แนบหลักฐานหรือระบุรายละเอียดหลักฐานก่อนรับเงิน');
         payment = {id:action.requestId,docNo,amountCents:gross,date,method:p.method,reference:p.reference,proofName:proof ? proof.name : String(p.proofNote).trim(),recordedAt:action.now,number:l.payments.length+1};
         l.payments.push(payment); l.dueDate=p.dueDate;
-        l.dueHistory=[...(l.dueHistory||[]),{date:p.date,dueDate:p.dueDate}];
+        l.dueHistory=[...(l.dueHistory||[]),{date:p.date,dueDate:p.dueDate,requestId:action.requestId}];
         items=[{...item((kind === 'advance' ? 'รับล่วงหน้าค่าสินค้า' : 'รับชำระค่าสินค้า')+' งวดที่ '+payment.number+' ตาม '+root.docNo,gross),itemBeforeVat:net/100,itemVat:vat/100}];
         note='รับเงินครั้งนี้ '+amountText(gross)+' บาท ('+percentage(gross,l.totalCents)+')\nช่องทาง '+p.method+' · อ้างอิง '+p.reference+'\nหลักฐาน: '+payment.proofName;
         if (kind === 'receipt' && l.deliveryTaxDocNo) note+='\nอ้างอิงใบกำกับ '+l.deliveryTaxDocNo+' (ไม่ออก VAT เพิ่ม)';
@@ -108,6 +111,14 @@ export function applyOperation(root, action, docNo, today, allDocuments = []) {
     } else if (action.kind === 'invoice') {
         kind='invoice'; prefix='INV'; date=today; gross=l.totalCents; net=moneyCents(root.subtotal); vat=moneyCents(root.vat); items=clone(root.items || []);
         note='ใบแจ้งหนี้ตาม '+root.docNo+'\nหักรับชำระแล้ว '+percentage(before,l.totalCents)+' จำนวน '+amountText(before)+' บาท\nยอดคงเหลือที่เรียกเก็บ '+amountText(dueBefore)+' บาท\nใบแจ้งหนี้ไม่ใช่ใบกำกับภาษีและไม่ใช่หลักฐานรับเงิน';
+        if (String(action.input?.amount ?? '').trim()) {
+            gross=moneyCents(action.input.amount);
+            if(gross<=0 || gross>dueBefore) throw new Error('ยอดเรียกเก็บต้องมากกว่า 0 และไม่เกินยอดคงเหลือ');
+            net=Math.round(gross*moneyCents(root.subtotal)/l.totalCents);vat=gross-net;
+            items=[{...item('เรียกเก็บ '+percentage(gross,l.totalCents)+' ตาม '+root.docNo,gross),itemBeforeVat:net/100,itemVat:vat/100}];
+            note='ใบแจ้งหนี้ตาม '+root.docNo+'\nเรียกเก็บครั้งนี้ '+percentage(gross,l.totalCents)+' จำนวน '+amountText(gross)+' บาท\nยอดคงเหลือทั้งออเดอร์ '+amountText(dueBefore)+' บาท\nใบแจ้งหนี้ไม่ใช่ใบกำกับภาษีและไม่ใช่หลักฐานรับเงิน';
+        }
+        if(action.input?.date){if(!validDate(action.input.date)||action.input.date>today||action.input.date<String(root.inputDate||'').slice(0,10))throw new Error('วันที่ใบแจ้งหนี้ไม่ถูกต้อง');date=action.input.date;}
     } else throw new Error('ประเภทรายการไม่รองรับ');
     if (l.payments.length > 500 || l.documents.length >= 1000) throw new Error('จำนวนรายการถึงขีดจำกัด กรุณาติดต่อผู้ดูแลเพื่อแยกงวดบัญชี');
     const after=paidCents(l), balance=l.totalCents-after;
@@ -119,7 +130,8 @@ export function applyOperation(root, action, docNo, today, allDocuments = []) {
         const names=['customerName','customerTaxId','customerBranch','customerAddr','customerEmail','sellerName'];
         const parties=Object.fromEntries(names.map(k=>[k,String(root[k]||'')]));
         output={...parties,docNo,prefix,docName,inputDate:date,rawDate:date+'T12:00:00+07:00',dateStr:new Date(date+'T12:00:00+07:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Bangkok'}),creditTerm:'',currency:'THB',exchangeRate:1,refDocManual:[root.docNo,...(kind==='tax'?priorTax.map(d=>d.docNo):kind==='receipt'&&l.deliveryTaxDocNo?[l.deliveryTaxDocNo]:[])].join(', '),items,subtotal:net/100,vat:vat/100,grandTotal:gross/100,isRevenue:false,isInputTax:false,status:kind==='advance'||kind==='receipt'?'paid':kind==='invoice'?'pending':'completed',remark:note,remarkIds:[],paymentManaged:{version:1,rootNo:root.docNo,kind,requestId:action.requestId},paymentSummary:summary};
-        if (kind==='advance'||kind==='tax') { output.paymentManaged.priceIncludesVat=true; output.remark+='\nราคาและจำนวนเงินในตารางรวม VAT แล้ว'; }
+        if(kind==='invoice'&&String(action.input?.amount??'').trim()) output.paymentManaged.requestedCents=gross;
+        if (kind==='advance'||kind==='tax'||(kind==='invoice'&&String(action.input?.amount??'').trim())) { output.paymentManaged.priceIncludesVat=true; output.remark+='\nราคาและจำนวนเงินในตารางรวม VAT แล้ว'; }
         if (action.issuer) output.paymentIssuer=clone(action.issuer);
         if (action.proof && payment) output.paymentProof=clone(action.proof);
     }
@@ -131,6 +143,50 @@ export function operationPrefix(root, action) {
     const l=assertLedger(root);
     if (action.kind==='invoice') return 'INV';
     if (action.kind==='payment') return l.mode==='domestic-vat7'&&!l.delivered?'RETAX':'RE';
-    if (action.kind==='delivery') return l.mode==='domestic-vat7'&&l.documents.filter(d=>['advance','tax'].includes(d.kind)).reduce((s,d)=>s+d.grossCents,0)<l.totalCents?'TINV':'';
+    if (action.kind==='delivery') return l.mode==='domestic-vat7'&&activePaymentEntries(l).filter(d=>['advance','tax'].includes(d.kind)).reduce((s,d)=>s+d.grossCents,0)<l.totalCents?'TINV':'';
     throw new Error('ประเภทรายการไม่รองรับ');
+}
+
+// Cancel an erroneous posting without deleting its original amount, number or proof.
+// Financial events unwind in reverse order so issued VAT/delivery dependencies stay consistent.
+export function cancelPaymentDocument(root, documents, input, audit) {
+    const l=clone(assertLedger(root)), reason=String(input.reason||'').trim();
+    if(!reason || reason.length>500) throw new Error('กรอกเหตุผลที่แก้ไขหรือยกเลิก ไม่เกิน 500 ตัวอักษร');
+    if(input.verified!==true) throw new Error('ยืนยันว่าเป็นการแก้รายการบันทึกผิด ไม่ใช่การคืนเงินจริง');
+    if(root.billingLock) throw new Error('ยกเลิกใบวางบิล '+root.billingLock.billNo+' ที่ผูกอยู่ก่อนแก้ไขรายการนี้');
+    const rootTarget=input.targetDocNo===root.docNo && !input.targetRequestId;
+    const entry=rootTarget?null:l.documents.find(d=>input.targetRequestId?d.requestId===input.targetRequestId:d.docNo===input.targetDocNo);
+    if(!rootTarget && (!entry || isCancelledRecord(entry))) throw new Error('ไม่พบรายการที่ยังใช้งาน หรือรายการนี้ยกเลิกแล้ว');
+    const active=activePaymentEntries(l), financial=active.filter(d=>d.kind!=='invoice');
+    if(rootTarget && (financial.length || l.delivered || paidCents(l))) {
+        const latest=financial.at(-1);
+        throw new Error('ยกเลิกรายการที่ผูกอยู่จากรายการล่าสุดก่อน: '+(latest?.docNo||'รายการส่งมอบที่ไม่มีเลขเอกสาร'));
+    }
+    if(entry?.kind!=='invoice' && entry && financial.at(-1)?.requestId!==entry.requestId) {
+        const latest=financial.at(-1);
+        throw new Error('มีรายการถัดไปอ้างอิงอยู่ กรุณายกเลิก '+(latest?.docNo||'รายการส่งมอบที่ไม่มีเลขเอกสาร')+' ก่อน');
+    }
+    const targets=rootTarget?active:[entry], updatedDocuments=[], reversedPayments=[];
+    const cancellation={...clone(audit),reason};
+    for(const target of targets) {
+        const document=target.docNo?documents.find(d=>d.docNo===target.docNo):null;
+        if(target.docNo && (!document || document.paymentManaged?.rootNo!==root.docNo || document.paymentManaged?.requestId!==target.requestId || isCancelledRecord(document))) throw new Error('เอกสารอ้างอิงเปลี่ยน กรุณาโหลดข้อมูลล่าสุด');
+        if(document?.paymentManaged?.batchId || l.payments.some(p=>p.docNo===target.docNo&&p.batchId)) throw new Error('รายการนี้เป็นการรับเงินรวมหลายออเดอร์ ต้องจัดการทั้งชุดจากงานรับเงินรวม');
+        target.status='cancelled';target.cancellation=clone(cancellation);
+        if(document) updatedDocuments.push({...clone(document),status:'cancelled',paymentCancellation:clone(cancellation),isRevenue:false,isInputTax:false});
+        for(const p of l.payments.filter(p=>p.docNo===target.docNo && !isCancelledRecord(p))) {p.status='cancelled';p.cancellation=clone(cancellation);reversedPayments.push(clone(p));}
+        for(const h of l.dueHistory||[]) if(h.requestId===target.requestId) h.status='cancelled';
+        // Older ledgers did not tag due-history entries; pair them by payment sequence.
+        if(!l.dueHistory?.some(h=>h.requestId===target.requestId)) for(const p of reversedPayments) {const h=l.dueHistory?.[p.number];if(h)h.status='cancelled';}
+        if(['tax','delivery'].includes(target.kind)){l.delivered=false;l.deliveryDate='';l.deliveryTaxDocNo='';}
+    }
+    l.dueDate=(l.dueHistory||[]).filter(h=>!isCancelledRecord(h)).at(-1)?.dueDate||l.dueDate;
+    l.corrections=[...(l.corrections||[]),{...cancellation,targetDocNo:input.targetDocNo||'',targetRequestId:entry?.requestId||'',docNo:''}];
+    l.revision=(l.revision||0)+1;
+    const corrected={...clone(root),paymentLedger:l};
+    const summary=ledgerSummary(corrected);
+    corrected.status=rootTarget?'cancelled':summary.balance===0?'paid':summary.paid>0?'partial':'pending';
+    corrected.isRevenue=rootTarget?false:!!l.delivered;
+    if(rootTarget)corrected.paymentCancellation=clone(cancellation);
+    return {root:corrected,documents:updatedDocuments,reversedPayments,entry:entry?clone(entry):null,summary};
 }

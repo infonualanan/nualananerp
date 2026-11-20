@@ -50,3 +50,13 @@
 @media(max-width:400px){#payment-workspace .pp-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}#payment-workspace .pp-metrics>div:last-child{grid-column:1/-1}}
 @media(pointer:coarse){#payment-workspace button{min-height:44px}#payment-workspace .pp-check{min-height:44px}}
 #payment-workspace #pp-paper-items{border-block:1px solid #e2e8f0;padding:5px 0;margin:14px 0}
+#payment-workspace .pp-danger{color:#b91c1c;border-color:#fca5a5}
+#payment-workspace .pp-correction{background:#fff7ed;border-block:1px solid #fed7aa;font-size:14px}
+#payment-workspace .pp-correction .pp-label{font-size:14px}
+#payment-workspace textarea{font:inherit;width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical}
+#payment-workspace .pp-correction-actions{position:sticky;bottom:0;background:#fff7ed;padding:12px 0 calc(12px + env(safe-area-inset-bottom));z-index:2}
+#payment-workspace .pp-correction-actions button{min-height:44px}
+#payment-workspace .pp-cancelled{border:2px solid #b91c1c}
+#payment-workspace .pp-cancelled #pp-paper-state{display:block;color:#b91c1c;font-size:14px;font-weight:700}
+.payment-cancelled-banner{color:#b91c1c;border:2px solid #b91c1c;padding:8px;margin-bottom:12px;font-size:14px;font-weight:700;white-space:pre-wrap;break-inside:avoid}
+@media(max-width:600px){#payment-workspace textarea{font-size:16px}#payment-workspace .pp-correction-actions button{flex:1}}

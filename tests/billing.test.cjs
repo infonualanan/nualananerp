@@ -105,3 +105,18 @@ test('explicit head-office labels and formatted tax IDs group together without a
  assert.equal(f.core.partyKey(first),f.core.partyKey(second));assert.notEqual(f.core.partyKey(first),f.core.partyKey({...first,customerBranch:''}));
  const r=await f.issueBill();assert.equal(f.get('documents',r.docNos[0]).grandTotal,39000);
 });
+test('corrected single receipts are excluded from receivables and their released reference works in batch collection',async()=>{
+ const f=await fixture();f.seed();const root=f.get('documents','INV-2026-001');
+ await f.singleStore.commit(root.docNo,{kind:'cancel',requestId:'correction-before-batch-001',expectedRevision:root.paymentLedger.revision,now:f.api.now(),input:{targetDocNo:'RETAX-2026-P000001',reason:'บันทึกยอดรับผิด',verified:true}});
+ let loaded=await f.store.load(),row=f.core.receivables(loaded.documents,f.api.today(),f.api.today()).rows.find(r=>r.rootNo===root.docNo);assert.equal(row.paidCents,0);assert.equal(row.balanceCents,6000000);
+ const out=await f.store.commit(await f.batch({'INV-2026-001':'18000'},{reference:'INITIAL-1'}));assert.equal(out.docNos.length,1);assert.equal(f.payments.ledgerSummary(f.get('documents',root.docNo)).paid,1800000);
+});
+test('a 50% request cannot be billed again for the other 50% after its own payment',async()=>{
+ const f=await fixture();let root=f.root('SO-PARTIAL',60000);root.prefix='SO';f.put('documents',root.docNo,root);
+ await f.singleStore.commit(root.docNo,{kind:'invoice',requestId:'invoice-half-request-001',expectedRevision:0,input:{amount:'30000'}});
+ let r=f.core.receivables(await f.api.readServerDocuments(),f.api.today(),f.api.today());assert.equal(r.rows.length,0);assert.match(r.review[0].reason,/บางส่วน/);
+ await f.singleStore.commit(root.docNo,{kind:'payment',requestId:'payment-half-request-001',expectedRevision:1,input:{amount:'30000',date:f.api.today(),reference:'HALF-BANK',method:'โอนธนาคาร',dueDate:'2026-11-10',verified:true,proofNote:'ทดสอบยอดรับจริง'}});
+ r=f.core.receivables(await f.api.readServerDocuments(),f.api.today(),f.api.today());assert.equal(r.rows.length,0);assert.match(r.review[0].reason,/บางส่วน/);
+ await f.singleStore.commit(root.docNo,{kind:'invoice',requestId:'invoice-final-request-001',expectedRevision:2,input:{amount:'30000'}});
+ r=f.core.receivables(await f.api.readServerDocuments(),f.api.today(),f.api.today());assert.equal(r.rows.length,1);assert.equal(r.rows[0].balanceCents,3000000);
+});

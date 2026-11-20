@@ -1,4 +1,4 @@
-import {isPaymentRoot,ledgerSummary,moneyCents,validDate,applyOperation,operationPrefix} from './payments-core.mjs';
+import {isPaymentRoot,ledgerSummary,moneyCents,validDate,applyOperation,operationPrefix,isCancelledRecord} from './payments-core.mjs';
 import {connectedPaymentSources,untrackedDocuments,normalizeReference} from './accounting-common.mjs';
 export const clone=v=>JSON.parse(JSON.stringify(v));
 export const ensure=(condition,message)=>{if(!condition)throw new Error(message);};
@@ -22,7 +22,7 @@ export function sourceRow(root,documents,asOf,today){
  ensure(['receipt','domestic-vat7'].includes(l.mode),'รูปแบบรับเงินต้นทางไม่ถูกต้อง');
  ensure(l.version===1&&s.total===moneyCents(root.grandTotal)&&s.total>0&&s.total<=1e12,'ยอดต้นทางหรือรุ่นข้อมูลไม่ตรง กรุณาตรวจยอด');
  ensure(Number.isSafeInteger(s.paid)&&s.paid>=0&&s.balance>=0,'ยอดรับสะสมผิดปกติ');
- const taxDocs=(l.documents||[]).filter(d=>['advance','tax'].includes(d.kind));
+ const taxDocs=(l.documents||[]).filter(d=>!isCancelledRecord(d)&&['advance','tax'].includes(d.kind));
  const covered=safeSum(taxDocs.map(d=>d.grossCents));
  ensure(taxDocs.every(d=>Number.isSafeInteger(d.grossCents)&&d.grossCents>=0&&Number.isSafeInteger(d.netCents)&&Number.isSafeInteger(d.vatCents)&&d.netCents+d.vatCents===d.grossCents),'ข้อมูลใบกำกับต้นทางผิดปกติ');
  ensure(l.mode==='receipt'?covered===0:covered<=s.total&&(l.delivered?covered===s.total:covered===s.paid&&!taxDocs.some(d=>d.kind==='tax')),'สถานะภาษีต้นทางไม่ตรงกับประวัติ กรุณาตรวจยอด');
@@ -32,15 +32,17 @@ export function sourceRow(root,documents,asOf,today){
  ensure(!linked.some(id=>documents.some(d=>d.docNo===id&&d.paymentLedger)),'พบยอดอ้างอิงจากหลายต้นทาง ต้องกระทบยอดก่อน');
  let invoice=root;
  if(root.prefix==='SO'){
-  const issued=(l.documents||[]).filter(d=>d.kind==='invoice'&&validDate(d.date)&&d.date<=asOf);
+  const issued=(l.documents||[]).filter(d=>!isCancelledRecord(d)&&d.kind==='invoice'&&validDate(d.date)&&d.date<=asOf);
   const latest=issued.at(-1);ensure(latest,'ยังไม่มีใบแจ้งหนี้ของใบสั่งขายนี้');
   invoice=documents.find(d=>d.docNo===latest.docNo);
   ensure(invoice?.paymentManaged?.kind==='invoice'&&invoice.paymentManaged.rootNo===root.docNo,'ไม่พบใบแจ้งหนี้อ้างอิงที่ตรงกับต้นทาง');
+  const requested=invoice.paymentManaged.requestedCents,paidSinceIssue=Math.max(0,s.paid-(invoice.paymentSummary?.paidCents||0));
+  ensure(!requested||Math.max(0,requested-paidSinceIssue)===s.balance,'ใบแจ้งหนี้เรียกเก็บบางส่วน กรุณาตรวจยอดงวดก่อนรวมวางบิลเต็มออเดอร์');
  }
  const date=sourceDate(invoice);ensure(date&&date<=asOf,'ใบแจ้งหนี้ยังไม่อยู่ในวันที่รายงาน');
- const payments=(l.payments||[]).filter(p=>{ensure(validDate(p.date)&&p.date<=today&&p.date>=sourceDate(root)&&Number.isSafeInteger(p.amountCents)&&p.amountCents>0,'ข้อมูลรับชำระไม่สมบูรณ์');return p.date<=asOf;});
+ const payments=(l.payments||[]).filter(p=>!isCancelledRecord(p)).filter(p=>{ensure(validDate(p.date)&&p.date<=today&&p.date>=sourceDate(root)&&Number.isSafeInteger(p.amountCents)&&p.amountCents>0,'ข้อมูลรับชำระไม่สมบูรณ์');return p.date<=asOf;});
  const paid=safeSum(payments.map(p=>p.amountCents));ensure(paid<=s.total,'ยอดรับเงินเกินยอดต้นทาง');
- const history=(l.dueHistory||[]).filter(h=>validDate(h.date)&&validDate(h.dueDate)&&h.date<=asOf);
+ const history=(l.dueHistory||[]).filter(h=>!isCancelledRecord(h)&&validDate(h.date)&&validDate(h.dueDate)&&h.date<=asOf);
  let due=history.at(-1)?.dueDate||'';
  if(!due&&asOf===today&&validDate(l.dueDate))due=l.dueDate;
  if(!due&&String(invoice.creditTerm??'').trim()!==''&&/^\d+$/.test(String(invoice.creditTerm))&&Number(invoice.creditTerm)<=3650){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+Number(invoice.creditTerm));due=d.toISOString().slice(0,10);}
