@@ -35,6 +35,12 @@
         .product-usage-badge[data-usage="sale"] { background: #d1fae5; color: #065f46; }
         .product-usage-badge[data-usage="purchase"] { background: #dbeafe; color: #1e40af; }
         .product-usage-badge[data-usage="both"] { background: #ede9fe; color: #5b21b6; }
+        #vat-purchase-status { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; }
+        #vat-purchase-status [data-issue] { color: #9a3412; }
+        #vat-open-vault { min-height: 44px; padding: 6px 12px; border: 1px solid #a7c8b7; border-radius: 8px; background: white; color: #065f46; }
+        .vat-source-label { display: block; color: #047857; font-size: 11px; font-weight: normal; margin-top: 4px; }
+        #vat-export-button:disabled, #vat-print-button:disabled { opacity: .45; cursor: not-allowed; }
+        #vat-print-blocked { display: none; }
 
         /* PRINT STYLES FIX */
         @media print {
@@ -61,6 +67,8 @@
             body:not(.modal-open) .table-scroll { overflow: visible !important; }
             body:not(.modal-open) table.vat-table { min-width: 100% !important; width: 100% !important; font-size: 11px !important; }
             body:not(.modal-open) table.vat-table th, body:not(.modal-open) table.vat-table td { padding: 4px !important; white-space: normal !important; word-wrap: break-word; }
+            #tab-vat-report.vat-print-blocked #vat-print-header, #tab-vat-report.vat-print-blocked .vat-table { display: none !important; }
+            #tab-vat-report.vat-print-blocked #vat-print-blocked { display: block !important; }
 
             table { page-break-inside: auto; width: 100% !important; }
             tr { page-break-inside: avoid; page-break-after: auto; }
@@ -1023,10 +1031,18 @@
                         <div><label class="block text-[12px] font-medium text-gray-700 mb-1" data-i18n="lbl_report_type">ประเภทรายงาน</label><select id="vat-type-filter" class="border border-gray-300 rounded-lg p-2 outline-none"><option value="output">ภาษีขาย</option><option value="input">ภาษีซื้อ</option></select></div>
                         <div><label class="block text-[12px] font-medium text-gray-700 mb-1" data-i18n="lbl_report_month">เดือน / ปี</label><input type="month" id="vat-month-filter" class="border border-gray-300 rounded-lg p-2 outline-none"></div>
                         <button onclick="generateVatReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2"><i class="ph ph-magnifying-glass"></i> <span data-i18n="btn_view_report">ดูรายงาน</span></button>
-                        <button onclick="exportVatToCSV()" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 ml-auto"><i class="ph ph-file-csv"></i> <span>Export CSV</span></button>
-                        <button onclick="window.print()" class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2"><i class="ph ph-printer"></i> <span data-i18n="btn_print_report">พิมพ์รายงาน</span></button>
+                        <button type="button" id="vat-export-button" onclick="exportVatToCSV()" disabled class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 ml-auto"><i class="ph ph-file-csv"></i> <span>Export CSV</span></button>
+                        <button type="button" id="vat-print-button" disabled class="bg-gray-100 border px-4 py-2 rounded-lg flex items-center gap-2"><i class="ph ph-printer"></i> <span data-i18n="btn_print_report">พิมพ์รายงาน</span></button>
+                    </div>
+                    <div id="vat-purchase-status" class="hidden no-print text-[14px]">
+                        <div class="flex flex-wrap justify-between items-center gap-4">
+                            <div><strong>รายงานภาษีซื้อรวม</strong><p id="vat-purchase-summary" role="status" class="mt-1"></p></div>
+                            <button type="button" id="vat-open-vault">ดูคลังแนบเดือนนี้</button>
+                        </div>
+                        <ul id="vat-purchase-issues" class="mt-2" data-issue></ul>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print-area print:shadow-none print:border-none p-4 pb-12">
+                        <p id="vat-print-blocked">รายงานยังไม่พร้อมพิมพ์ กรุณาตรวจสถานะในหน้ารายงาน</p>
                         <div id="vat-print-header" class="mb-4 text-gray-900">
                             <h2 class="text-center text-xl font-bold mb-6" id="vat-official-title">รายงานภาษีขาย</h2>
                             <div class="flex justify-center gap-8 mb-6 text-[14px]"><div><span class="font-bold">เดือนภาษี</span> <span id="vat-official-month" class="border-b border-black inline-block w-32 text-center pb-1">...</span></div><div><span class="font-bold">ปี</span> <span id="vat-official-year" class="border-b border-black inline-block w-24 text-center pb-1">...</span></div></div>
@@ -1408,6 +1424,8 @@
         import { createPaymentsController } from "./payments-ui.mjs";
         import { createFactoryController } from "./factory-ui.mjs";
         import { createBillingController } from "./billing-ui.mjs";
+        import { buildPurchaseVatReport } from "./purchase-vat.mjs";
+        import { csvCell as vatCSVCell } from "./vault-core.mjs";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, getDocFromServer, getDocsFromServer, collection, onSnapshot, deleteDoc, serverTimestamp, runTransaction, Bytes, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -1518,6 +1536,7 @@
 
         let currentLang = 'th', database = [], vatRate = 0.07, currentlyPreviewingDoc = null;
         let dashboardVaultRecords = [], dashboardVaultState = 'loading';
+        let vatDocumentState = 'loading', vatCompanyState = 'loading', renderedVatPeriod = '', renderedVatType = '';
         let exchangeRates = { 'USD': 35.00, 'EUR': 38.00, 'JPY': 0.24, 'GBP': 44.00, 'CNY': 5.00 };
         let companyProfile = {nameTh: '', nameEn: '', taxId: '', branch: 'สำนักงานใหญ่', addressTh: '', addressEn: '', phone: '', email: '', logo: null};
         let products = [];
@@ -1542,7 +1561,7 @@
         let selectedRemarksSequence = [];
 
         const initialUserData = JSON.parse(JSON.stringify({companyProfile,products,customers,employees,savedRemarks,exchangeRates}));
-        function resetUserData() { const defaults=JSON.parse(JSON.stringify(initialUserData)); companyProfile=defaults.companyProfile; products=defaults.products; customers=defaults.customers; employees=defaults.employees; savedRemarks=defaults.savedRemarks; exchangeRates=defaults.exchangeRates; purchaseHighWater=0; dashboardVaultRecords=[]; dashboardVaultState='loading'; $('dash-expense-rows')?.replaceChildren(); $('dash-po-details')?.replaceChildren(); productText('dash-po-summary',''); show('dash-expense-details',false); $('dash-open-expenses')?.setAttribute('aria-expanded','false'); }
+        function resetUserData() { const defaults=JSON.parse(JSON.stringify(initialUserData)); companyProfile=defaults.companyProfile; products=defaults.products; customers=defaults.customers; employees=defaults.employees; savedRemarks=defaults.savedRemarks; exchangeRates=defaults.exchangeRates; purchaseHighWater=0; dashboardVaultRecords=[]; dashboardVaultState='loading'; resetVatReportSession(); $('dash-expense-rows')?.replaceChildren(); $('dash-po-details')?.replaceChildren(); productText('dash-po-summary',''); show('dash-expense-details',false); $('dash-open-expenses')?.setAttribute('aria-expanded','false'); }
 
         const docTypeNames = { 'QT': 'ใบเสนอราคา (QUOTATION)', 'SO': 'ใบสั่งขาย (SALES ORDER)', 'DO': 'ใบส่งของ (DELIVERY NOTE)', 'INV': 'ใบแจ้งหนี้ (INVOICE)', 'TINV': 'ใบกำกับภาษี (TAX INVOICE)', 'ABB': 'ใบกำกับภาษีอย่างย่อ (ABB. TAX INVOICE)', 'RE': 'ใบเสร็จรับเงิน (RECEIPT)', 'RETAX': 'ใบเสร็จรับเงิน/ใบกำกับภาษี (RECEIPT/TAX INVOICE)', 'DN': 'ใบเพิ่มหนี้ (DEBIT NOTE)', 'CN': 'ใบลดหนี้ (CREDIT NOTE)', 'EQT': 'ใบเสนอราคาส่งออก (EXPORT QUOTATION)', 'PI': 'ใบเรียกเก็บเงินล่วงหน้า (PROFORMA INVOICE)', 'CI': 'ใบกำกับสินค้า (COMMERCIAL INVOICE)', 'PL': 'ใบรายการบรรจุหีบห่อ (PACKING LIST)', 'EVAT': 'ใบกำกับภาษี 0% (EXPORT TAX INVOICE)', 'BC': 'ใบจองเรือ (BOOKING CONFIRMATION)', 'BL': 'ใบตราส่ง (BILL OF LADING)', 'PR': 'ใบขอซื้อ (PURCHASE REQUISITION)', 'PO': 'ใบสั่งซื้อ (PURCHASE ORDER)', 'GRN': 'ใบรับสินค้า (GOODS RECEIPT NOTE)', 'OEMR': 'ใบรับสินค้า', 'VB': 'ใบรับวางบิล (VENDOR BILL)', 'PINV': 'ใบกำกับภาษีซื้อ (PURCHASE TAX INVOICE)', 'SDN': 'ใบเพิ่มหนี้จากผู้ขาย (SUPPLIER DN)', 'SCN': 'ใบลดหนี้จากผู้ขาย (SUPPLIER CN)', 'STI': 'ใบรับเข้าคลัง (STOCK IN)', 'STO': 'ใบจ่ายออกคลัง (STOCK OUT)', 'STT': 'ใบโอนย้ายคลัง (STOCK TRANSFER)', 'STA': 'ใบปรับปรุงสต๊อก (STOCK ADJUSTMENT)', 'PDO': 'ใบสั่งผลิต (PRODUCTION ORDER)', 'MI': 'ใบเบิกวัตถุดิบ (MATERIAL ISSUE)', 'FGR': 'ใบรับเข้าผลิตสำเร็จ (FINISHED GOODS RECEIPT)', 'MR': 'ใบคืนวัตถุดิบ (MATERIAL RETURN)', 'RV': 'ใบสำคัญรับ (PAYMENT RECEIPT)', 'PV': 'ใบสำคัญจ่าย (PAYMENT VOUCHER)', 'JV': 'ใบสำคัญทั่วไป (JOURNAL VOUCHER)', 'WHT': 'หนังสือรับรองหัก ณ ที่จ่าย (WHT CERTIFICATE)', 'PAYSLIP': 'สลิปเงินเดือน (PAYSLIP)' };
         const revenueDocs = ['TINV', 'ABB', 'RE', 'CI', 'EVAT', 'RETAX'], inputTaxDocs = ['PINV'], salesAndExportDocs = ['SO', 'DO', 'INV', 'TINV', 'ABB', 'RE', 'RETAX', 'EQT', 'PI', 'CI', 'PL', 'EVAT'];
@@ -1657,7 +1676,7 @@
         function handleMenuClick(moduleType, category) {
             if (documentSaveInProgress || remarkSaveInProgress) return;
             if (category === 'create') { switchTab('create-doc'); if($('doc-type')) $('doc-type').value = moduleType; resetDocumentSignatureChoice(); checkDocType(); }
-            else if (category === 'report') { if(moduleType === 'VATOUT' || moduleType === 'VATIN') { switchTab('vat-report'); if($('vat-type-filter')) $('vat-type-filter').value = moduleType === 'VATOUT' ? 'output' : 'input'; generateVatReport(); } else if(moduleType === 'STC') { switchTab('stock-card'); renderStockCardDropdown(); } else { switchTab('reports-center'); generateUnifiedReport(moduleType); } }
+            else if (category === 'report') { if(moduleType === 'VATOUT' || moduleType === 'VATIN') { if($('vat-type-filter')) $('vat-type-filter').value = moduleType === 'VATOUT' ? 'output' : 'input'; switchTab('vat-report'); } else if(moduleType === 'STC') { switchTab('stock-card'); renderStockCardDropdown(); } else { switchTab('reports-center'); generateUnifiedReport(moduleType); } }
             else if (category === 'label') { switchTab('shipping-mark'); renderShippingMarkDropdown(); } 
         }
 
@@ -1669,7 +1688,7 @@
             if (billingController && (billingController.busy || billingController.pending)) { showAlert('กรุณายืนยันหรือกลับไปแก้ไขรายการบัญชีก่อนเปลี่ยนหน้า'); return; }
             window.closeErpMenu(false);
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); if($(`tab-${tabId}`)) $(`tab-${tabId}`).classList.add('active');
-            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': () => {renderCustomers(); renderCustomerIntake();}, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': () => {renderSettingsRemarks(); renderSignatureSettings();}, 'vat-report': generateVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault, 'salary-certificates': renderSalaryCertificates };
+            const renders = { 'dashboard': updateDashboard, 'document-list': updateDocumentTable, 'customers': () => {renderCustomers(); renderCustomerIntake();}, 'employees': renderEmployees, 'products': ()=>{renderProducts(); renderExchangeRates();}, 'company-profile': populateCompanyForm, 'settings': () => {renderSettingsRemarks(); renderSignatureSettings();}, 'vat-report': openVatReport, 'payments': renderPaymentWorkspace, 'factory': renderFactoryWorkspace, 'billing': renderBillingWorkspace, 'vault': renderAccountingVault, 'salary-certificates': renderSalaryCertificates };
             if (renders[tabId]) renders[tabId]();
             if(tabId === 'create-doc') { 
                 populateRefDocDatalist(); populateAllDocsDatalist(); renderEmployeeDropdownForSeller(); checkDocType(); 
@@ -3795,13 +3814,22 @@
         }
 
         // Loaded on demand so document-reader errors cannot interrupt ERP startup.
-        let vaultController = null, vaultLoading = null, vaultEpoch = 0;
-        function resetVaultSession() { vaultEpoch++; vaultController?.destroy(); vaultController = null; vaultLoading = null; }
-        function openAccountingVault() { switchTab('vault'); }
+        let vaultController = null, vaultLoading = null, vaultEpoch = 0, vaultReportMonth = '';
+        function resetVaultSession() { vaultEpoch++; vaultController?.destroy(); vaultController = null; vaultLoading = null; vaultReportMonth = ''; }
+        function openAccountingVault(month = '') {
+            vaultReportMonth = month;
+            switchTab('vault');
+            if (!$('tab-vault').classList.contains('active')) vaultReportMonth = '';
+        }
         Object.assign(window, {openAccountingVault});
+        function showAccountingVault() {
+            const month = vaultReportMonth;
+            vaultReportMonth = '';
+            vaultController.open(month ? {reportMonth:month} : undefined);
+        }
         async function renderAccountingVault() {
             if (!currentUser) return;
-            if (vaultController) { vaultController.open(); return; }
+            if (vaultController) { showAccountingVault(); return; }
             if (vaultLoading) return;
             const uid=currentUser.uid, epoch=vaultEpoch, host=$('accounting-vault-workspace');
             host.textContent='กำลังเปิดคลังเอกสารบัญชี…';
@@ -3814,11 +3842,12 @@
                     getUserId:()=>currentUser?.uid, getIdToken:()=>currentUser.getIdToken(),
                     getActor:()=>({name:currentUser?.displayName || currentUser?.email || ''}),
                     getCompany:()=>companyProfile, today:()=>employeeTodayISO(),
+                    openPurchaseVat:openPurchaseVatFromVault,
                     toBytes:bytes=>Bytes.fromUint8Array(bytes),
                     writeFileChunkBatch:async entries=>{const uid=currentUser?.uid,batch=writeBatch(db);for(const e of entries)batch.set(e.ref,e.data);await batch.commit();if(currentUser?.uid!==uid)throw new Error('บัญชีผู้ใช้เปลี่ยน');},
                     watchRecords:(next,error)=>onSnapshot(getUserCol('accounting_vault'),snap=>next(snap.docs.map(d=>({...d.data(),id:d.id}))),error)
                 });
-                vaultController.open();
+                if ($('tab-vault').classList.contains('active')) showAccountingVault();
             } catch(error) {
                 if(currentUser?.uid===uid && vaultEpoch===epoch) { host.textContent='เปิดคลังเอกสารไม่สำเร็จ กรุณาเลือกเมนูอีกครั้ง'; console.error('Accounting vault failed to load', error); }
             } finally { if(vaultEpoch===epoch)vaultLoading=null; }
@@ -4340,39 +4369,164 @@
             $('shm-print-area').innerHTML = Array.from({length: ctn}, (_, i) => `<div class="border-4 border-gray-800 p-8 flex flex-col justify-center h-[400px] break-inside-avoid print-area"><h2 class="text-4xl font-black text-center mb-6 uppercase tracking-widest">${d.customerName}</h2><div class="text-xl mb-4"><strong>REF DOC:</strong> ${d.docNo}</div><div class="text-xl mb-4"><strong>DATE:</strong> ${d.dateStr}</div><div class="text-xl mb-4"><strong>DESTINATION:</strong> <span class="uppercase">${d.customerBranch || 'HEAD OFFICE'}</span></div><div class="mt-auto flex justify-between items-end border-t-2 border-gray-400 pt-4"><div class="text-xl font-bold">MADE IN THAILAND</div><div class="text-4xl font-black">CTN No. <span class="text-red-600">${i+1}</span> / ${ctn}</div></div></div>`).join('');
         }
 
+        function openVatReport() {
+            if (!$('vat-month-filter').value) $('vat-month-filter').value = employeeTodayISO().slice(0, 7);
+            generateVatReport();
+        }
+
+        function openPurchaseVatFromVault(month) {
+            if (!currentUser) return;
+            $('vat-type-filter').value = 'input';
+            $('vat-month-filter').value = month;
+            switchTab('vat-report');
+        }
+
+        function vatSourceState(snapshot) {
+            return snapshot.metadata?.fromCache ? 'cached' : snapshot.metadata?.hasPendingWrites ? 'loading' : 'ready';
+        }
+
+        function refreshOpenPurchaseVatReport() {
+            if ($('tab-vat-report').classList.contains('active') && val('vat-type-filter') === 'input') generateVatReport();
+        }
+
+        function setVatReportAvailable(available) {
+            $('vat-export-button').disabled = !available;
+            $('vat-print-button').disabled = !available;
+            $('tab-vat-report').classList.toggle('vat-print-blocked', !available);
+        }
+
+        function resetVatReportSession() {
+            vatDocumentState = vatCompanyState = 'loading';
+            renderedVatPeriod = renderedVatType = '';
+            $('vat-table-body').replaceChildren();
+            $('vat-purchase-issues').replaceChildren();
+            productText('vat-purchase-summary', '');
+            productText('vat-total-amt', '—');
+            productText('vat-total-vat', '—');
+            setVatReportAvailable(false);
+        }
+
+        function setVatEmpty(message, unavailable = false) {
+            $('vat-table-body').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-500">${productHtml(message)}</td></tr>`;
+            productText('vat-total-amt', unavailable ? '—' : '0.00');
+            productText('vat-total-vat', unavailable ? '—' : '0.00');
+        }
+
         function generateVatReport() {
-            const rt = val('vat-type-filter') || 'output', m = val('vat-month-filter'); if(!m) return; const [y, mo] = m.split('-');
-            
-            // กรองเฉพาะภาษีขาย (output) ให้ดึงแค่ RETAX และ CI เท่านั้น ตามที่เคยขอไว้
-            const fD = database.filter(d => !isCancelledDocument(d) && !!d.rawDate && ((rt==='output'&&(['RETAX', 'CI'].includes(d.prefix)||['advance','tax'].includes(d.paymentManaged?.kind)))||(rt==='input'&&d.isInputTax)) && (d.rawDate && new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0')===mo && (d.rawDate && new Date(d.rawDate).getFullYear().toString()===y));
-            const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][parseInt(mo)-1];
-            
-            txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`); txt('vat-official-month', mName); txt('vat-official-year', parseInt(y)+543);
-            txt('vat-official-comp-name', currentLang==='en'?companyProfile.nameEn:companyProfile.nameTh); txt('vat-official-comp-name2', currentLang==='en'?companyProfile.nameEn:companyProfile.nameTh);
-            if($('vat-official-comp-tax')) $('vat-official-comp-tax').innerHTML = formatTaxIdBoxes(companyProfile.taxId);
-            const isHq = companyProfile.branch === 'สำนักงานใหญ่' || companyProfile.branch === '00000' || !companyProfile.branch;
-            if($('vat-hq-check')) $('vat-hq-check').checked = isHq; 
-            if($('vat-branch-check')) $('vat-branch-check').checked = !isHq; 
-            txt('vat-official-branch-no', isHq ? '' : companyProfile.branch);
-            
-            let sAmt = 0, sVat = 0;
-            if($('vat-table-body')) $('vat-table-body').innerHTML = fD.length ? fD.map((d, i) => { const r=d.exchangeRate||exchangeRates[d.currency]||1, sb=d.subtotal*r, vt=d.vat*r; sAmt+=sb; sVat+=vt; return `<tr class="hover:bg-gray-50"><td class="p-2 text-center border border-gray-800">${i+1}</td><td class="p-2 text-center border border-gray-800" contenteditable="true">${d.dateStr}</td><td class="p-2 text-center text-blue-600 font-bold border border-gray-800" contenteditable="true">${rt==='input'?d.vendorInvNo:d.docNo}</td><td class="p-2 text-left border border-gray-800 pl-4" contenteditable="true">${d.customerName}</td><td class="p-2 text-center border border-gray-800 tracking-widest" contenteditable="true">${d.customerTaxId || '-'}</td><td class="p-2 text-center border border-gray-800" contenteditable="true">${d.customerBranch || '-'}</td><td class="p-2 text-right border border-gray-800 pr-4 editable-amt" contenteditable="true" oninput="recalcVatTotal()">${formatMoney(sb)}</td><td class="p-2 text-right text-emerald-700 font-medium border border-gray-800 pr-4 editable-vat" contenteditable="true" oninput="recalcVatTotal()">${formatMoney(vt)}</td></tr>`; }).join('') : `<tr><td colspan="8" class="p-8 text-center text-gray-500 border border-gray-800">ไม่มีข้อมูล</td></tr>`;
-            txt('vat-total-amt', formatMoney(sAmt)); txt('vat-total-vat', formatMoney(sVat));
+            const rt = val('vat-type-filter') || 'output', month = val('vat-month-filter');
+            renderedVatPeriod = month;
+            renderedVatType = rt;
+            show('vat-purchase-status', rt === 'input');
+            $('vat-purchase-issues').replaceChildren();
+            const monthSelected = /^(?:20|21)\d{2}-(0[1-9]|1[0-2])$/.test(month);
+            $('vat-open-vault').disabled = !monthSelected;
+            if (!monthSelected) {
+                setVatReportAvailable(false);
+                productText('vat-purchase-summary', 'เลือกเดือนที่ต้องการดูรายงาน');
+                setVatEmpty('กรุณาเลือกเดือนรายงาน', true);
+                return;
+            }
+            const [y, mo] = month.split('-');
+            const mName = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"][Number(mo)-1];
+            txt('vat-official-title', currentLang==='en'?`${rt.toUpperCase()} VAT Report`:`รายงานภาษี${rt==='output'?'ขาย':'ซื้อ'}`);
+            productText('vat-official-month', mName);
+            productText('vat-official-year', Number(y)+543);
+            const companyName = currentLang === 'en' ? companyProfile.nameEn : companyProfile.nameTh;
+            productText('vat-official-comp-name', companyName);
+            productText('vat-official-comp-name2', companyName);
+            $('vat-official-comp-tax').innerHTML = formatTaxIdBoxes(companyProfile.taxId);
+            const isHq = /^(สำนักงานใหญ่|head\s*office|00000)$/i.test(String(companyProfile.branch || 'สำนักงานใหญ่').trim());
+            $('vat-hq-check').checked = isHq;
+            $('vat-branch-check').checked = !isHq;
+            productText('vat-official-branch-no', isHq ? '' : companyProfile.branch);
+
+            if (rt === 'input') {
+                const states = [vatDocumentState, dashboardVaultState, vatCompanyState];
+                if (states.some(state => state !== 'ready')) {
+                    const message = states.includes('error') ? 'โหลดข้อมูลภาษีซื้อไม่ครบ กรุณาตรวจการเชื่อมต่อแล้วรีเฟรช' : states.includes('cached') ? 'ยังยืนยันข้อมูลจากคลาวด์ไม่ได้ กรุณาตรวจการเชื่อมต่อ' : 'กำลังโหลดใบกำกับจาก ERP และคลังแนบ…';
+                    productText('vat-purchase-summary', message);
+                    setVatEmpty(message, true);
+                    setVatReportAvailable(false);
+                    return;
+                }
+                const r = buildPurchaseVatReport(database, dashboardVaultRecords, {period: month, company: companyProfile, today: employeeTodayISO(), exchangeRates});
+                const combined = r.duplicates ? ` · รวมสำเนาที่ตรงกันแล้ว ${r.duplicates} รายการ` : '';
+                const pending = r.issues.length ? ` · ยังไม่รวม ${r.issues.length} รายการที่ต้องตรวจ พิมพ์และส่งออกได้เมื่อแก้รายการเหล่านี้แล้ว` : '';
+                productText('vat-purchase-summary', `รวม ${r.rows.length} ฉบับ จาก ERP และคลังแนบที่ตรวจแล้ว${combined}${pending}`);
+                for (const issue of r.issues) {
+                    const item = document.createElement('li');
+                    const entries = issue.entries.map(row => {
+                        const source = row.source === 'vault' ? 'คลังแนบ' : `ERP${row.id ? ` [${row.id}]` : ''}`;
+                        const amount = Number.isSafeInteger(row.vatCents) ? ` · VAT ${formatMoney(row.vatCents/100)} บาท` : '';
+                        return `${source}: ${row.number || 'ไม่มีเลขใบกำกับ'} (${row.party || 'ไม่ระบุผู้ขาย'} · วันที่ ${row.date} · งวด ${row.month}${amount})`;
+                    });
+                    item.textContent = entries.join(' / ') + ' — ' + issue.reason;
+                    $('vat-purchase-issues').append(item);
+                }
+                if (r.rows.length) $('vat-table-body').innerHTML = r.rows.map((row,i) => vatReportRow({...row,date:formatDateThai(row.date),net:row.netCents/100,vat:row.vatCents/100},i,false)).join('');
+                else setVatEmpty('ไม่มีใบกำกับภาษีซื้อที่รวมได้ในเดือนนี้');
+                productText('vat-total-amt', formatMoney(r.netCents/100));
+                productText('vat-total-vat', formatMoney(r.vatCents/100));
+                setVatReportAvailable(!r.issues.length);
+                return;
+            }
+
+            // Preserve the existing sales VAT rules and temporary editing in the sales report.
+            const sales = database.filter(d => !isCancelledDocument(d) && !!d.rawDate &&
+                (['RETAX','CI'].includes(d.prefix) || ['advance','tax'].includes(d.paymentManaged?.kind)) &&
+                (new Date(d.rawDate).getMonth()+1).toString().padStart(2,'0') === mo && new Date(d.rawDate).getFullYear().toString() === y);
+            let net = 0, vat = 0;
+            if (sales.length) $('vat-table-body').innerHTML = sales.map((d,i) => {
+                const rate = d.exchangeRate || exchangeRates[d.currency] || 1;
+                const row = {date:d.dateStr, number:d.docNo, party:d.customerName, taxId:d.customerTaxId, branch:d.customerBranch, net:d.subtotal*rate, vat:d.vat*rate};
+                net += row.net; vat += row.vat;
+                return vatReportRow(row,i,true);
+            }).join('');
+            else setVatEmpty('ไม่มีข้อมูล');
+            productText('vat-total-amt', formatMoney(net));
+            productText('vat-total-vat', formatMoney(vat));
+            setVatReportAvailable(true);
+        }
+
+        function vatReportRow(row, index, editable) {
+            const edit = editable ? ' contenteditable="true"' : '';
+            const label = editable ? '' : `<span class="vat-source-label no-print" data-vat-ui>${row.sources.length > 1 ? 'คลังแนบ · ตรงกับ ERP' : row.source === 'vault' ? 'คลังแนบ' : 'ERP'}</span>`;
+            const borders = 'border border-gray-800';
+            const cell = (content, classes='', attributes='', escaped=true) => `<td class="p-2 ${borders} ${classes}"${attributes}>${escaped ? productHtml(content) : content}</td>`;
+            return `<tr class="hover:bg-gray-50">${cell(index+1,'text-center')}${cell(row.date,'text-center',edit)}${cell(productHtml(row.number)+label,'text-center text-blue-600 font-bold',edit,false)}${cell(row.party,'text-left pl-4',edit)}${cell(row.taxId||'-','text-center tracking-widest',edit)}${cell(row.branch||'-','text-center',edit)}${cell(formatMoney(row.net),'text-right pr-4 editable-amt',editable?edit+' oninput="recalcVatTotal()"':'')}${cell(formatMoney(row.vat),'text-right text-emerald-700 font-medium pr-4 editable-vat',editable?edit+' oninput="recalcVatTotal()"':'')}</tr>`;
         }
 
         function recalcVatTotal() {
-            let sAmt = 0, sVat = 0;
-            document.querySelectorAll('.editable-amt').forEach(td => sAmt += parseFloat(td.innerText.replace(/,/g, ''))||0);
-            document.querySelectorAll('.editable-vat').forEach(td => sVat += parseFloat(td.innerText.replace(/,/g, ''))||0);
-            txt('vat-total-amt', formatMoney(sAmt)); txt('vat-total-vat', formatMoney(sVat));
+            const sum = selector => [...$('vat-table-body').querySelectorAll(selector)].reduce((total, cell) => total + (parseFloat(cell.textContent.replace(/,/g,''))||0), 0);
+            productText('vat-total-amt', formatMoney(sum('.editable-amt')));
+            productText('vat-total-vat', formatMoney(sum('.editable-vat')));
+        }
+
+        function vatReportCanExport() {
+            if (renderedVatPeriod !== val('vat-month-filter') || renderedVatType !== val('vat-type-filter')) generateVatReport();
+            return !$('vat-export-button').disabled;
         }
 
         function exportVatToCSV() {
-            const table = document.querySelector('.vat-table'); if(!table) return;
-            let csv = Array.from(table.querySelectorAll('tr')).map(r => Array.from(r.querySelectorAll('td, th')).map(c => `"${c.innerText.replace(/(\r\n|\n|\r)/gm, '').trim().replace(/"/g, '""')}"`).join(','));
-            const dl = document.createElement("a"); dl.download = `VAT_${val('vat-type-filter')||'output'}_${val('vat-month-filter')||'report'}.csv`;
-            dl.href = window.URL.createObjectURL(new Blob(["\uFEFF"+csv.join('\n')], {type: 'text/csv;charset=utf-8;'})); dl.click();
+            if (!vatReportCanExport()) return;
+            const table = document.querySelector('.vat-table').cloneNode(true);
+            table.querySelectorAll('[data-vat-ui]').forEach(el=>el.remove());
+            const csv = [...table.rows].map(row => [...row.cells].map(cell => {
+                const value = cell.textContent.replace(/\s+/g,' ').trim();
+                const amount = cell.matches('.editable-amt,.editable-vat,#vat-total-amt,#vat-total-vat') && /^-?\d{1,3}(?:,\d{3})*\.\d{2}$/.test(value);
+                return amount ? `"${value}"` : vatCSVCell(value);
+            }).join(',')).join('\r\n');
+            const dl = document.createElement('a');
+            dl.download = `VAT_${renderedVatType}_${renderedVatPeriod}.csv`;
+            dl.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
+            dl.click();
+            setTimeout(() => URL.revokeObjectURL(dl.href), 60000);
         }
+
+        $('vat-month-filter').addEventListener('change', generateVatReport);
+        $('vat-type-filter').addEventListener('change', generateVatReport);
+        $('vat-print-button').addEventListener('click', () => { if (vatReportCanExport()) window.print(); });
+        $('vat-open-vault').addEventListener('click', () => openAccountingVault(val('vat-month-filter')));
 
         function resetSystem() { 
             showConfirm('⚠️ ลบข้อมูลทั้งหมด (Set Zero)?\nข้อมูลจะถูกลบทั้งหมด', () => { 
@@ -4438,12 +4592,17 @@
                 const stop=options?onSnapshot(ref,options,guarded,onError):onSnapshot(ref,guarded,onError);
                 firebaseUnsubscribers.push(stop);
             };
-            watch(userRef("settings", "companyProfile"), (docSnap) => {
+            watch(userRef("settings", "companyProfile"), {includeMetadataChanges: true}, (docSnap) => {
                 if(docSnap.exists()) { companyProfile = docSnap.data(); companyProfileLoaded=true; updateDashboard(); updateCompanyHeader(); populateCompanyForm(); salaryCertificateController?.refresh(); }
-            }, errHandler);
+                vatCompanyState = vatSourceState(docSnap);
+                refreshOpenPurchaseVatReport(); vaultController?.refreshReport();
+            }, err => {
+                if(currentUser?.uid!==sessionUid) return;
+                vatCompanyState='error'; refreshOpenPurchaseVatReport(); errHandler(err);
+            });
             
             watch(userRef("settings", "exchangeRates"), (docSnap) => {
-                if(docSnap.exists()) { exchangeRates = docSnap.data(); renderExchangeRates(); }
+                if(docSnap.exists()) { exchangeRates = docSnap.data(); renderExchangeRates(); refreshOpenPurchaseVatReport(); }
             }, errHandler);
             const signatureWatchSession = signatureSession;
             watch(userRef('settings', signatureSettingsId), {includeMetadataChanges: true}, snap => {
@@ -4483,16 +4642,16 @@
                 renderSettingsRemarks(); renderRemarksCheckboxes();
             }, errHandler);
             
-            watch(userCol("accounting_vault"), (snap) => {
+            watch(userCol("accounting_vault"), {includeMetadataChanges: true}, (snap) => {
                 dashboardVaultRecords = snap.docs.map(d => ({...d.data(), id: d.id}));
-                dashboardVaultState = 'ready'; updateDashboard();
+                dashboardVaultState = vatSourceState(snap); updateDashboard(); refreshOpenPurchaseVatReport();
             }, error => {
                 if (currentUser?.uid !== sessionUid) return;
-                dashboardVaultRecords = []; dashboardVaultState = 'error'; updateDashboard();
+                dashboardVaultRecords = []; dashboardVaultState = 'error'; updateDashboard(); refreshOpenPurchaseVatReport();
                 console.error('Dashboard document vault failed to load', error);
             });
 
-            watch(userCol("documents"), (snap) => {
+            watch(userCol("documents"), {includeMetadataChanges: true}, (snap) => {
                 database = snap.docs.map(d => {
                     let data = d.data({ serverTimestamps: 'estimate' });
                     if(data.rawDate && data.rawDate.toDate) data.rawDate = data.rawDate.toDate();
@@ -4501,7 +4660,11 @@
                 });
                 updateDashboard(); updateDocumentTable(); populateRefDocDatalist(); populateAllDocsDatalist();
                 if(paymentsController) paymentsController.refresh();
-            }, errHandler);
+                vatDocumentState = vatSourceState(snap); refreshOpenPurchaseVatReport();
+            }, err => {
+                if(currentUser?.uid!==sessionUid) return;
+                vatDocumentState='error'; refreshOpenPurchaseVatReport(); errHandler(err);
+            });
         }
 
         function initApp() {
