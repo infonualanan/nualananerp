@@ -34,12 +34,23 @@ export function validation(raw,{company={},today='2199-12-31'}={}){
 }
 export async function sha256(bytes){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');}
 export async function naturalKey(d){const seller=digits(d.sellerTaxId)||clean(d.sellerName).normalize('NFKC').toLowerCase().replace(/\s+/g,' '),number=clean(d.documentNo).normalize('NFKC').toUpperCase().replace(/\s+/g,'');if(!seller||!number)return null;const kind=['tax_invoice','receipt_tax'].includes(d.documentType)?'tax_invoice':d.documentType;return sha256(new TextEncoder().encode(JSON.stringify([seller,digits(d.sellerBranch),kind,number])));}
+export function classifyVaultInputTax(record, options) {
+ const data=record.data||{};
+ if(record.status!=='reviewed')return {reason:'ยังไม่ตรวจยืนยัน'};
+ if(data.taxEligible!==true)return {reason:'ไม่ได้เลือกเข้ารายงานภาษีซื้อ'};
+ // Report from the latest reviewed snapshot, never from the AI output or file chunks.
+ try {
+  const check=validation(data,options);
+  if(check.errors.length)return {reason:check.errors.join(' / ')};
+  return {netCents:check.net,vatCents:check.vat,totalCents:check.total};
+ } catch {return {reason:'ข้อมูลเอกสารไม่สมบูรณ์ กรุณาเปิดต้นฉบับเพื่อตรวจอีกครั้ง'};}
+}
 export function report(records,{period,yearly=false,company={},today}){
  ensure(yearly?/^\d{4}$/.test(period):/^\d{4}-(0[1-9]|1[0-2])$/.test(period),'เลือกรอบรายงาน');
  const included=[],excluded=[];
  for(const r of records){const d=r.data||{},month=d.reportMonth||d.documentDate?.slice(0,7)||'';if(!(yearly?month.slice(0,4)===period:month===period))continue;
-  const check=validation(d,{company,today});const reason=r.status!=='reviewed'?'ยังไม่ตรวจยืนยัน':!d.taxEligible?'ไม่ได้เลือกเข้ารายงานภาษีซื้อ':check.errors.join(' / ');
-  if(reason)excluded.push({...r,reason});else included.push({...r,netCents:check.net,vatCents:check.vat,totalCents:check.total});
+  const check=classifyVaultInputTax(r,{company,today});
+  if(check.reason)excluded.push({...r,reason:check.reason});else included.push({...r,...check});
  }
  included.sort((a,b)=>a.data.documentDate.localeCompare(b.data.documentDate)||a.data.documentNo.localeCompare(b.data.documentNo));
  return {period,yearly,included,excluded,net:included.reduce((s,r)=>s+r.netCents,0),vat:included.reduce((s,r)=>s+r.vatCents,0),total:included.reduce((s,r)=>s+r.totalCents,0)};
